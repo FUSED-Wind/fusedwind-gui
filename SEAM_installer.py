@@ -19,8 +19,14 @@ def install(package):
     out = commands.getoutput(cmd)
     print out
 
-files = ['SEAM', 'SEAMTower', 'SEAMLoads', 'SEAMRotor']
+# first check whether FUSED-Wind is installed and install if necessary
+try:
+    import fusedwind
+except:
+    url = 'git+https://github.com/FUSED-Wind/fusedwind.git@develop#egg=fusedwind'
+    install(url)
 
+files = ['SEAM', 'SEAMTower', 'SEAMLoads', 'SEAMRotor']
 SEAM = "https://gitlab.windenergy.dtu.dk/SEAM/"
 
 for f in files:
