@@ -26,10 +26,14 @@ except:
     url = 'git+https://github.com/FUSED-Wind/fusedwind.git@develop#egg=fusedwind'
     install(url)
 
-files = ['SEAM', 'SEAMTower', 'SEAMLoads', 'SEAMRotor']
+modules = ['SEAM', 'SEAMTower', 'SEAMLoads', 'SEAMRotor','SEAMAero', 'SEAMGeometry', 'SEAMDrivetrain']
 SEAM = "https://gitlab.windenergy.dtu.dk/SEAM/"
 
-for f in files:
-    url = "git+%s%s.git#egg=%s" % (SEAM, f, f)
-    print 'URL', url
-    install(url)
+for name in modules:
+    try:
+        m = __import__(name)
+        print 'Module %s already installed in directory %s' % (name, m.__file__.strip('__init.pyc'))
+    except:
+        url = "git+%s%s.git#egg=%s" % (SEAM, name, name)
+        print 'Installing module %s' % name
+        install(url)
