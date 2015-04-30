@@ -27,9 +27,17 @@ To test that SEAM and all its sub-models were installed correctly run the ``SEAM
 
 If all tests passed you should see an "OK".
 
+## Documentation
+
+SEAM is documented with Sphinx, and you can build the complete documentation for SEAM and all its sum-models by typing make from this directory:
+
+    $ make
+    
+To view it in a web-browser, open the file ``_build/html/index.html`` or on Linux and Mac type:
+
+    $ open _build/html/index.html
+
 
 ## Examples
 
 Examples of how to run SEAM can be found in XX
-
-
