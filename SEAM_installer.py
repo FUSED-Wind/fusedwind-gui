@@ -26,7 +26,14 @@ except:
     url = 'git+https://github.com/FUSED-Wind/fusedwind.git@develop#egg=fusedwind'
     install(url)
 
-modules = ['SEAM', 'SEAMTower', 'SEAMLoads', 'SEAMRotor','SEAMAero', 'SEAMGeometry', 'SEAMDrivetrain']
+modules = ['SEAM',
+           'SEAMCosts',
+           'SEAMTower',
+           'SEAMLoads',
+           'SEAMRotor',
+           'SEAMAero',
+           'SEAMGeometry',
+           'SEAMDrivetrain']
 SEAM = "https://gitlab.windenergy.dtu.dk/SEAM/"
 
 for name in modules:

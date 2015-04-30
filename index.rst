@@ -17,6 +17,7 @@ Contents:
    seamrotor/docs/index
    seamtower/docs/index
    seamdrivetrain/docs/index
+   seamcosts/docs/index
 
 
 
