@@ -1,8 +1,0 @@
--e ./seam
--e ./seamcosts
--e ./seamtower
--e ./seamloads
--e ./seamrotor
--e ./seamaero
--e ./seamgeometry
--e ./seamdrivetrain
