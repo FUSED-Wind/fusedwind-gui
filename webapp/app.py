@@ -8,7 +8,7 @@ from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
 from flask_wtf import Form, RecaptchaField
 from flask.ext.mail import Message, Mail
-
+import numpy as np
 import re
 
 from jinja2 import evalcontextfilter, Markup, escape
@@ -89,15 +89,24 @@ class FormLoadInputFile(Form):
 
 from bokeh.embed import components
 from bokeh.plotting import figure
+from bokeh.charts import  Line
 from bokeh.resources import INLINE
 from bokeh.templates import RESOURCES
 from bokeh.util.string import encode_utf8
 
-def plotting(color, _from=0, to=100):
+def test_plot(fig, s,t, title="", color='#000000', _from=0, to=100):
+    xyvalues = OrderedDict(
+
+    )
+    fig = Line(s, t, color=color, line_width=2, xlabel='Height [m]', ylabel='Mass [kg]',
+        title='Tower mass distribution')
+    return fig
+
+
+def prepare_plot(func, *args, **kwargs):
+    fig = figure()
+    fig = func(fig, *args, **kwargs)
     # Create a polynomial line graph
-    x = list(range(_from, to + 1))
-    fig = figure(title="Polynomial")
-    fig.line(x, [i ** 2 for i in x], color=color, line_width=2)
 
     # Configure resources to include BokehJS inline in the document.
     # For more details see:
@@ -148,15 +157,14 @@ def webgui(cpnt, app=None):
                 cpnt.run()
                 outputs = {k:getattr(cpnt,k) for k in io['outputs'].keys()}
 
-                script, div, plot_resources = plotting(color='#000000')
+                script, div, plot_resources = prepare_plot(cpnt.plot)
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
                             outputs=WebGUIForm(io['outputs'])(MultiDict(outputs)),
                             load=form_load,
                             name=cpname,
-                            plot_script=script, plot_div=div, plot_resources=plot_resources
-                            )
+                            plot_script=script, plot_div=div, plot_resources=plot_resources)
 
 
 
