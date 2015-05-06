@@ -26,6 +26,26 @@ json2type = {
     'Array': array
     }
 
+
+def prep_field(dic):
+    """Helpful function that translate the FUSED I/O definition into something
+    consumable by the wtform field classes
+    """
+    out = {}
+    if 'desc' in dic:
+        out['description'] = dic['desc']
+    if 'default' in dic:
+        out['default'] = dic['default']
+    return out
+
+# A rosetta dictionary to transform between FUSED types into WTForm field types
+type_fields = {
+    'Float':FloatField,
+    'Int':IntegerField,
+    'Str':TextField,
+    'Array':TextField,
+}
+
 def traits2json(cpnt):
     """Get the traits information about the component and return a json dictionary"""
     out = {'inputs':{}, 'outputs':{}}
@@ -84,70 +104,6 @@ def register_Component(cpnt, app=None):
         return json.dumps(traits2json(cpnt))
     myflask.__name__ = cpnt.__class__.__name__
     app.route('/'+cpnt.__class__.__name__, methods=['GET', 'POST'])(myflask)
-    return app
-
-def prep_field(dic):
-    """Helpful function that translate the FUSED I/O definition into something
-    consumable by the wtform field classes
-    """
-    out = {}
-    if 'desc' in dic:
-        out['description'] = dic['desc']
-    if 'default' in dic:
-        out['default'] = dic['default']
-    return out
-
-# A rosetta dictionary to transform between FUSED types into WTForm field types
-type_fields = {
-    'Float':FloatField,
-    'Int':IntegerField,
-    'Str':TextField,
-    'Array':TextField,
-}
-
-def WebGUIForm(dic, send=False):
-    """Automagically generate the form from a FUSED I/O dictionary.
-    TODO:
-    * Add type validators
-    * Add low/high validators
-    * Add units nice looking extension using 'input-group-addon'
-     (http://getbootstrap.com/components/#input-groups)
-    """
-    field_dict = {k:type_fields[v['type']](k, **prep_field(v)) for k,v in dic.iteritems()}
-    if send: # Add the submit button
-        field_dict['submit'] = SubmitField("Send")
-
-    # 9th level python magic to dynamically create classes, don't try it at home kiddo...
-    MyForm = type('magicform', (Form,), field_dict)
-    return MyForm
-
-def webgui(cpnt, app=None):
-    cpname = cpnt.__class__.__name__
-    if app == None:
-        app = start_app(cpname)
-
-    def myflask():
-        io = traits2json(cpnt)
-        form_inputs = WebGUIForm(io['inputs'], send=True)()
-        form_outputs = WebGUIForm(io['outputs'])()
-        if request.method == 'POST':
-            inputs =  request.form.to_dict()
-
-            ### TODO: make the right format instead of float
-
-            for k in io['inputs'].keys():
-                setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
-            cpnt.run()
-            outputs = {k:getattr(cpnt,k) for k in io['outputs'].keys()}
-            return render_template('webgui.html',
-                        inputs=WebGUIForm(io['inputs'], send=True)(MultiDict(inputs)),
-                        outputs=WebGUIForm(io['outputs'])(MultiDict(outputs)),
-                        name=cpname)
-        # Publish the interface definition of the class
-        return render_template('webgui.html', inputs=form_inputs, outputs=None, name=cpname)
-
-    myflask.__name__ = cpname
-    app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
     return app
 
 
