@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block styles %}
+{{super()}}
+<link rel="stylesheet"
+      href="{{url_for('.static', filename='css/mystyle.css')}}">
+{% endblock %}
+
 {% block head %}
 {{super()}}
 {% if plot_resources %}
@@ -11,7 +17,7 @@
 
 {% block content %}
 <div class="container">
-    <div class="jumbotron">
+
         <div class="container">
             <div class="panel panel-default">
                 <div class="panel-heading">
@@ -37,8 +43,25 @@
                             <h3 class="panel-title">Inputs</h3>
                         </div>
                         <div class="panel-body">
-                            {{ wtf.quick_form(inputs, form_type='horizontal',
-                            button_map={'submit_button': 'primary'})}}
+                            <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
+                               button_map={'submit_button': 'primary'})}} -->
+
+                               <form method="post" class="form form-horizontal">
+                                 {{ inputs.hidden_tag() }}
+                                 {{ wtf.form_errors(inputs, hiddens='only') }}
+
+                                 {%- for field in inputs %}
+                                    {{field.label()|safe}}
+                                    {{field(class="form-control")|safe}}
+                                         {%- if field.description -%}
+                                             <p class="help-block tooltipcontainer">{{field.description|safe}}
+
+                                                 <div class="tooltip">Here some info</div>
+                                             </p>
+                                         {%- endif %}
+                                {%- endfor %}
+                               </form>
+
                         </div>
                     </div>
                 </div>
@@ -70,6 +93,6 @@
 
             </div>
         </div>
-    </div>
+    
 </div>
 {% endblock %}
