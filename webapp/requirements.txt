@@ -5,3 +5,4 @@ flask-appconfig
 flask-wtf
 flask-mail
 pyyaml
+bokeh

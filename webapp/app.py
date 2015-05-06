@@ -87,6 +87,33 @@ class FormLoadInputFile(Form):
 
 
 
+from bokeh.embed import components
+from bokeh.plotting import figure
+from bokeh.resources import INLINE
+from bokeh.templates import RESOURCES
+from bokeh.util.string import encode_utf8
+
+def plotting(color, _from=0, to=100):
+    # Create a polynomial line graph
+    x = list(range(_from, to + 1))
+    fig = figure(title="Polynomial")
+    fig.line(x, [i ** 2 for i in x], color=color, line_width=2)
+
+    # Configure resources to include BokehJS inline in the document.
+    # For more details see:
+    #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
+    plot_resources = RESOURCES.render(
+        js_raw=INLINE.js_raw,
+        css_raw=INLINE.css_raw,
+        js_files=INLINE.js_files,
+        css_files=INLINE.css_files,
+    )
+
+    # For more details see:
+    #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
+    script, div = components(fig, INLINE)
+    return script, div, plot_resources
+
 def webgui(cpnt, app=None):
     cpname = cpnt.__class__.__name__
     if app == None:
@@ -97,32 +124,47 @@ def webgui(cpnt, app=None):
         form_load = FormLoadInputFile()
         form_inputs = WebGUIForm(io['inputs'], run=True)()
         form_outputs = WebGUIForm(io['outputs'])()
-        if request.method == 'POST':
-            inputs =  request.form.to_dict()
-            ### TODO: make the right format instead of float
-            try:
+
+        if request.method == 'POST': # Receiving a POST request
+
+            try: # Trying to load the file
                 filename = secure_filename(form_load.upload.data.filename)
                 if filename is not None:
                     form_load.upload.data.save('uploads/' + filename)
                     with open('uploads/'+filename, 'r') as f:
                         inputs = yaml.load(f)
+
+                return render_template('webgui.html',
+                            inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
+                            outputs=None, load=form_load, name=cpname, plot_script=None)
+
             except: # no files are passed, using the form instead
-                pass
+                inputs =  request.form.to_dict()
 
-            for k in inputs.keys():
-                if k in io['inputs']:
-                    setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                for k in inputs.keys():
+                    if k in io['inputs']: # Loading only the inputs allowed
+                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
 
-            cpnt.run()
-            outputs = {k:getattr(cpnt,k) for k in io['outputs'].keys()}
+                cpnt.run()
+                outputs = {k:getattr(cpnt,k) for k in io['outputs'].keys()}
 
-            return render_template('webgui.html',
-                        inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                        outputs=WebGUIForm(io['outputs'])(MultiDict(outputs)),
-                        load=form_load,
-                        name=cpname)
-        # Publish the interface definition of the class
-        return render_template('webgui.html', inputs=form_inputs, outputs=None, load=form_load, name=cpname)
+                script, div, plot_resources = plotting(color='#000000')
+
+                return render_template('webgui.html',
+                            inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
+                            outputs=WebGUIForm(io['outputs'])(MultiDict(outputs)),
+                            load=form_load,
+                            name=cpname,
+                            plot_script=script, plot_div=div, plot_resources=plot_resources
+                            )
+
+
+
+        # Show the standard form
+        return render_template('webgui.html',
+            inputs=form_inputs, outputs=None,
+            load=form_load, name=cpname,
+            plot_script=None, plot_div=None, plot_resources=None)
 
     myflask.__name__ = cpname
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
