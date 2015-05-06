@@ -1,0 +1,7 @@
+Flask
+wtforms
+flask-bootstrap
+flask-appconfig
+flask-wtf
+flask-mail
+pyyaml
