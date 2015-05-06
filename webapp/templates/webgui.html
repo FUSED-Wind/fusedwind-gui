@@ -11,37 +11,47 @@
 
 {% block content %}
 <div class="container">
-    <div class="jumbotron">
+    <div class="page-header">
+      <h1>SEAM</h1>
+      <h2><small>The DTU Wind Energy Systems Engineering Analysis Model</small></h2>
+    </div>
+    <!-- <div class="jumbotron"> -->
         <div class="container">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h2 class="panel-title">{{name}}</h2>
-                </div>
-                <div class="panel-body">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title">Load Input File</h3>
+                            <h2 class="panel-title">{{name}}</h2>
                         </div>
+                        <div class="row">
+                            <div class="col-md-4">
                         <div class="panel-body">
-                            <form action="/{{name}}" method="POST" enctype="multipart/form-data">
-                                {{ load.hidden_tag() }}
-                                {{ load.upload.label }} {{ load.upload() }}
-                                <br><input type="submit" class="btn btn-default" value="Load Inputs">
-                            </form>
-                            <!--{{ wtf.quick_form(load, form_type='horizontal',
-                            button_map={'submit_button': 'primary'})}}-->
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Load Input File</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <form action="/{{name}}" method="POST" enctype="multipart/form-data">
+                                        {{ load.hidden_tag() }}
+                                        {{ load.upload.label }} {{ load.upload() }}
+                                        <br><input type="submit" class="btn btn-default" value="Load Inputs">
+                                    </form>
+                                    <!--{{ wtf.quick_form(load, form_type='horizontal',
+                                    button_map={'submit_button': 'primary'})}}-->
+                                </div>
+                            </div>
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Inputs</h3>
+                                </div>
+                                <div class="panel-body">
+                                    {{ wtf.quick_form(inputs, form_type='horizontal',
+                                    button_map={'submit_button': 'primary'})}}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">Inputs</h3>
-                        </div>
-                        <div class="panel-body">
-                            {{ wtf.quick_form(inputs, form_type='horizontal',
-                            button_map={'submit_button': 'primary'})}}
-                        </div>
-                    </div>
-                </div>
+
+                <div class="col-md-8">
+
                 {% if outputs %} <!-- Only show the outputs pannel if there are outputs to show -->
                     <div class="panel-body">
                         <div class="panel panel-default">
@@ -53,7 +63,9 @@
                             </div>
                         </div>
                     </div>
+
                     {% if plot_div %}
+
                         <div class="panel-body">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
@@ -65,11 +77,11 @@
                             </div>
                         </div>
                     {% endif %}
-
                 {% endif %}
-
             </div>
         </div>
-    </div>
+
+        </div>
+    <!-- </div> -->
 </div>
 {% endblock %}
