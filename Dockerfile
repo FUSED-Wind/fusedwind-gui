@@ -12,7 +12,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
     wget
 
 ADD ./webapp /opt/webapp/
-
+RUN mkdir /opt/webapp/uploads
 WORKDIR /opt/webapp
 RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install -r /opt/webapp/requirements.txt"
 

@@ -21,14 +21,6 @@ AppConfig(app, configfile)  # Flask-Appconfig is not necessary, but
                             # highly recommend =)
                             # https://github.com/mbr/flask-appconfig
 
-mail = Mail()
-
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 465
-app.config["MAIL_USE_SSL"] = True
-app.config["MAIL_USERNAME"] = 'fractalflows@gmail.com'
-app.config["MAIL_PASSWORD"] = 'emergence'
-mail.init_app(app)
 
 Bootstrap(app)
 # in a real app, these should be configured through Flask-Appconfig
@@ -49,8 +41,40 @@ from SEAMTower.SEAMTower import SEAMTower
 from webcomponent import *
 from flask_wtf.file import FileField
 from werkzeug import secure_filename
+from wtforms.widgets.core  import  html_params
+
+from bokeh.charts import Donut, output_file, show
+def donuts(fig):
+    # dict, OrderedDict, lists, arrays and DataFrames are valid inputs
+    xyvalues = [[2., 5., 3., 2.], [4., 1., 4., 0.], [6., 4., 3., 0.]]
+    donut = Donut(xyvalues, ['cpu1', 'cpu2', 'cpu3', 'cpu4'])
+    return donut
+
+def unitfield(units, name):
+    def myfield(field, ul_class='', **kwargs):
+        field_id = kwargs.pop('id', field.id)
+        html = [u'<div id="%s">' % (field_id)]
+        html.append(u'<div class="input-group">')
+        html.append(u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' % (field_id, field.name, field.data))
+        html.append(u'<span class="input-group-addon">%s</span>'%(units))
+        html.append(u'</div>')
+        html.append(u'</div>')
+        return u''.join(html)
+    myfield.__name__ = name
+    return myfield
+
+def make_field(k,v):
+    field = type_fields[v['type']]
+    if 'units' in v:
+        class MyField(field):
+            widget = unitfield(v['units'], k)
+        MyField.__name__ = 'Field'+k
+        return MyField(k, **prep_field(v))
+    return field(k, **prep_field(v))
 
 
+
+from wtforms import widgets
 def WebGUIForm(dic, run=False):
     """Automagically generate the form from a FUSED I/O dictionary.
     TODO:
@@ -69,15 +93,18 @@ def WebGUIForm(dic, run=False):
     class MyForm(Form):
         pass
 
+
     # sorting the keys alphabetically
     skeys = dic.keys()
     skeys.sort()
     for k in skeys:
         v = dic[k]
-        setattr(MyForm, k, type_fields[v['type']](k, **prep_field(v)))
+        setattr(MyForm, k, make_field(k,v))
 
     if run: # Add the run button
         setattr(MyForm, 'submit', SubmitField("Run"))
+
+    #setattr(MyForm, 'widget', widgets.TableWidget(with_table_tag=True))
 
     return MyForm
 
@@ -123,6 +150,8 @@ def prepare_plot(func, *args, **kwargs):
     script, div = components(fig, INLINE)
     return script, div, plot_resources
 
+#from wtforms import Form, TextField, widgets
+
 def webgui(cpnt, app=None):
     cpname = cpnt.__class__.__name__
     if app == None:
@@ -139,8 +168,8 @@ def webgui(cpnt, app=None):
             try: # Trying to load the file
                 filename = secure_filename(form_load.upload.data.filename)
                 if filename is not None:
-                    form_load.upload.data.save('uploads/' + filename)
-                    with open('uploads/'+filename, 'r') as f:
+                    form_load.upload.data.save('/tmp/' + filename)
+                    with open('/tmp/'+filename, 'r') as f:
                         inputs = yaml.load(f)
 
                 return render_template('webgui.html',
@@ -157,7 +186,7 @@ def webgui(cpnt, app=None):
                 cpnt.run()
                 outputs = {k:getattr(cpnt,k) for k in io['outputs'].keys()}
 
-                script, div, plot_resources = prepare_plot(cpnt.plot)
+                script, div, plot_resources = prepare_plot(donuts) #cpnt.plot)
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
