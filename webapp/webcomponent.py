@@ -7,7 +7,8 @@ from flask import Flask, request
 from flask_wtf import Form, RecaptchaField
 from flask.ext.mail import Message, Mail
 from wtforms import TextField, HiddenField, FloatField, ValidationError, RadioField,\
-    BooleanField, SubmitField, IntegerField, FormField, validators, PasswordField, TextAreaField
+    BooleanField, SubmitField, IntegerField, FormField, validators, PasswordField, TextAreaField,\
+    SelectField
 from wtforms.validators import Required
 from flask import Flask, request, render_template, flash
 import yaml
@@ -18,14 +19,16 @@ json2omdao = {
     'Float': Float,
     'Int': Int,
     'Array': Array,
-    'Str': Str
+    'Str': Str,
+    'Enum': Enum
     }
 
 json2type = {
     'Float': float,
     'Int': int,
     'Array': array,
-    'Str': str
+    'Str': str,
+    'Enum': str
     }
 
 
@@ -38,6 +41,8 @@ def prep_field(dic):
         out['description'] = dic['desc']
     if 'default' in dic:
         out['default'] = dic['default']
+    if 'values' in dic:
+        out['choices'] = [(i, val) for i, val in enumerate(dic['values'])]
     return out
 
 # A rosetta dictionary to transform between FUSED types into WTForm field types
@@ -46,6 +51,7 @@ type_fields = {
     'Int':IntegerField,
     'Str':TextField,
     'Array':TextField,
+    'Enum': SelectField
 }
 
 def traits2json(cpnt):
@@ -58,7 +64,7 @@ def traits2json(cpnt):
             t = cpnt.get_trait(s)
             out[ty][s] = {}
             out[ty][s]['type'] = t.trait_type.__class__.__name__
-            for d in ['desc', 'default', 'units', 'high', 'low']:
+            for d in ['desc', 'default', 'units', 'high', 'low','values']:
                 val = getattr(t, d)
                 if not val == None:
                     out[ty][s][d] = val
