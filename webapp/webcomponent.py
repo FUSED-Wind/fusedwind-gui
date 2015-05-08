@@ -42,7 +42,7 @@ def prep_field(dic):
     if 'default' in dic:
         out['default'] = dic['default']
     if 'values' in dic:
-        out['choices'] = [(i, val) for i, val in enumerate(dic['values'])]
+        out['choices'] = [(val, val) for val in dic['values']]
     return out
 
 # A rosetta dictionary to transform between FUSED types into WTForm field types
