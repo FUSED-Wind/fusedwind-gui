@@ -1,16 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
-  <h1>Example page header <small>Subtext for header</small></h1>
+<div class="container">
+    <div class="page-header">
+        <img src="static/dtuwind.png" align='right' class='media-right' width=30%>
+        <h1>SEAM</h1>
+        <h2><small>The DTU Wind Energy Systems Engineering Analysis Model</small></h2>
 </div>
 <div class="container">
-    <div class="jumbotron">
-        <div class="container">
-            <h1>Hello, my {{ form.hello }}!</h1>
-            <p>...</p>
-            <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a></p>
-        </div>
+    <ul class="nav nav-tabs">
+        <li role="presentation"><a href="/">Home</a></li>
+        <li role="presentation" class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="presentation">
+                Examples <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li role="presentation"> <a href="SEAMCAPEX">SEAMCAPEX</a></li>
+                <li role="presentation"> <a href="SEAMTower">SEAMTower</a></li>
+        </ul>
+      </li>
+    </ul>
+</div>
+<div class="container">
+
+    <div class="content">
+        Welcome to the DTU Wind Energy ....
     </div>
 </div>
+
 {% endblock %}
