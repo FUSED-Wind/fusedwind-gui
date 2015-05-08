@@ -8,4 +8,4 @@ To run the web app locally on your machine activate your OpenMDAO virtual enviro
 
     $ python webapp/app.py
 
-In a web browser open the page http://localhost:5000/SEAMCAPEX.
+In a web browser open the page http://localhost:5000/
