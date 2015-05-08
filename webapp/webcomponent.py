@@ -1,4 +1,4 @@
-from openmdao.main.api import Component, Container
+from openmdao.main.api import Component, Container, Assembly
 from openmdao.lib.datatypes.api import *
 from numpy import array
 from requests import get, post
@@ -17,13 +17,15 @@ from werkzeug.datastructures import MultiDict
 json2omdao = {
     'Float': Float,
     'Int': Int,
-    'Array': Array
+    'Array': Array,
+    'Str': Str
     }
 
 json2type = {
     'Float': float,
     'Int': int,
-    'Array': array
+    'Array': array,
+    'Str': str
     }
 
 
@@ -50,8 +52,8 @@ def traits2json(cpnt):
     """Get the traits information about the component and return a json dictionary"""
     out = {'inputs':{}, 'outputs':{}}
     for ty, se in zip(['inputs', 'outputs'],
-                    [set(cpnt.list_inputs()).difference(Component().list_inputs()),
-                     set(cpnt.list_outputs()).difference(Component().list_outputs())]):
+                    [set(cpnt.list_inputs()).difference(Assembly().list_inputs()),
+                     set(cpnt.list_outputs()).difference(Assembly().list_outputs())]):
         for s in se:
             t = cpnt.get_trait(s)
             out[ty][s] = {}
