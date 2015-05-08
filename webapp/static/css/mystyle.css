@@ -10,3 +10,13 @@ div#pop-up {
   border: 1px solid #1a1a1a;
   font-size: 90%;
 }
+
+.header-image {
+    width: 100px;
+    vertical-align: top;
+}
+
+/* resize images */
+.container img {
+    width: 25%;
+}
