@@ -3,20 +3,20 @@
 {% block styles %}
 {{super()}}
 <link rel="stylesheet"
-      href="{{url_for('.static', filename='css/mystyle.css')}}">
+href="{{url_for('.static', filename='css/mystyle.css')}}">
 <style>
-      {%- for field in inputs %}
+{%- for field in inputs %}
 {%- if field.description -%}
 
 div#sspop-up-{{field.name|safe}} {
-display: none;
-position: absolute;
-width: 280px;
-padding: 10px;
-background: #eeeeee;
-color: #000000;
-border: 1px solid #1a1a1a;
-font-size: 90%;
+    display: none;
+    position: absolute;
+    width: 280px;
+    padding: 10px;
+    background: #eeeeee;
+    color: #000000;
+    border: 1px solid #1a1a1a;
+    font-size: 90%;
 }
 
 {% endif %}
@@ -31,24 +31,24 @@ font-size: 90%;
 <script>
 {%- for field in inputs %}
 {%- if field.description -%}
-    $(function() {
-      var moveLeft = 20;
-      var moveDown = 10;
+$(function() {
+    var moveLeft = 20;
+    var moveDown = 10;
 
-      $('div#trigger-{{field.name|safe}}').hover(function(e) {
+    $('div#trigger-{{field.name|safe}}').hover(function(e) {
         $('div#pop-up-{{field.name|safe}}').show()
-//          .css('top', e.pageY + moveDown)
-//          .css('left', e.pageX + moveLeft)
-//          .appendTo('body');
-      }, function() {
+        //          .css('top', e.pageY + moveDown)
+        //          .css('left', e.pageX + moveLeft)
+        //          .appendTo('body');
+    }, function() {
         $('div#pop-up-{{field.name|safe}}').hide();
-      });
-
-//      $('div#trigger-{{field.name|safe}}').mousemove(function(e) {
-//        $("div#pop-up-{{field.name|safe}}").css('top', e.pageY + moveDown).css('left', e.pageX + moveLeft);
-//      });
-
     });
+
+    //      $('div#trigger-{{field.name|safe}}').mousemove(function(e) {
+    //        $("div#pop-up-{{field.name|safe}}").css('top', e.pageY + moveDown).css('left', e.pageX + moveLeft);
+    //      });
+
+});
 {% endif %}
 {% endfor %}
 </script>
@@ -80,71 +80,64 @@ font-size: 90%;
                 <ul class="dropdown-menu" role="menu">
                     <li role="presentation"> <a href="SEAMCAPEX">SEAMCAPEX</a></li>
                     <li role="presentation"> <a href="SEAMTower">SEAMTower</a></li>
-            </ul>
-          </li>
+                </ul>
+            </li>
         </ul>
     </div>
-    <!-- <div class="jumbotron"> -->
-        <div class="container">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h2 class="panel-title">{{name}}</h2>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4">
-                        <div class="panel-body">
-                            <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
-                               button_map={'submit_button': 'primary'})}} -->
-
-
-
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Load Input File</h3>
-                                </div>
-                                <div class="panel-body">
-                                    <form action="/{{name}}" method="POST" enctype="multipart/form-data">
-                                        {{ load.hidden_tag() }}
-                                        {{ load.upload.label }} {{ load.upload() }}
-                                        <br><input type="submit" class="btn btn-default" value="Load Inputs">
-                                    </form>
-                                    <!--{{ wtf.quick_form(load, form_type='horizontal',
-                                    button_map={'submit_button': 'primary'})}}-->
-                                </div>
+    <div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h2 class="panel-title">{{name}}</h2>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="panel-body">
+                        <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
+                        button_map={'submit_button': 'primary'})}} -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Load Input File</h3>
                             </div>
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Inputs</h3>
-                                </div>
-                                <div class="panel-body">
-                                    <form method="post" class="form">
-                                      {{ inputs.hidden_tag() }}
-                                      {{ wtf.form_errors(inputs, hiddens='only') }}
+                            <div class="panel-body">
+                                <form action="/{{name}}" method="POST" enctype="multipart/form-data">
+                                    {{ load.hidden_tag() }}
+                                    {{ load.upload.label }} {{ load.upload() }}
+                                    <br><input type="submit" class="btn btn-default" value="Load Inputs">
+                                </form>
+                                <!--{{ wtf.quick_form(load, form_type='horizontal',
+                                button_map={'submit_button': 'primary'})}}-->
+                            </div>
+                        </div>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Inputs</h3>
+                            </div>
+                            <div class="panel-body">
+                                <form method="post" class="form">
+                                    {{ inputs.hidden_tag() }}
+                                    {{ wtf.form_errors(inputs, hiddens='only') }}
 
-                                      {%- for field in inputs %}
-                                       <div id='trigger-{{field.name|safe}}'>
-                                         {{field.name|safe}}{{field(class="form-control")|safe}}
-                                              {%- if field.description -%}
-                                              <div id='pop-up-{{field.name|safe}}'>
-                                                <p class="help-block">{{field.description|safe}}</p>
-                                              </div>
-                                              {%- endif %}
-                                       </div>
-                                       <!-- HIDDEN / POP-UP DIV -->
-
-                                     {%- endfor %}
-                                 </form>
-
+                                    {%- for field in inputs %}
+                                    <div id='trigger-{{field.name|safe}}'>
+                                        {{field.name|safe}}{{field(class="form-control")|safe}}
+                                        {%- if field.description -%}
+                                        <div id='pop-up-{{field.name|safe}}'>
+                                            <p class="help-block">{{field.description|safe}}</p>
+                                        </div>
+                                        {%- endif %}
+                                    </div>
+                                    <!-- HIDDEN / POP-UP DIV -->
+                                    {%- endfor %}
+                                </form>
                                 <!--    {{ wtf.quick_form(inputs, form_type='horizontal',
-                                    button_map={'submit_button': 'primary'})}} -->
-                                </div>
+                                button_map={'submit_button': 'primary'})}} -->
                             </div>
                         </div>
                     </div>
+                </div>
 
                 <div class="col-md-8">
-
-                {% if outputs %} <!-- Only show the outputs pannel if there are outputs to show -->
+                    {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
                     <div class="panel-body">
                         <div class="panel panel-default">
                             <div class="panel-heading">
@@ -157,21 +150,22 @@ font-size: 90%;
                     </div>
 
                     {% if plot_div %}
-
-                        <div class="panel-body">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Plot</h3>
-                                </div>
-                                <div class="panel-body", align="center">
-                                    {{ plot_div|indent(4)|safe }}
-                                </div>
+                    <div class="panel-body">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Plot</h3>
+                            </div>
+                            <div class="panel-body", align="center">
+                                {{ plot_div|indent(4)|safe }}
                             </div>
                         </div>
+                    </div>
                     {% endif %}
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
