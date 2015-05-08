@@ -1,0 +1,11 @@
+hub_height: 100.
+rated_power: 3.
+rotor_diameter: 110.
+bearing_cost_per_mass: 14.0
+blade_cost_per_mass: 15.0
+spinner_cost_per_mass: 4.5
+tower_cost_per_mass: 4.
+d2e: 0.73
+hub_cost_per_mass: 3.5
+site_type: 'offshore'
+
