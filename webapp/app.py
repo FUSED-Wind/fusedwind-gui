@@ -45,7 +45,7 @@ def hello():
 from paraboloid import Paraboloid
 
 from SEAMTower.SEAMTower import SEAMTower
-
+from SEAMCosts.SEAMCAPEX import SEAMCAPEX
 from webcomponent import *
 from flask_wtf.file import FileField
 from werkzeug import secure_filename
@@ -74,7 +74,10 @@ def WebGUIForm(dic, run=False):
     skeys.sort()
     for k in skeys:
         v = dic[k]
-        setattr(MyForm, k, type_fields[v['type']](k, **prep_field(v)))
+        try:
+            setattr(MyForm, k, type_fields[v['type']](k, **prep_field(v)))
+        except:
+            pass
 
     if run: # Add the run button
         setattr(MyForm, 'submit', SubmitField("Run"))
@@ -179,7 +182,8 @@ def webgui(cpnt, app=None):
     return app
 
 
-webgui(SEAMTower(10), app)
+webgui(SEAMTower(20), app)
+webgui(SEAMCAPEX(), app)
 
 
 if __name__ == '__main__':
