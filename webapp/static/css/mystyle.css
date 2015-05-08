@@ -12,11 +12,6 @@ div#pop-up {
 }
 
 .header-image {
-    width: 100px;
+    width: 30%;
     vertical-align: top;
-}
-
-/* resize images */
-.container img {
-    width: 25%;
 }
