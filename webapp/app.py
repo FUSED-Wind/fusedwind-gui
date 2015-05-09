@@ -201,8 +201,8 @@ def webgui(cpnt, app=None):
                         inout = traits2json(comp)
                         sub_comp_data[name]['params'] = inout
                         if hasattr(comp, "plot"):
-                            script, div, plot_resources = prepare_plot(comp.plot)
-                            sub_comp_data[name]['plot'] = {'script': script, 'div': div, 'resources':plot_resources}
+                            c_script, c_div, c_plot_resources = prepare_plot(comp.plot)
+                            sub_comp_data[name]['plot'] = {'script': c_script, 'div': c_div, 'resources': c_plot_resources}
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
