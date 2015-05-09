@@ -68,6 +68,7 @@ def traits2json(cpnt):
                 val = getattr(t, d)
                 if not val == None:
                     out[ty][s][d] = val
+            out[ty][s]['state'] = getattr(cpnt, s)
 
     return out
 

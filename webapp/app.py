@@ -192,12 +192,25 @@ def webgui(cpnt, app=None):
 
                 script, div, plot_resources = prepare_plot(cpnt.plot)
 
+                # sub-component data
+                sub_comp_data = {}
+                if isinstance(cpnt, Assembly):
+                    for name in cpnt.list_components():
+                        sub_comp_data[name] = {}
+                        comp = getattr(cpnt, name)
+                        inout = traits2json(comp)
+                        sub_comp_data[name]['params'] = inout
+                        if hasattr(comp, "plot"):
+                            script, div, plot_resources = prepare_plot(comp.plot)
+                            sub_comp_data[name]['plot'] = {'script': script, 'div': div, 'resources':plot_resources}
+
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
                             outputs=WebGUIForm(io['outputs'])(MultiDict(outputs)),
                             load=form_load,
                             name=cpname,
-                            plot_script=script, plot_div=div, plot_resources=plot_resources)
+                            plot_script=script, plot_div=div, plot_resources=plot_resources,
+                            sub_comp_data=sub_comp_data)
 
 
 

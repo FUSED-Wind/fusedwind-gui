@@ -64,12 +64,15 @@ $(function() {
 {% endblock %}
 
 {% block content %}
+<!-- Header  -->
 <div class="container">
     <div class="page-header">
         <img src="static/dtuwind.png" align='right' class='media-right' width=30%>
         <h1>SEAM</h1>
         <h2><small>The DTU Wind Energy Systems Engineering Analysis Model</small></h2>
     </div>
+
+    <!-- Navigation tabs -->
     <div class="container">
         <ul class="nav nav-tabs">
             <li role="presentation"><a href="/">Home</a></li>
@@ -84,6 +87,8 @@ $(function() {
             </li>
         </ul>
     </div>
+
+    <!-- Main content -->
     <div class="container">
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -108,6 +113,8 @@ $(function() {
                                 button_map={'submit_button': 'primary'})}}-->
                             </div>
                         </div>
+
+                        <!-- Input form -->
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Inputs</h3>
@@ -136,6 +143,7 @@ $(function() {
                     </div>
                 </div>
 
+                <!-- Outputs  -->
                 <div class="col-md-8">
                     {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
                     <div class="panel-body">
@@ -149,6 +157,7 @@ $(function() {
                         </div>
                     </div>
 
+                    <!-- Plot -->
                     {% if plot_div %}
                     <div class="panel-body">
                         <div class="panel panel-default">
@@ -164,6 +173,83 @@ $(function() {
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Sub-components -->
+            {% if sub_comp_data %}
+            <div class="panel-group" id="accordion">
+                {% for field, inout in sub_comp_data.iteritems() %}
+                <div class="panel panel-default" id="panel{{field}}">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">
+                            <a data-toggle="collapse" data-target="#collapse{{field}}"
+                            href="#collapse"{{i}} class="collapsed">
+                            {{field}}
+                        </a>
+                    </h4>
+                    </div>
+                    <div id="collapse{{field}}" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="panel-body">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Inputs</h3>
+                                            </div>
+                                            <div class="panel-body", align="center">
+                                                <table class="table", border="2", align="left">
+                                                    <tr>
+                                                        <th>Name</td>
+                                                        <th>Value</td>
+                                                    </tr>
+                                                    {%- for vname, val in inout.params.inputs.iteritems() %}
+                                                    <tr>
+                                                        <td>{{val.desc}}</td>
+                                                        <td>{{val.state}} {{val.units}}</td>
+                                                    </tr>
+                                                    {%- endfor %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Outputs</h3>
+                                            </div>
+                                            <div class="panel-body", align="center">
+                                                <table class="table", border="2", align="left">
+                                                    <tr>
+                                                        <th>Name</td>
+                                                        <th>Value</td>
+                                                    </tr>
+                                                    {%- for vname, val in inout.params.outputs.iteritems() %}
+                                                    <tr>
+                                                        <td>{{val.desc}}</td>
+                                                        <td>{{val.state}} {{val.units}}</td>
+                                                    </tr>
+                                                    {%- endfor %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    {% if inout.plot %}
+                                    <div class="panel-body", align="center">
+                                        {{ inout.plot.resources|indent(4)|safe }}
+                                        {{ inout.plot.script|indent(4)|safe }}
+                                        {{ inout.plot.div|indent(4)|safe }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
