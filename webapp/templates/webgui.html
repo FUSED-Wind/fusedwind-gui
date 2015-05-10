@@ -64,15 +64,13 @@ $(function() {
 {% endblock %}
 
 {% block content %}
-<!-- Header  -->
+
 <div class="container">
     <div class="page-header">
         <img src="static/dtuwind.png" align='right' class='media-right' width=30%>
         <h1>SEAM</h1>
         <h2><small>The DTU Wind Energy Systems Engineering Analysis Model</small></h2>
     </div>
-
-    <!-- Navigation tabs -->
     <div class="container">
         <ul class="nav nav-tabs">
             <li role="presentation"><a href="/">Home</a></li>
@@ -85,112 +83,147 @@ $(function() {
                     <li role="presentation"> <a href="SEAMTower">SEAMTower</a></li>
                 </ul>
             </li>
+            <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
         </ul>
     </div>
 
-    <!-- Main content -->
-    <div class="container">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h2 class="panel-title">{{name}}</h2>
-            </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="panel-body">
-                        <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
-                        button_map={'submit_button': 'primary'})}} -->
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Load Input File</h3>
-                            </div>
-                            <div class="panel-body">
-                                <form action="/{{name}}" method="POST" enctype="multipart/form-data">
-                                    {{ load.hidden_tag() }}
-                                    {{ load.upload.label }} {{ load.upload() }}
-                                    <br><input type="submit" class="btn btn-default" value="Load Inputs">
-                                </form>
-                                <!--{{ wtf.quick_form(load, form_type='horizontal',
-                                button_map={'submit_button': 'primary'})}}-->
-                            </div>
-                        </div>
+    <ul id="myTab" class="nav nav-tabs">
+      <li class="active"><a href="#assembly" data-toggle="tab">Assembly</a></li>
+      <li><a href="#components" data-toggle="tab">Components</a></li>
+    </ul>
+    <div id="myTabContent" class="tab-content">
 
-                        <!-- Input form -->
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Inputs</h3>
+        <!-- Assembly tab -->
+        <div class="tab-pane fade in active" id="assembly">
+            <div class="panel panel-default">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="panel-body">
+                            <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
+                            button_map={'submit_button': 'primary'})}} -->
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Load Input File</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <form action="/{{name}}" method="POST" enctype="multipart/form-data">
+                                        {{ load.hidden_tag() }}
+                                        {{ load.upload.label }} {{ load.upload() }}
+                                        <br><input type="submit" class="btn btn-default" value="Load Inputs">
+                                    </form>
+                                    <!--{{ wtf.quick_form(load, form_type='horizontal',
+                                    button_map={'submit_button': 'primary'})}}-->
+                                </div>
                             </div>
-                            <div class="panel-body">
-                                <form method="post" class="form">
-                                    {{ inputs.hidden_tag() }}
-                                    {{ wtf.form_errors(inputs, hiddens='only') }}
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Inputs</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <form method="post" class="form">
 
-                                    {%- for field in inputs %}
-                                    <div id='trigger-{{field.name|safe}}'>
-                                        {{field.name|safe}}{{field(class="form-control")|safe}}
-                                        {%- if field.description -%}
-                                        <div id='pop-up-{{field.name|safe}}'>
-                                            <p class="help-block">{{field.description|safe}}</p>
-                                        </div>
+                                        {{ inputs.hidden_tag() }}
+                                        {{ wtf.form_errors(inputs, hiddens='only') }}
+                                        <table class="table", border="2", align="left">
+                                            <col width="60%">
+                                            <col width="40%">
+                                            <tr>
+                                                <th>Name</td>
+                                                <th>Value</td>
+                                            </tr>
+                                        {%- for field in inputs %}
+                                        {% if field.name not in ('csrf_token', 'submit') %}
+                                        <tr>
+                                            <td>{{field.description}} ({{field.name}})</td>
+                                            <td>
+                                                <div id='trigger-{{field.name|safe}}'>
+                                                {{field(class="form-control")|safe}}
+                                                {% if field.name != 'submit'%}
+                                                <!-- <div id='help-block'>
+                                                    <p class="help-block">{{field.description|safe}} ({{field.name|safe}})</p>
+                                                </div>
+                                                {%- endif %} -->
+                                            <!-- disabling description popup for now -->
+                                            <!-- {{field.name|safe}}{{field(class="form-control")|safe}}
+                                            {%- if field.description -%}
+                                            <div id='pop-up-{{field.name|safe}}'>
+                                                <p class="help-block">{{field.description|safe}}</p>
+                                            </div>
+                                            {%- endif %} -->
+                                                </div>
+                                        </tr>
                                         {%- endif %}
-                                    </div>
-                                    <!-- HIDDEN / POP-UP DIV -->
+                                        {%- endfor %}
+                                    </table>
+                                    {{inputs.submit(class="form-control")|safe}}
+                                    </form>
+                                    <!--    {{ wtf.quick_form(inputs, form_type='horizontal',
+                                    button_map={'submit_button': 'primary'})}} -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+                        <div class="panel-body">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Outputs</h3>
+                                </div>
+                                <table class="table", border="2", align="left">
+                                    <tr>
+                                        <th>Name</td>
+                                        <th>Value</td>
+                                        <th>Units</td>
+                                    </tr>
+                                    {%- for vname, val in outputs.iteritems() %}
+                                    <tr>
+                                        <td>{{val.desc}}</td>
+                                        <td>{{val.state}}</td>
+                                        <td>{{val.units}}</td>
+                                    </tr>
                                     {%- endfor %}
-                                </form>
-                                <!--    {{ wtf.quick_form(inputs, form_type='horizontal',
-                                button_map={'submit_button': 'primary'})}} -->
+                                </table>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Outputs  -->
-                <div class="col-md-8">
-                    {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-                    <div class="panel-body">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Outputs</h3>
-                            </div>
-                            <div class="panel-body">
-                                {{ wtf.quick_form(outputs, form_type='horizontal')}}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Plot -->
-                    {% if plot_div %}
-                    <div class="panel-body">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Plot</h3>
-                            </div>
-                            <div class="panel-body", align="center">
-                                {{ plot_div|indent(4)|safe }}
+                        {% if plot_div %}
+                        <div class="panel-body">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Plot</h3>
+                                </div>
+                                <div class="panel-body", align="center">
+                                    {{ plot_div|indent(4)|safe }}
+                                </div>
                             </div>
                         </div>
+                        {% endif %}
+                        {% endif %}
                     </div>
-                    {% endif %}
-                    {% endif %}
                 </div>
             </div>
+        </div>
 
-            <!-- Sub-components -->
+        <!-- Components tab -->
+        <div class="tab-pane fade" id="components">
             {% if sub_comp_data %}
             <div class="panel-group" id="accordion">
                 {% for field, inout in sub_comp_data.iteritems() %}
-                <div class="panel panel-default" id="panel{{field}}">
+                <div class="panel panel-default" id="panel-{{field}}">
                     <div class="panel-heading">
                         <h4 class="panel-title">
-                            <a data-toggle="collapse" data-target="#collapse{{field}}"
-                            href="#collapse"{{i}} class="collapsed">
-                            {{field}}
-                        </a>
-                    </h4>
+                            <a data-toggle="collapse" data-target="#collapse-{{field}}"
+                            href="#collapse-{{field}}" class="collapsed">
+                                {{field}}
+                            </a>
+                        </h4>
                     </div>
-                    <div id="collapse{{field}}" class="panel-collapse collapse">
+                    <div id="collapse-{{field}}" class="panel-collapse collapse">
                         <div class="panel-body">
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-5">
                                     <div class="panel-body">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
@@ -201,11 +234,13 @@ $(function() {
                                                     <tr>
                                                         <th>Name</td>
                                                         <th>Value</td>
+                                                        <th>Units</td>
                                                     </tr>
                                                     {%- for vname, val in inout.params.inputs.iteritems() %}
                                                     <tr>
-                                                        <td>{{val.desc}}</td>
-                                                        <td>{{val.state}} {{val.units}}</td>
+                                                        <td>{{val.desc}} ({{vname}})</td>
+                                                        <td>{{val.state}}</td>
+                                                        <td>{{val.units}}</td>
                                                     </tr>
                                                     {%- endfor %}
                                                 </table>
@@ -222,11 +257,13 @@ $(function() {
                                                     <tr>
                                                         <th>Name</td>
                                                         <th>Value</td>
+                                                        <th>Units</td>
                                                     </tr>
                                                     {%- for vname, val in inout.params.outputs.iteritems() %}
                                                     <tr>
-                                                        <td>{{val.desc}}</td>
-                                                        <td>{{val.state}} {{val.units}}</td>
+                                                        <td>{{val.desc}} ({{vname}})</td>
+                                                        <td>{{val.state}}</td>
+                                                        <td>{{val.units}}</td>
                                                     </tr>
                                                     {%- endfor %}
                                                 </table>
@@ -234,7 +271,7 @@ $(function() {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-md-7">
                                     {% if inout.plot %}
                                     <div class="panel-body", align="center">
                                         {{ inout.plot.resources|indent(4)|safe }}
