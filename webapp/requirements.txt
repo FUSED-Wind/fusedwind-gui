@@ -1,6 +1,7 @@
 Flask
 wtforms
 flask-bootstrap
+flask-bower
 flask-appconfig
 flask-wtf
 flask-mail

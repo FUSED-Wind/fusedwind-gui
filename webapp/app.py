@@ -8,6 +8,7 @@ from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
 from flask_wtf import Form, RecaptchaField
 from flask.ext.mail import Message, Mail
+from flask.ext.bower import Bower
 import numpy as np
 import re
 
@@ -23,6 +24,8 @@ AppConfig(app, configfile)  # Flask-Appconfig is not necessary, but
 
 
 Bootstrap(app)
+Bower(app) # Usefull to use bower-components
+
 # in a real app, these should be configured through Flask-Appconfig
 app.config['SECRET_KEY'] = 'devkey'
 
@@ -156,6 +159,21 @@ def prepare_plot(func, *args, **kwargs):
 
 #from wtforms import Form, TextField, widgets
 
+test_ass = [{
+        'text': "Parent 1",
+        'nodes': [{
+            'text': "Child 1",
+            'nodes': [
+                {'text': "Grandchild 1"},
+                {'text': "Grandchild 2"}]},
+          {'text': "Child 2"}]},
+      {'text': "Parent 2"},
+      {'text': "Parent 3"},
+      {'text': "Parent 4"},
+      {'text': "Parent 5"}]
+
+
+
 def webgui(cpnt, app=None):
     cpname = cpnt.__class__.__name__
     if app == None:
@@ -167,6 +185,7 @@ def webgui(cpnt, app=None):
         form_inputs = WebGUIForm(io['inputs'], run=True)()
         form_outputs = WebGUIForm(io['outputs'])()
 
+        assembly_structure = test_ass
         if request.method == 'POST': # Receiving a POST request
 
             try: # Trying to load the file
@@ -178,7 +197,8 @@ def webgui(cpnt, app=None):
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                            outputs=None, load=form_load, name=cpname, plot_script=None)
+                            outputs=None, load=form_load, name=cpname, plot_script=None,
+                            assembly_structure=assembly_structure)
 
             except: # no files are passed, using the form instead
                 inputs =  request.form.to_dict()
@@ -212,7 +232,8 @@ def webgui(cpnt, app=None):
                             load=form_load,
                             name=cpname,
                             plot_script=script, plot_div=div, plot_resources=plot_resources,
-                            sub_comp_data=sub_comp_data)
+                            sub_comp_data=sub_comp_data,
+                            assembly_structure=assembly_structure)
 
 
 
@@ -220,7 +241,8 @@ def webgui(cpnt, app=None):
         return render_template('webgui.html',
             inputs=form_inputs, outputs=None,
             load=form_load, name=cpname,
-            plot_script=None, plot_div=None, plot_resources=None)
+            plot_script=None, plot_div=None, plot_resources=None,
+            assembly_structure=assembly_structure)
 
     myflask.__name__ = cpname
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)

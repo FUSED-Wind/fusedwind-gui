@@ -2,8 +2,7 @@
 
 {% block styles %}
 {{super()}}
-<link rel="stylesheet"
-href="{{url_for('.static', filename='css/mystyle.css')}}">
+<link rel="stylesheet" href="{{url_for('.static', filename='css/mystyle.css')}}">
 <style>
 
 </style>
@@ -13,8 +12,11 @@ href="{{url_for('.static', filename='css/mystyle.css')}}">
 
 {% block scripts %}
 {{super()}}
+<script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
+<script src="{{ bower_url_for('bootstrap-treeview', filename='src/js/bootstrap-treeview.js') }}"></script>
 <script>
-
+var tree = {{ assembly_structure|safe }}
+$('#assembly-tree').treeview({data: tree});
 </script>
 {% endblock %}
 
@@ -66,6 +68,19 @@ href="{{url_for('.static', filename='css/mystyle.css')}}">
                             <div class="panel-body">
                                 <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
                                 button_map={'submit_button': 'primary'})}} -->
+
+<!-- ########################## The Assembly navigation panel ############## -->
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Assembly Structure</h3>
+                                    </div>
+
+                                    <div class="panel-body">
+                                        <div id="assembly-tree"></div>
+                                    </div>
+                                </div>
+
+<!-- ########################## The Load Input panel ####################### -->
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Load Input File</h3>
@@ -80,6 +95,9 @@ href="{{url_for('.static', filename='css/mystyle.css')}}">
                                         button_map={'submit_button': 'primary'})}}-->
                                     </div>
                                 </div>
+
+
+<!-- ########################## The Inputs panel ########################### -->
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Inputs</h3>
@@ -130,6 +148,8 @@ href="{{url_for('.static', filename='css/mystyle.css')}}">
                         </div>
 
                         <div class="col-md-7">
+
+<!-- ###################### The Outputs panel ########################### -->
                             {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
                             <div class="panel-body">
                                 <div class="panel panel-default">

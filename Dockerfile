@@ -4,13 +4,16 @@ FROM piredtu/seam
 
 MAINTAINER Pierre-Elouan Rethore <pire@dtu.dk>
 
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
+RUN apt-get update \
+ && apt-get install -y -q \
     curl \
     python-all \
     python-pip \
-    wget
+    wget \
+ && apt-get clean all \
+ && apt-get purge
 
+# Install the webapp
 ADD ./webapp /opt/webapp/
 RUN mkdir /opt/webapp/uploads
 WORKDIR /opt/webapp
