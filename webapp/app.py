@@ -172,7 +172,29 @@ test_ass = [{
       {'text': "Parent 4"},
       {'text': "Parent 5"}]
 
+def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
 
+    for name in cpnt.list_components():
+        comp = getattr(cpnt, name)
+        cname = comp.__class__.__name__
+        sub_comp_data[cname] = {}
+
+        asym_structure.append({
+            'text':cname,
+            'href':'#collapse-%s'%(cname)})
+
+        inout = traits2json(comp)
+        sub_comp_data[cname]['params'] = inout
+        if hasattr(comp, "plot"):
+            c_script, c_div, c_plot_resources = prepare_plot(comp.plot)
+            sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div, 'resources': c_plot_resources}
+
+        if isinstance(comp, Assembly):
+
+            sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
+            asym_structure[-1]['nodes'] = sub_structure
+
+    return sub_comp_data, asym_structure
 
 import json, re, boto, StringIO, random
 
@@ -242,56 +264,35 @@ def webgui(cpnt, app=None):
         assembly_structure = [{'text':cpname,
                                'nodes':[]}]
 
+        inputs =  request.form.to_dict()
+
+        for k in inputs.keys():
+            if k in io['inputs']: # Loading only the inputs allowed
+                setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
 
         # sub-component data
         sub_comp_data = {}
         if isinstance(cpnt, Assembly):
-            #cpnt.run()
-            for name in cpnt.list_components():
-                comp = getattr(cpnt, name)
-                cname = comp.__class__.__name__
-                sub_comp_data[cname] = {}
 
-                assembly_structure[0]['nodes'].append({
-                    'text':cname,
-                    'href':'#collapse-%s'%(cname)})
-
-                inout = traits2json(comp)
-                sub_comp_data[cname]['params'] = inout
-                if hasattr(comp, "plot"):
-                    c_script, c_div, c_plot_resources = prepare_plot(comp.plot)
-                    sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div, 'resources': c_plot_resources}
+            sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+            assembly_structure[0]['nodes'] = structure
 
         if request.method == 'POST': # Receiving a POST request
-
-            #try: # Trying to load the file
-                #message = request.values['message']
-            #except:
-            #    print 'crap'
-
-
-            files = request.files
-            filename = files['files[]'].filename
-            print 'new files', filename
-            files['files[]'].save('/tmp/' + filename)
-
-            with open('/tmp/'+filename, 'r') as f:
-                inputs = yaml.load(f)
-            print inputs
-
-
             try: # Trying to load the file
                 # filename = secure_filename(form_load.upload.data.filename)
                 # if filename is not None:
                 #     form_load.upload.data.save('/tmp/' + filename)
 
                 files = request.files
-                filename = files['files[]'].filename
+                filename = files['files'].filename
                 print 'new files', filename
-                files['files[]'].save('/tmp/' + filename)
+                files['files'].save('/tmp/' + filename)
 
                 with open('/tmp/'+filename, 'r') as f:
                     inputs = yaml.load(f)
+
+
+                print inputs
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
@@ -310,7 +311,18 @@ def webgui(cpnt, app=None):
                 cpnt.run()
                 outputs = traits2json(cpnt)['outputs']
 
-                script, div, plot_resources = prepare_plot(cpnt.plot)
+                try:
+                    script, div, plot_resources = prepare_plot(cpnt.plot)
+                except:
+                    script, div, plot_resources = None, None, None
+
+
+                # sub-component data
+                sub_comp_data = {}
+                if isinstance(cpnt, Assembly):
+
+                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                    assembly_structure[0]['nodes'] = structure
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
@@ -335,9 +347,11 @@ def webgui(cpnt, app=None):
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
     return app
 
-
-webgui(SEAMTower(20), app)
-webgui(SEAMCAPEX(), app)
+from SEAM.seam_assemblies import SEAMAssembly
+from openmdao.main.api import set_as_top
+webgui(set_as_top(SEAMTower(20)), app)
+webgui(set_as_top(SEAMCAPEX()), app)
+webgui(set_as_top(SEAMAssembly()), app)
 
 
 if __name__ == '__main__':

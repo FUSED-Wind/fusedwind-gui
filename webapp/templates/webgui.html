@@ -87,7 +87,7 @@ $(function () {
         },
         send: function (e, data) {
             console.log('sending');
-            location.reload();
+            //location.reload();
         }
     });
 });
@@ -121,8 +121,8 @@ $(function () {
                     Examples <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu" role="menu">
-                    <li role="presentation"> <a href="SEAMCAPEX">SEAMCAPEX</a></li>
                     <li role="presentation"> <a href="SEAMTower">SEAMTower</a></li>
+                    <li role="presentation"> <a href="SEAMAssembly">SEAMAssembly</a></li>
                 </ul>
             </li>
             <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
@@ -230,7 +230,7 @@ $(function () {
                                         <span class="btn btn-success fileinput-button col-md-6">
                                             <i class="glyphicon glyphicon-plus"></i>
                                             <span>Load Input File</span>
-                                            <input type="file" name="files[]" multiple>
+                                            <input type="file" name="file" multiple>
                                         </span>
                                     </form>
 
