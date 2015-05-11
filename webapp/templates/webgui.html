@@ -5,22 +5,7 @@
 <link rel="stylesheet"
 href="{{url_for('.static', filename='css/mystyle.css')}}">
 <style>
-{%- for field in inputs %}
-{%- if field.description -%}
 
-div#sspop-up-{{field.name|safe}} {
-    display: none;
-    position: absolute;
-    width: 280px;
-    padding: 10px;
-    background: #eeeeee;
-    color: #000000;
-    border: 1px solid #1a1a1a;
-    font-size: 90%;
-}
-
-{% endif %}
-{% endfor %}
 </style>
 {% endblock %}
 
@@ -29,28 +14,7 @@ div#sspop-up-{{field.name|safe}} {
 {% block scripts %}
 {{super()}}
 <script>
-{%- for field in inputs %}
-{%- if field.description -%}
-$(function() {
-    var moveLeft = 20;
-    var moveDown = 10;
 
-    $('div#trigger-{{field.name|safe}}').hover(function(e) {
-        $('div#pop-up-{{field.name|safe}}').show()
-        //          .css('top', e.pageY + moveDown)
-        //          .css('left', e.pageX + moveLeft)
-        //          .appendTo('body');
-    }, function() {
-        $('div#pop-up-{{field.name|safe}}').hide();
-    });
-
-    //      $('div#trigger-{{field.name|safe}}').mousemove(function(e) {
-    //        $("div#pop-up-{{field.name|safe}}").css('top', e.pageY + moveDown).css('left', e.pageX + moveLeft);
-    //      });
-
-});
-{% endif %}
-{% endfor %}
 </script>
 {% endblock %}
 
