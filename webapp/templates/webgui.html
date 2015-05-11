@@ -2,7 +2,9 @@
 
 {% block styles %}
 {{super()}}
-<link rel="stylesheet" href="{{url_for('.static', filename='css/mystyle.css')}}">
+<link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
 <style>
 .hidden {
   display: none !important;
@@ -29,6 +31,69 @@ $('#assembly-tree').treeview({
             $('.panel-'+data['text']).toggle();
         }});
 </script>
+
+<script src="{{ bower_url_for('blueimp-file-upload', filename='js/vendor/jquery.ui.widget.js') }}"></script>
+<script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.iframe-transport.js') }}"></script>
+<script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.fileupload.js') }}"></script>
+<script>
+$(function () {
+    $('#fileupload').fileupload({
+        dataType: 'json',
+        done: function (e, data) {
+            $.each(data.result.files, function (index, file) {
+                $('<p/>').text(file.name).appendTo(document.body);
+            });
+        }
+    });
+});
+
+$('#fileupload').fileupload({
+    /* ... */
+    progressall: function (e, data) {
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#progress .bar').css(
+            'width',
+            progress + '%'
+        );
+    }
+});
+
+$(function () {
+    var added_files = [];
+    var submitted = false;
+    $('#fileupload').fileupload({
+        dataType: 'json',
+        singleFileUploads: false,
+        forceIframeTransport: true,
+        url: '/{{name}}',
+        add: function (e, data) {
+            console.log('add', data);
+            added_files.push(data);
+            data.context = $('<p/>').text('Uploading...').appendTo(document.body);
+            data.formData = $('#fileupload').serializeArray();
+            var original_data = data;
+            var new_data = {files: [], originalFiles: [], paramName: []};
+            jQuery.each(added_files, function(index, file) {
+                new_data['files'] = jQuery.merge(new_data['files'], file.files);
+                new_data['originalFiles'] = jQuery.merge(new_data['originalFiles'], file.originalFiles);
+                new_data['paramName'] = jQuery.merge(new_data['paramName'], file.paramName);
+            });
+            new_data = jQuery.extend({}, original_data, new_data);
+            console.log(new_data);
+            new_data.submit();
+        },
+        done: function (e, data) {
+            data.context.text('Upload finished.');
+        },
+        send: function (e, data) {
+            console.log('sending');
+            location.reload();
+        }
+    });
+});
+
+</script>
+
 {% endblock %}
 
 {% block head %}
@@ -84,7 +149,7 @@ $('#assembly-tree').treeview({
 
 <!-- ########################## The Assembly navigation panel ############## -->
                                 <div class="panel panel-default" id='panel-'>
-                                    <div class="panel-heading
+                                    <div class="panel-heading">
                                     <h3 class="panel-title">
                                         <a data-toggle="collapse" data-target="#collapse-tree"
                                         href="#collapse-tree" class="collapsed">
@@ -110,10 +175,9 @@ $('#assembly-tree').treeview({
                                             {{ load.hidden_tag() }}{{ load.upload() }}
                                             <input type="submit" class="btn btn-default" value="Load Inputs">
                                         </form>
-                                        <!--{{ wtf.quick_form(load, form_type='horizontal',
-                                        button_map={'submit_button': 'primary'})}}-->
                                     </div>
                                 </div>
+
 
 
 <!-- ########################## The Inputs panel ########################### -->
@@ -126,7 +190,7 @@ $('#assembly-tree').treeview({
 
                                             {{ inputs.hidden_tag() }}
                                             {{ wtf.form_errors(inputs, hiddens='only') }}
-                                            <table class="table table-hover"" align="left">
+                                            <table class="table table-hover" align="left">
                                                 <col width="55%">
                                                 <col width="45%">
                                                 <tr>
@@ -140,8 +204,8 @@ $('#assembly-tree').treeview({
                                                 <td>
                                                     <div id='trigger-{{field.name|safe}}'>
                                                     {{field(class="form-control")|safe}}
-                                                    {% if field.name != 'submit'%}
-                                                    <!-- <div id='help-block'>
+                                                    <!--{% if field.name != 'submit'%}
+                                                     <div id='help-block'>
                                                         <p class="help-block">{{field.description|safe}} ({{field.name|safe}})</p>
                                                     </div>
                                                     {%- endif %} -->
@@ -157,10 +221,24 @@ $('#assembly-tree').treeview({
                                             {%- endif %}
                                             {%- endfor %}
                                         </table>
-                                        {{inputs.submit(class="form-control")|safe}}
-                                        </form>
-                                        <!--    {{ wtf.quick_form(inputs, form_type='horizontal',
+
+
+                                        <!-- {{inputs.submit(class="form-control")|safe}} -->
+                                        <input class="btn btn-primary col-md-6" id="submit" name="submit" type="submit" value="Run">
+                                    </form>
+                                    <form id="fileupload" action="/{{name}}" method="POST" enctype="multipart/form-data">
+                                        <span class="btn btn-success fileinput-button col-md-6">
+                                            <i class="glyphicon glyphicon-plus"></i>
+                                            <span>Load Input File</span>
+                                            <input type="file" name="files[]" multiple>
+                                        </span>
+                                    </form>
+
+                                                                <!--    {{ wtf.quick_form(inputs, form_type='horizontal',
                                         button_map={'submit_button': 'primary'})}} -->
+                                        <div id="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
