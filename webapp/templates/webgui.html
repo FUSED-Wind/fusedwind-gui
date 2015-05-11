@@ -4,7 +4,10 @@
 {{super()}}
 <link rel="stylesheet" href="{{url_for('.static', filename='css/mystyle.css')}}">
 <style>
-
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
 </style>
 {% endblock %}
 
@@ -16,7 +19,15 @@
 <script src="{{ bower_url_for('bootstrap-treeview', filename='src/js/bootstrap-treeview.js') }}"></script>
 <script>
 var tree = {{ assembly_structure|safe }}
-$('#assembly-tree').treeview({data: tree, enableLinks: true});
+$('#assembly-tree').treeview({
+        data: tree,
+        enableLinks: true,
+        showBorder: false,
+        onNodeSelected: function(event, data){
+            $('.comp-panels').hide();
+            if ( $('.panel-'+data['text']).hasClass( 'hidden' ) ) $('.panel-'+data['text']).hide().removeClass('hidden');
+            $('.panel-'+data['text']).toggle();
+        }});
 </script>
 {% endblock %}
 
@@ -52,44 +63,52 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
             <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
         </ul>
     </div>
-    <div class="container">
+<!--    <div class="container">
         <ul id="myTab" class="nav nav-tabs">
           <li><a href="#assembly" data-toggle="tab">Assembly</a></li>
           <li><a href="#components" data-toggle="tab">Components</a></li>
         </ul>
     </div>
+-->
+
     <div class='container'>
         <div id="TabContent" class="tab-content">
             <!-- Assembly tab -->
             <div class="tab-pane fade in active" id="assembly">
                 <div class="panel panel-default">
                     <div class="row">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <div class="panel-body">
                                 <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
                                 button_map={'submit_button': 'primary'})}} -->
 
 <!-- ########################## The Assembly navigation panel ############## -->
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        <h3 class="panel-title">Assembly Structure</h3>
+                                <div class="panel panel-default" id='panel-'>
+                                    <div class="panel-heading
+                                    <h3 class="panel-title">
+                                        <a data-toggle="collapse" data-target="#collapse-tree"
+                                        href="#collapse-tree" class="collapsed">
+                                        Assembly Structure
+                                        </a>
+                                    </h3>
                                     </div>
 
-                                    <div class="panel-body">
-                                        <div id="assembly-tree"></div>
+                                    <div id="collapse-tree" class="panel-collapse collapse" >
+                                        <div class="panel-body ">
+                                            <div id="assembly-tree"></div>
+                                        </div>
                                     </div>
                                 </div>
 
 <!-- ########################## The Load Input panel ####################### -->
-                                <div class="panel panel-default">
+                                <div class="panel panel-default  comp-panels panel-{{name}}">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Load Input File</h3>
                                     </div>
                                     <div class="panel-body">
                                         <form action="/{{name}}" method="POST" enctype="multipart/form-data">
-                                            {{ load.hidden_tag() }}
-                                            {{ load.upload.label }} {{ load.upload() }}
-                                            <br><input type="submit" class="btn btn-default" value="Load Inputs">
+                                            {{ load.hidden_tag() }}{{ load.upload() }}
+                                            <input type="submit" class="btn btn-default" value="Load Inputs">
                                         </form>
                                         <!--{{ wtf.quick_form(load, form_type='horizontal',
                                         button_map={'submit_button': 'primary'})}}-->
@@ -98,16 +117,16 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
 
 
 <!-- ########################## The Inputs panel ########################### -->
-                                <div class="panel panel-default">
+                                <div class="panel panel-default comp-panels panel-{{name}}">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Inputs</h3>
                                     </div>
-                                    <div class="panel-body">
+                                    <div class="panel-body", align="center">
                                         <form method="post" class="form">
 
                                             {{ inputs.hidden_tag() }}
                                             {{ wtf.form_errors(inputs, hiddens='only') }}
-                                            <table class="table", border="2", align="left">
+                                            <table class="table table-hover"" align="left">
                                                 <col width="55%">
                                                 <col width="45%">
                                                 <tr>
@@ -147,34 +166,37 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
                             </div>
                         </div>
 
-                        <div class="col-md-7">
+                        <div class="col-md-8">
 
 <!-- ###################### The Outputs panel ########################### -->
                             {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-                            <div class="panel-body">
+                            <div class="panel-body  comp-panels panel-{{name}}">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Outputs</h3>
                                     </div>
-                                    <table class="table", border="2", align="left">
-                                        <tr>
-                                            <th>Name</td>
-                                            <th>Value</td>
-                                            <th>Units</td>
-                                        </tr>
-                                        {%- for vname, val in outputs.iteritems() %}
-                                        <tr>
-                                            <td>{{val.desc}}</td>
-                                            <td>{{val.state}}</td>
-                                            <td>{{val.units}}</td>
-                                        </tr>
-                                        {%- endfor %}
-                                    </table>
+                                    <div class="panel-body", align="center">
+                                        <table class="table table-hover" align="left">
+                                            <tr>
+                                                <th>Name</td>
+                                                <th>Value</td>
+                                                <th>Units</td>
+                                            </tr>
+                                            {%- for vname, val in outputs.iteritems() %}
+                                            <tr>
+                                                <td>{{val.desc}}</td>
+                                                <td>{{val.state}}</td>
+                                                <td>{{val.units}}</td>
+                                            </tr>
+                                            {%- endfor %}
+                                        </table>
+
                                 </div>
                             </div>
+                        </div>
 
                             {% if plot_div %}
-                            <div class="panel-body">
+                            <div class="panel-body comp-panels panel-{{name}}">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h3 class="panel-title">Plot</h3>
@@ -186,17 +208,93 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
                             </div>
                             {% endif %}
                             {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Components tab -->
+            {% if sub_comp_data %}
+            {% for field, inout in sub_comp_data.iteritems() %}
+<!--            <div class="panel panel-default hidden comp-panels panel-{{field}}">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                            {{field}}
+                    </h4>
+                </div> -->
+                    <div class="panel-body hidden comp-panels panel-{{field}}">
+                        <!--<div class="row">
+                             <div class="col-md-5"> -->
+                                <div class="panel-body">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h3 class="panel-title">Inputs</h3>
+                                        </div>
+                                        <div class="panel-body", align="center">
+                                        <table class="table table-hover"" align="left">
+                                            <tr>
+                                                <th>Name</td>
+                                                <th>Value</td>
+                                                <th>Units</td>
+                                            </tr>
+                                            {%- for vname, val in inout.params.inputs.iteritems() %}
+                                            <tr>
+                                                <td>{{val.desc}} ({{vname}})</td>
+                                                <td>{{val.state}}</td>
+                                                <td>{{val.units}}</td>
+                                            </tr>
+                                            {%- endfor %}
+                                        </table>
+                                    </div>
+                                </div>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h3 class="panel-title">Outputs</h3>
+                                        </div>
+                                        <div class="panel-body", align="center">
+                                            <table class="table table-hover"" align="left">
+                                                <tr>
+                                                    <th>Name</td>
+                                                    <th>Value</td>
+                                                    <th>Units</td>
+                                                </tr>
+                                                {%- for vname, val in inout.params.outputs.iteritems() %}
+                                                <tr>
+                                                    <td>{{val.desc}} ({{vname}})</td>
+                                                    <td>{{val.state}}</td>
+                                                    <td>{{val.units}}</td>
+                                                </tr>
+                                                {%- endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- </div>
+                            div class="col-md-7" -->
+                                {% if inout.plot %}
+                                <div class="panel-body", align="center">
+                                    {{ inout.plot.resources|indent(4)|safe }}
+                                    {{ inout.plot.script|indent(4)|safe }}
+                                    {{ inout.plot.div|indent(4)|safe }}
+                                </div>
+                                {% endif %}
+                            <!-- /div -->
+                        </div>
+                        <!--    </div>
+             </div> -->
+            {% endfor %}
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+    </div>
+
+
+            <!-- Components tab
             <div class="tab-pane fade" id="components">
                 {% if sub_comp_data %}
                 <div class="panel-group" id="accordion">
                     {% for field, inout in sub_comp_data.iteritems() %}
-                    <div class="panel panel-default" id="panel-{{field}}">
+                    <div class="panel panel-defaul panel-{{field}}t>
                         <div class="panel-heading">
                             <h4 class="panel-title">
                                 <a data-toggle="collapse" data-target="#collapse-{{field}}"
@@ -214,22 +312,20 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
                                                 <div class="panel-heading">
                                                     <h3 class="panel-title">Inputs</h3>
                                                 </div>
-                                                <div class="panel-body", align="center">
-                                                    <table class="table", border="2", align="left">
-                                                        <tr>
-                                                            <th>Name</td>
-                                                            <th>Value</td>
-                                                            <th>Units</td>
-                                                        </tr>
-                                                        {%- for vname, val in inout.params.inputs.iteritems() %}
-                                                        <tr>
-                                                            <td>{{val.desc}} ({{vname}})</td>
-                                                            <td>{{val.state}}</td>
-                                                            <td>{{val.units}}</td>
-                                                        </tr>
-                                                        {%- endfor %}
-                                                    </table>
-                                                </div>
+                                                <table class="table table-hover"" align="left">
+                                                    <tr>
+                                                        <th>Name</td>
+                                                        <th>Value</td>
+                                                        <th>Units</td>
+                                                    </tr>
+                                                    {%- for vname, val in inout.params.inputs.iteritems() %}
+                                                    <tr>
+                                                        <td>{{val.desc}} ({{vname}})</td>
+                                                        <td>{{val.state}}</td>
+                                                        <td>{{val.units}}</td>
+                                                    </tr>
+                                                    {%- endfor %}
+                                                </table>
                                             </div>
                                         </div>
                                         <div class="panel-body">
@@ -238,7 +334,7 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
                                                     <h3 class="panel-title">Outputs</h3>
                                                 </div>
                                                 <div class="panel-body", align="center">
-                                                    <table class="table", border="2", align="left">
+                                                    <table class="table table-hover"" align="left">
                                                         <tr>
                                                             <th>Name</td>
                                                             <th>Value</td>
@@ -273,6 +369,8 @@ $('#assembly-tree').treeview({data: tree, enableLinks: true});
                 </div>
                 {% endif %}
             </div>
+
+        -->
         </div>
 </div>
 </div>
