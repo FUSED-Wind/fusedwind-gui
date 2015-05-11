@@ -16,7 +16,7 @@
 <script src="{{ bower_url_for('bootstrap-treeview', filename='src/js/bootstrap-treeview.js') }}"></script>
 <script>
 var tree = {{ assembly_structure|safe }}
-$('#assembly-tree').treeview({data: tree});
+$('#assembly-tree').treeview({data: tree, enableLinks: true});
 </script>
 {% endblock %}
 

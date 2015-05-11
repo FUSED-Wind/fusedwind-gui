@@ -185,7 +185,8 @@ def webgui(cpnt, app=None):
         form_inputs = WebGUIForm(io['inputs'], run=True)()
         form_outputs = WebGUIForm(io['outputs'])()
 
-        assembly_structure = test_ass
+        assembly_structure = [{'text':cpname,
+                               'nodes':[]}]
         if request.method == 'POST': # Receiving a POST request
 
             try: # Trying to load the file
@@ -219,6 +220,10 @@ def webgui(cpnt, app=None):
                         comp = getattr(cpnt, name)
                         cname = comp.__class__.__name__
                         sub_comp_data[cname] = {}
+
+                        assembly_structure[0]['nodes'].append({
+                            'text':cname,
+                            'href':'#collapse-%s'%(cname)})
 
                         inout = traits2json(comp)
                         sub_comp_data[cname]['params'] = inout
