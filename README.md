@@ -2,24 +2,16 @@
 
 SEAM can be run using a web server providing easy user interaction and graphical representation of the outputs in a web browser.
 
-# Installing and running on your machine (the hard way)
-## Installing on your machine
+## Installing and running on your machine (the hard way)
+### Installing on your machine
 
 * Install OpenMDAO
 * Install all the DTU-SEAM components
-<!-- * Install nodejs
-* Install bower:
-    $ sudo npm install -g bower
-
-* Install the relelvant js libraries
-
-    $ bower install bootstrap-treeview -->
-
 * Install the additional python libraries
 
     $ pip install -r webapp/requirements.txt
 
-## Starting the web app
+### Starting the web app
 
 To run the web app locally on your machine activate your OpenMDAO virtual environment and issue the command
 
@@ -27,7 +19,7 @@ To run the web app locally on your machine activate your OpenMDAO virtual enviro
 
 In a web browser open the page http://localhost:5000/
 
-# Working with Docker (the easier way, if you have docker)
+## Working with Docker (the easier way, if you have docker)
 
 To build the docker image
 
