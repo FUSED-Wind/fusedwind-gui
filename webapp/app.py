@@ -4,28 +4,26 @@ import os
 
 from flask import Flask, request, render_template, flash
 from wtforms.widgets import TextArea
+from flask.ext.mail import Message, Mail
+from flask.ext.bower import Bower
+from flask import Blueprint, request, abort, jsonify, redirect, render_template
+from flask_wtf.file import FileField
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
 from flask_wtf import Form, RecaptchaField
-from flask.ext.mail import Message, Mail
-from flask.ext.bower import Bower
-import json, re, boto, StringIO, random
+
 from functools import wraps
-from flask import Blueprint, request, abort, jsonify, redirect, render_template
-from flask_wtf.file import FileField
 from werkzeug import secure_filename
 from wtforms.widgets.core  import  html_params
 from wtforms import widgets
 
-
-
 import numpy as np
-import re
 
 from jinja2 import evalcontextfilter, Markup, escape
 
 from webcomponent import *
 
+import json
 import yaml
 
 
