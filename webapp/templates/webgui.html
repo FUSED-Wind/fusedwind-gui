@@ -221,69 +221,76 @@ $('#fileupload').fileupload({
 
             {% if sub_comp_data %}
             {% for field, inout in sub_comp_data.iteritems() %}
-                <div class="panel-body hidden comp-panels panel-{{field}}">
+            <div class="panel-body hidden comp-panels panel-{{field}}">
 <!-- ############## The Component Input panel ############################## -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="panel-body">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        <h3 class="panel-title">Inputs</h3>
-                                    </div>
-                                    <div class="panel-body", align="center">
-                                        <table class="table table-hover" align="left">
-                                            <tr>
-                                                <th>Name</td>
-                                                <th>Value</td>
-                                                <th>Units</td>
-                                            </tr>
-                                            {%- for vname, val in inout.params.inputs.iteritems() %}
-                                                <tr>
-                                                    <td>{{val.desc}} ({{vname}})</td>
-                                                    <td>{{val.state}}</td>
-                                                    <td>{{val.units}}</td>
-                                                </tr>
-                                            {%- endfor %}
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-<!-- ########### The Component Outputs panel ################################# -->
-                    <div class="col-md-6">
-                        <div class="panel-body">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Outputs</h3>
-                                </div>
-                                <div class="panel-body", align="center">
-                                    <table class="table table-hover" align="left">
-                                        <tr>
-                                            <th>Name</td>
-                                            <th>Value</td>
-                                            <th>Units</td>
-                                        </tr>
-                                        {%- for vname, val in inout.params.outputs.iteritems() %}
-                                            <tr>
-                                                <td>{{val.desc}} ({{vname}})</td>
-                                                <td>{{val.state}}</td>
-                                                <td>{{val.units}}</td>
-                                            </tr>
-                                        {%- endfor %}
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">{{field}}</h3>
                     </div>
-                </div>
-                    {% if inout.plot %}
+                    <div class="panel-body", align="center">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="panel-body">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h3 class="panel-title">Inputs</h3>
+                                        </div>
+                                        <div class="panel-body", align="center">
+                                            <table class="table table-hover" align="left">
+                                                <tr>
+                                                    <th>Name</td>
+                                                    <th>Value</td>
+                                                    <th>Units</td>
+                                                </tr>
+                                                {%- for vname, val in inout.params.inputs.iteritems() %}
+                                                    <tr>
+                                                        <td>{{val.desc}} ({{vname}})</td>
+                                                        <td>{{val.state}}</td>
+                                                        <td>{{val.units}}</td>
+                                                    </tr>
+                                                {%- endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+    <!-- ########### The Component Outputs panel ################################# -->
+                            <div class="col-md-6">
+                                <div class="panel-body">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h3 class="panel-title">Outputs</h3>
+                                        </div>
+                                        <div class="panel-body", align="center">
+                                            <table class="table table-hover" align="left">
+                                                <tr>
+                                                    <th>Name</td>
+                                                    <th>Value</td>
+                                                    <th>Units</td>
+                                                </tr>
+                                                {%- for vname, val in inout.params.outputs.iteritems() %}
+                                                    <tr>
+                                                        <td>{{val.desc}} ({{vname}})</td>
+                                                        <td>{{val.state}}</td>
+                                                        <td>{{val.units}}</td>
+                                                    </tr>
+                                                {%- endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if inout.plot %}
                         <div class="panel-body", align="center">
                             {{ inout.plot.resources|indent(4)|safe }}
                             {{ inout.plot.script|indent(4)|safe }}
                             {{ inout.plot.div|indent(4)|safe }}
                         </div>
-                    {% endif %}
+                        {% endif %}
                     </div>
+                </div>
+            </div>
                 {% endfor %}
                 {% endif %}
                 </div>
