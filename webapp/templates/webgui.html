@@ -20,6 +20,7 @@
 <script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <script src="{{ bower_url_for('bootstrap-treeview', filename='src/js/bootstrap-treeview.js') }}"></script>
 <script>
+// The treeview script ---------------------------------------------------------
 var tree = {{ assembly_structure|safe }}
 $('#assembly-tree').treeview({
         data: tree,
@@ -35,63 +36,37 @@ $('#assembly-tree').treeview({
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/vendor/jquery.ui.widget.js') }}"></script>
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.iframe-transport.js') }}"></script>
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.fileupload.js') }}"></script>
+
+
 <script>
-$(function () {
-    $('#fileupload').fileupload({
-        dataType: 'json',
-        done: function (e, data) {
-            $.each(data.result.files, function (index, file) {
-                $('<p/>').text(file.name).appendTo(document.body);
-            });
-        }
-    });
-});
-
+// The fileupload script -------------------------------------------------------
 $('#fileupload').fileupload({
-    /* ... */
-    progressall: function (e, data) {
-        var progress = parseInt(data.loaded / data.total * 100, 10);
-        $('#progress .bar').css(
-            'width',
-            progress + '%'
-        );
-    }
-});
+    dataType: 'json',
+    singleFileUploads: false,
+    forceIframeTransport: true,
+    url: '/upload/',
+    add: function (e, data) {
+        var jqXHR = data.submit()
+            .success(function (result, textStatus, jqXHR) {
+                console.log('success-result',result);
+                console.log('success-textStatus',textStatus);
+                console.log('success-jqXHR',jqXHR);
 
-$(function () {
-    var added_files = [];
-    var submitted = false;
-    $('#fileupload').fileupload({
-        dataType: 'json',
-        singleFileUploads: false,
-        forceIframeTransport: true,
-        url: '/{{name}}',
-        add: function (e, data) {
-            console.log('add', data);
-            added_files.push(data);
-            data.context = $('<p/>').text('Uploading...').appendTo(document.body);
-            data.formData = $('#fileupload').serializeArray();
-            var original_data = data;
-            var new_data = {files: [], originalFiles: [], paramName: []};
-            jQuery.each(added_files, function(index, file) {
-                new_data['files'] = jQuery.merge(new_data['files'], file.files);
-                new_data['originalFiles'] = jQuery.merge(new_data['originalFiles'], file.originalFiles);
-                new_data['paramName'] = jQuery.merge(new_data['paramName'], file.paramName);
+                for ( var j = 0; j < result['files'].length; j++ ) {
+                    content = result['files'][j].content
+                    for (var key in content) {
+                       if (content.hasOwnProperty(key)) {
+                           var obj = content[key];
+                           console.log(key,obj)
+                           $('#'+key).val(function( index, value ) {
+                                return obj;
+                            });
+                        }
+                    }
+                }
             });
-            new_data = jQuery.extend({}, original_data, new_data);
-            console.log(new_data);
-            new_data.submit();
-        },
-        done: function (e, data) {
-            data.context.text('Upload finished.');
-        },
-        send: function (e, data) {
-            console.log('sending');
-            //location.reload();
         }
     });
-});
-
 </script>
 
 {% endblock %}
@@ -165,21 +140,6 @@ $(function () {
                                     </div>
                                 </div>
 
-<!-- ########################## The Load Input panel ####################### -->
-                                <div class="panel panel-default  comp-panels panel-{{name}}">
-                                    <div class="panel-heading">
-                                        <h3 class="panel-title">Load Input File</h3>
-                                    </div>
-                                    <div class="panel-body">
-                                        <form action="/{{name}}" method="POST" enctype="multipart/form-data">
-                                            {{ load.hidden_tag() }}{{ load.upload() }}
-                                            <input type="submit" class="btn btn-default" value="Load Inputs">
-                                        </form>
-                                    </div>
-                                </div>
-
-
-
 <!-- ########################## The Inputs panel ########################### -->
                                 <div class="panel panel-default comp-panels panel-{{name}}">
                                     <div class="panel-heading">
@@ -203,39 +163,22 @@ $(function () {
                                                 <td>{{field.description}} ({{field.name}})</td>
                                                 <td>
                                                     <div id='trigger-{{field.name|safe}}'>
-                                                    {{field(class="form-control")|safe}}
-                                                    <!--{% if field.name != 'submit'%}
-                                                     <div id='help-block'>
-                                                        <p class="help-block">{{field.description|safe}} ({{field.name|safe}})</p>
+                                                        {{field(class="form-control")|safe}}
                                                     </div>
-                                                    {%- endif %} -->
-                                                <!-- disabling description popup for now -->
-                                                <!-- {{field.name|safe}}{{field(class="form-control")|safe}}
-                                                {%- if field.description -%}
-                                                <div id='pop-up-{{field.name|safe}}'>
-                                                    <p class="help-block">{{field.description|safe}}</p>
-                                                </div>
-                                                {%- endif %} -->
-                                                    </div>
+                                                </td>
                                             </tr>
                                             {%- endif %}
                                             {%- endfor %}
                                         </table>
-
-
-                                        <!-- {{inputs.submit(class="form-control")|safe}} -->
                                         <input class="btn btn-primary col-md-6" id="submit" name="submit" type="submit" value="Run">
                                     </form>
-                                    <form id="fileupload" action="/{{name}}" method="POST" enctype="multipart/form-data">
+                                    <form style="margin: 0px;" id="form-upload" enctype="multipart/form-data">
                                         <span class="btn btn-success fileinput-button col-md-6">
                                             <i class="glyphicon glyphicon-plus"></i>
                                             <span>Load Input File</span>
-                                            <input type="file" name="file" multiple>
+                                            <input id="fileupload" type="file" name="files[]" multiple>
                                         </span>
                                     </form>
-
-                                                                <!--    {{ wtf.quick_form(inputs, form_type='horizontal',
-                                        button_map={'submit_button': 'primary'})}} -->
                                         <div id="progress">
                                             <div class="bar" style="width: 0%;"></div>
                                         </div>
@@ -247,7 +190,7 @@ $(function () {
                         <div class="col-md-8">
 
 <!-- ###################### The Outputs panel ########################### -->
-                            {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+                        {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
                             <div class="panel-body  comp-panels panel-{{name}}">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
@@ -273,183 +216,87 @@ $(function () {
                             </div>
                         </div>
 
-                            {% if plot_div %}
-                            <div class="panel-body comp-panels panel-{{name}}">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        <h3 class="panel-title">Plot</h3>
-                                    </div>
-                                    <div class="panel-body", align="center">
-                                        {{ plot_div|indent(4)|safe }}
-                                    </div>
+                        {% if plot_div %}
+                        <div class="panel-body comp-panels panel-{{name}}">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Plot</h3>
+                                </div>
+                                <div class="panel-body", align="center">
+                                    {{ plot_div|indent(4)|safe }}
                                 </div>
                             </div>
-                            {% endif %}
-                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endif %}
 
             {% if sub_comp_data %}
             {% for field, inout in sub_comp_data.iteritems() %}
-<!--            <div class="panel panel-default hidden comp-panels panel-{{field}}">
-                <div class="panel-heading">
-                    <h4 class="panel-title">
-                            {{field}}
-                    </h4>
-                </div> -->
-                    <div class="panel-body hidden comp-panels panel-{{field}}">
-                        <!--<div class="row">
-                             <div class="col-md-5"> -->
-                                <div class="panel-body">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <h3 class="panel-title">Inputs</h3>
-                                        </div>
-                                        <div class="panel-body", align="center">
-                                        <table class="table table-hover"" align="left">
-                                            <tr>
-                                                <th>Name</td>
-                                                <th>Value</td>
-                                                <th>Units</td>
-                                            </tr>
-                                            {%- for vname, val in inout.params.inputs.iteritems() %}
-                                            <tr>
-                                                <td>{{val.desc}} ({{vname}})</td>
-                                                <td>{{val.state}}</td>
-                                                <td>{{val.units}}</td>
-                                            </tr>
-                                            {%- endfor %}
-                                        </table>
-                                    </div>
-                                </div>
-                                </div>
-                                <div class="panel-body">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <h3 class="panel-title">Outputs</h3>
-                                        </div>
-                                        <div class="panel-body", align="center">
-                                            <table class="table table-hover"" align="left">
-                                                <tr>
-                                                    <th>Name</td>
-                                                    <th>Value</td>
-                                                    <th>Units</td>
-                                                </tr>
-                                                {%- for vname, val in inout.params.outputs.iteritems() %}
-                                                <tr>
-                                                    <td>{{val.desc}} ({{vname}})</td>
-                                                    <td>{{val.state}}</td>
-                                                    <td>{{val.units}}</td>
-                                                </tr>
-                                                {%- endfor %}
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- </div>
-                            div class="col-md-7" -->
-                                {% if inout.plot %}
-                                <div class="panel-body", align="center">
-                                    {{ inout.plot.resources|indent(4)|safe }}
-                                    {{ inout.plot.script|indent(4)|safe }}
-                                    {{ inout.plot.div|indent(4)|safe }}
-                                </div>
-                                {% endif %}
-                            <!-- /div -->
-                        </div>
-                        <!--    </div>
-             </div> -->
-            {% endfor %}
-            {% endif %}
-        </div>
-
-    </div>
-</div>
-
-    </div>
-
-
-            <!-- Components tab
-            <div class="tab-pane fade" id="components">
-                {% if sub_comp_data %}
-                <div class="panel-group" id="accordion">
-                    {% for field, inout in sub_comp_data.iteritems() %}
-                    <div class="panel panel-defaul panel-{{field}}t>
-                        <div class="panel-heading">
-                            <h4 class="panel-title">
-                                <a data-toggle="collapse" data-target="#collapse-{{field}}"
-                                href="#collapse-{{field}}" class="collapsed">
-                                    {{field}}
-                                </a>
-                            </h4>
-                        </div>
-                        <div id="collapse-{{field}}" class="panel-collapse collapse">
-                            <div class="panel-body">
-                                <div class="row">
-                                    <div class="col-md-5">
-                                        <div class="panel-body">
-                                            <div class="panel panel-default">
-                                                <div class="panel-heading">
-                                                    <h3 class="panel-title">Inputs</h3>
-                                                </div>
-                                                <table class="table table-hover"" align="left">
-                                                    <tr>
-                                                        <th>Name</td>
-                                                        <th>Value</td>
-                                                        <th>Units</td>
-                                                    </tr>
-                                                    {%- for vname, val in inout.params.inputs.iteritems() %}
-                                                    <tr>
-                                                        <td>{{val.desc}} ({{vname}})</td>
-                                                        <td>{{val.state}}</td>
-                                                        <td>{{val.units}}</td>
-                                                    </tr>
-                                                    {%- endfor %}
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="panel-body">
-                                            <div class="panel panel-default">
-                                                <div class="panel-heading">
-                                                    <h3 class="panel-title">Outputs</h3>
-                                                </div>
-                                                <div class="panel-body", align="center">
-                                                    <table class="table table-hover"" align="left">
-                                                        <tr>
-                                                            <th>Name</td>
-                                                            <th>Value</td>
-                                                            <th>Units</td>
-                                                        </tr>
-                                                        {%- for vname, val in inout.params.outputs.iteritems() %}
-                                                        <tr>
-                                                            <td>{{val.desc}} ({{vname}})</td>
-                                                            <td>{{val.state}}</td>
-                                                            <td>{{val.units}}</td>
-                                                        </tr>
-                                                        {%- endfor %}
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        {% if inout.plot %}
-                                        <div class="panel-body", align="center">
-                                            {{ inout.plot.resources|indent(4)|safe }}
-                                            {{ inout.plot.script|indent(4)|safe }}
-                                            {{ inout.plot.div|indent(4)|safe }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                <div class="panel-body hidden comp-panels panel-{{field}}">
+<!-- ############## The Component Input panel ############################## -->
+                    <div class="panel-body">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Inputs</h3>
+                            </div>
+                            <div class="panel-body", align="center">
+                                <table class="table table-hover" align="left">
+                                    <tr>
+                                        <th>Name</td>
+                                        <th>Value</td>
+                                        <th>Units</td>
+                                    </tr>
+                                    {%- for vname, val in inout.params.inputs.iteritems() %}
+                                        <tr>
+                                            <td>{{val.desc}} ({{vname}})</td>
+                                            <td>{{val.state}}</td>
+                                            <td>{{val.units}}</td>
+                                        </tr>
+                                    {%- endfor %}
+                                </table>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
 
-        -->
+<!-- ########### The Component Outputs panel ################################# -->
+                    <div class="panel-body">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Outputs</h3>
+                            </div>
+                            <div class="panel-body", align="center">
+                                <table class="table table-hover" align="left">
+                                    <tr>
+                                        <th>Name</td>
+                                        <th>Value</td>
+                                        <th>Units</td>
+                                    </tr>
+                                    {%- for vname, val in inout.params.outputs.iteritems() %}
+                                        <tr>
+                                            <td>{{val.desc}} ({{vname}})</td>
+                                            <td>{{val.state}}</td>
+                                            <td>{{val.units}}</td>
+                                        </tr>
+                                    {%- endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% if inout.plot %}
+                        <div class="panel-body", align="center">
+                            {{ inout.plot.resources|indent(4)|safe }}
+                            {{ inout.plot.script|indent(4)|safe }}
+                            {{ inout.plot.div|indent(4)|safe }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% endif %}
         </div>
+    </div>
+</div>
+</div>
+</div>
 </div>
 </div>
 

@@ -9,6 +9,13 @@ from flask_appconfig import AppConfig
 from flask_wtf import Form, RecaptchaField
 from flask.ext.mail import Message, Mail
 from flask.ext.bower import Bower
+import json, re, boto, StringIO, random
+from functools import wraps
+from flask import Blueprint, request, abort, jsonify, redirect, render_template
+from flask_wtf.file import FileField
+from werkzeug import secure_filename
+from wtforms.widgets.core  import  html_params
+from wtforms import widgets
 import numpy as np
 import re
 
@@ -42,9 +49,6 @@ from paraboloid import Paraboloid
 from SEAMTower.SEAMTower import SEAMTower
 from SEAMCosts.SEAMCAPEX import SEAMCAPEX
 from webcomponent import *
-from flask_wtf.file import FileField
-from werkzeug import secure_filename
-from wtforms.widgets.core  import  html_params
 
 from bokeh.charts import Donut, output_file, show
 def donuts(fig):
@@ -56,11 +60,10 @@ def donuts(fig):
 def unitfield(units, name):
     def myfield(field, ul_class='', **kwargs):
         field_id = kwargs.pop('id', field.id)
-        html = [u'<div id="%s">' % (field_id)]
+        html = []
         html.append(u'<div class="input-group">')
-        html.append(u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' % (field_id, field.name, field.data))
+        html.append(u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' % (field.name, field.name, field.data))
         html.append(u'<span class="input-group-addon">%s</span>'%(units))
-        html.append(u'</div>')
         html.append(u'</div>')
         return u''.join(html)
     myfield.__name__ = name
@@ -75,9 +78,6 @@ def make_field(k,v):
         return MyField(k, **prep_field(v))
     return field(k, **prep_field(v))
 
-
-
-from wtforms import widgets
 def WebGUIForm(dic, run=False):
     """Automagically generate the form from a FUSED I/O dictionary.
     TODO:
@@ -157,21 +157,6 @@ def prepare_plot(func, *args, **kwargs):
     script, div = components(fig, INLINE)
     return script, div, plot_resources
 
-#from wtforms import Form, TextField, widgets
-
-test_ass = [{
-        'text': "Parent 1",
-        'nodes': [{
-            'text': "Child 1",
-            'nodes': [
-                {'text': "Grandchild 1"},
-                {'text': "Grandchild 2"}]},
-          {'text': "Child 2"}]},
-      {'text': "Parent 2"},
-      {'text': "Parent 3"},
-      {'text': "Parent 4"},
-      {'text': "Parent 5"}]
-
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
 
     for name in cpnt.list_components():
@@ -196,49 +181,40 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
 
     return sub_comp_data, asym_structure
 
-import json, re, boto, StringIO, random
-
-from functools import wraps
-from flask import Blueprint, request, abort, jsonify, redirect, render_template
 
 def _handleUpload(files):
+    """Handle the files uploaded, put them in a tmp directory, read the content
+    using a yaml library, and return its content as a python object.
+    """
     if not files:
         return None
 
-    bucket_name = "bucket_name"
-    s3bucket = s3conn.get_bucket(bucket_name, validate=False)
-    filenames = []
+    outfiles = []
 
-    myhash = random.getrandbits(128)
-    hash_str = "%032x" % myhash
     for upload_file in files.getlist('files[]'):
-        output = StringIO.StringIO()
-        output.write(upload_file.stream.read())
-        k = s3bucket.new_key("%s/%s" % (hash_str, upload_file.filename))
-        k.set_contents_from_string(output.getvalue())
+        upload_file.save('/tmp/' + upload_file.filename)
 
-        filenames.append("%s/%s" % (hash_str, upload_file.filename))
+        with open('/tmp/'+upload_file.filename, 'r') as f:
+            inputs = yaml.load(f)
 
-    return filenames
+        print inputs
 
-def _handleDownload(hashstr, filename):
-    bucket_name = "bucket_name"
-    return s3conn.generate_url(60, 'GET', bucket=bucket_name, key='%s/%s' % (hashstr, filename), force_http=True)
+        outfiles.append({
+            'filename': upload_file.filename,
+            'content': inputs
+        })
 
-@app.route('/file', methods=['GET'])
-def index():
-    return render_template('file_upload.html')
+    return outfiles
 
 @app.route('/upload/', methods=['POST'])
 def upload():
+    """Take care of the reception of the file upload. Return a json file
+    to be consumbed by a jQuery function
+    """
     try:
-        message = request.values['message']
         files = request.files
-        print message, files
-
-        #uploaded_files = _handleUpload(files)
-
-        return 'success' #jsonify({'files': uploaded_files})
+        uploaded_files = _handleUpload(files)
+        return jsonify({'files': uploaded_files})
     except:
         raise
         return jsonify({'status': 'error'})
@@ -278,60 +254,37 @@ def webgui(cpnt, app=None):
             assembly_structure[0]['nodes'] = structure
 
         if request.method == 'POST': # Receiving a POST request
-            try: # Trying to load the file
-                # filename = secure_filename(form_load.upload.data.filename)
-                # if filename is not None:
-                #     form_load.upload.data.save('/tmp/' + filename)
 
-                files = request.files
-                filename = files['files'].filename
-                print 'new files', filename
-                files['files'].save('/tmp/' + filename)
+            inputs =  request.form.to_dict()
 
-                with open('/tmp/'+filename, 'r') as f:
-                    inputs = yaml.load(f)
+            for k in inputs.keys():
+                if k in io['inputs']: # Loading only the inputs allowed
+                    setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
 
+            cpnt.run()
+            outputs = traits2json(cpnt)['outputs']
 
-                print inputs
-
-                return render_template('webgui.html',
-                            inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                            outputs=None, load=form_load, name=cpname, plot_script=None,
-                            assembly_structure=assembly_structure)
-
-            except: # no files are passed, using the form instead
-                #data_file = request.files.get('data_file')
-                print 'cant get the file' #,   data_file.filename
-                inputs =  request.form.to_dict()
-
-                for k in inputs.keys():
-                    if k in io['inputs']: # Loading only the inputs allowed
-                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
-
-                cpnt.run()
-                outputs = traits2json(cpnt)['outputs']
-
-                try:
-                    script, div, plot_resources = prepare_plot(cpnt.plot)
-                except:
-                    script, div, plot_resources = None, None, None
+            try:
+                script, div, plot_resources = prepare_plot(cpnt.plot)
+            except:
+                script, div, plot_resources = None, None, None
 
 
-                # sub-component data
-                sub_comp_data = {}
-                if isinstance(cpnt, Assembly):
+            # sub-component data
+            sub_comp_data = {}
+            if isinstance(cpnt, Assembly):
 
-                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
-                    assembly_structure[0]['nodes'] = structure
+                sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                assembly_structure[0]['nodes'] = structure
 
-                return render_template('webgui.html',
-                            inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                            outputs=outputs,
-                            load=form_load,
-                            name=cpname,
-                            plot_script=script, plot_div=div, plot_resources=plot_resources,
-                            sub_comp_data=sub_comp_data,
-                            assembly_structure=assembly_structure)
+            return render_template('webgui.html',
+                        inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
+                        outputs=outputs,
+                        load=form_load,
+                        name=cpname,
+                        plot_script=script, plot_div=div, plot_resources=plot_resources,
+                        sub_comp_data=sub_comp_data,
+                        assembly_structure=assembly_structure)
 
 
 
