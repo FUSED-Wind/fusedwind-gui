@@ -82,13 +82,13 @@ $('#fileupload').fileupload({
 
 {% block content %}
 
-<div class="container">
+<div class="container-fluid">
     <div class="page-header">
         <img src="static/dtuwind.png" align='right' class='media-right' width=30%>
         <h1>SEAM</h1>
         <h2><small>The DTU Wind Energy Systems Engineering Analysis Model</small></h2>
     </div>
-    <div class="container">
+    <div class="container-fluid">
         <ul class="nav nav-tabs">
             <li role="presentation"><a href="/">Home</a></li>
             <li role="presentation" class="dropdown">
@@ -103,163 +103,85 @@ $('#fileupload').fileupload({
             <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
         </ul>
     </div>
-<!--    <div class="container">
-        <ul id="myTab" class="nav nav-tabs">
-          <li><a href="#assembly" data-toggle="tab">Assembly</a></li>
-          <li><a href="#components" data-toggle="tab">Components</a></li>
-        </ul>
-    </div>
--->
 
-    <div class='container'>
-        <div id="TabContent" class="tab-content">
-            <!-- Assembly tab -->
-            <div class="tab-pane fade in active" id="assembly">
-                <div class="panel panel-default">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="panel-body">
-                                <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
-                                button_map={'submit_button': 'primary'})}} -->
+    <div class="container-fluid">
+        <div class="panel panel-default">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="panel-body">
+                        <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
+                        button_map={'submit_button': 'primary'})}} -->
 
 <!-- ########################## The Assembly navigation panel ############## -->
-                                <div class="panel panel-default" id='panel-'>
-                                    <div class="panel-heading">
-                                    <h3 class="panel-title">
-                                        <a data-toggle="collapse" data-target="#collapse-tree"
-                                        href="#collapse-tree" class="collapsed">
-                                        Assembly Structure
-                                        </a>
-                                    </h3>
-                                    </div>
-
-                                    <div id="collapse-tree" class="panel-collapse collapse" >
-                                        <div class="panel-body ">
-                                            <div id="assembly-tree"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-<!-- ########################## The Inputs panel ########################### -->
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        <h3 class="panel-title">Inputs</h3>
-                                    </div>
-                                    <div class="panel-body", align="center">
-                                        <form method="post" class="form">
-
-                                            {{ inputs.hidden_tag() }}
-                                            {{ wtf.form_errors(inputs, hiddens='only') }}
-                                            <table class="table table-hover" align="left">
-                                                <col width="55%">
-                                                <col width="45%">
-                                                <tr>
-                                                    <th>Parameter</td>
-                                                    <th>Value</td>
-                                                </tr>
-                                            {%- for field in inputs %}
-                                            {% if field.name not in ('csrf_token', 'submit') %}
-                                            <tr>
-                                                <td>{{field.description}} ({{field.name}})</td>
-                                                <td>
-                                                    <div id='trigger-{{field.name|safe}}'>
-                                                        {{field(class="form-control")|safe}}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {%- endif %}
-                                            {%- endfor %}
-                                        </table>
-                                        <input class="btn btn-primary col-md-6" id="submit" name="submit" type="submit" value="Run">
-                                    </form>
-                                    <form style="margin: 0px;" id="form-upload" enctype="multipart/form-data">
-                                        <span class="btn btn-success fileinput-button col-md-6">
-                                            <i class="glyphicon glyphicon-plus"></i>
-                                            <span>Load Input File</span>
-                                            <input id="fileupload" type="file" name="files[]" multiple>
-                                        </span>
-                                    </form>
-                                        <div id="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-8">
-
-<!-- ###################### The Outputs panel ########################### -->
-                        {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-                            <div class="panel-body  comp-panels panel-{{name}}">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        <h3 class="panel-title">Outputs</h3>
-                                    </div>
-                                    <div class="panel-body", align="center">
-                                        <table class="table table-hover" align="left">
-                                            <tr>
-                                                <th>Name</td>
-                                                <th>Value</td>
-                                                <th>Units</td>
-                                            </tr>
-                                            {%- for vname, val in outputs.iteritems() %}
-                                            <tr>
-                                                <td>{{val.desc}}</td>
-                                                <td>{{val.state}}</td>
-                                                <td>{{val.units}}</td>
-                                            </tr>
-                                            {%- endfor %}
-                                        </table>
-
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if plot_div %}
-                        <div class="panel-body comp-panels panel-{{name}}">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">Plot</h3>
-                                </div>
-                                <div class="panel-body", align="center">
-                                    {{ plot_div|indent(4)|safe }}
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endif %}
-
-            {% if sub_comp_data %}
-            {% for field, inout in sub_comp_data.iteritems() %}
-                <div class="panel-body hidden comp-panels panel-{{field}}">
-<!-- ############## The Component Input panel ############################## -->
-                    <div class="panel-body">
-                        <div class="panel panel-default">
+                        <div class="panel panel-default" id='panel-'>
                             <div class="panel-heading">
-                                <h3 class="panel-title">Inputs</h3>
+                            <h3 class="panel-title">
+                                <a data-target="#collapse-tree"
+                                href="#collapse-tree" >
+                                System Hierarchy
+                                </a>
+                            </h3>
                             </div>
-                            <div class="panel-body", align="center">
-                                <table class="table table-hover" align="left">
-                                    <tr>
-                                        <th>Name</td>
-                                        <th>Value</td>
-                                        <th>Units</td>
-                                    </tr>
-                                    {%- for vname, val in inout.params.inputs.iteritems() %}
-                                        <tr>
-                                            <td>{{val.desc}} ({{vname}})</td>
-                                            <td>{{val.state}}</td>
-                                            <td>{{val.units}}</td>
-                                        </tr>
-                                    {%- endfor %}
-                                </table>
+
+                            <!-- <div id="collapse-tree" class="panel panel-default" > -->
+                                    <div id="assembly-tree"></div>
                             </div>
                         </div>
                     </div>
-
-<!-- ########### The Component Outputs panel ################################# -->
+                <div class="col-md-3">
                     <div class="panel-body">
+<!-- ########################## The Inputs panel ########################### -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Global inputs</h3>
+                            </div>
+                            <div class="panel-body", align="center">
+                                <form method="post" class="form">
+
+                                    {{ inputs.hidden_tag() }}
+                                    {{ wtf.form_errors(inputs, hiddens='only') }}
+                                    <table class="table table-hover" align="left">
+                                        <col width="55%">
+                                        <col width="45%">
+                                        <tr>
+                                            <th>Parameter</td>
+                                            <th>Value</td>
+                                        </tr>
+                                    {%- for field in inputs %}
+                                    {% if field.name not in ('csrf_token', 'submit') %}
+                                    <tr>
+                                        <td>{{field.description}} ({{field.name}})</td>
+                                        <td>
+                                            <div id='trigger-{{field.name|safe}}'>
+                                                {{field(class="form-control")|safe}}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {%- endif %}
+                                    {%- endfor %}
+                                </table>
+                                <input class="btn btn-primary col-md-6" id="submit" name="submit" type="submit" value="Run">
+                            </form>
+                            <form style="margin: 0px;" id="form-upload" enctype="multipart/form-data">
+                                <span class="btn btn-success fileinput-button col-md-6">
+                                    <i class="glyphicon glyphicon-plus"></i>
+                                    <span>Load Input File</span>
+                                    <input id="fileupload" type="file" name="files[]" multiple>
+                                </span>
+                            </form>
+                                <div id="progress">
+                                    <div class="bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+
+<!-- ###################### The Outputs panel ########################### -->
+                {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+                    <div class="panel panel-body  comp-panels panel-{{name}}">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Outputs</h3>
@@ -271,17 +193,90 @@ $('#fileupload').fileupload({
                                         <th>Value</td>
                                         <th>Units</td>
                                     </tr>
-                                    {%- for vname, val in inout.params.outputs.iteritems() %}
-                                        <tr>
-                                            <td>{{val.desc}} ({{vname}})</td>
-                                            <td>{{val.state}}</td>
-                                            <td>{{val.units}}</td>
-                                        </tr>
+                                    {%- for vname, val in outputs.iteritems() %}
+                                    <tr>
+                                        <td>{{val.desc}}</td>
+                                        <td>{{val.state}}</td>
+                                        <td>{{val.units}}</td>
+                                    </tr>
                                     {%- endfor %}
                                 </table>
+
                             </div>
                         </div>
                     </div>
+
+                {% if plot_div %}
+                <div class="panel-body comp-panels panel-{{name}}">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Plot</h3>
+                        </div>
+                        <div class="panel-body", align="center">
+                            {{ plot_div|indent(4)|safe }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {% if sub_comp_data %}
+            {% for field, inout in sub_comp_data.iteritems() %}
+                <div class="panel-body hidden comp-panels panel-{{field}}">
+<!-- ############## The Component Input panel ############################## -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="panel-body">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h3 class="panel-title">Inputs</h3>
+                                    </div>
+                                    <div class="panel-body", align="center">
+                                        <table class="table table-hover" align="left">
+                                            <tr>
+                                                <th>Name</td>
+                                                <th>Value</td>
+                                                <th>Units</td>
+                                            </tr>
+                                            {%- for vname, val in inout.params.inputs.iteritems() %}
+                                                <tr>
+                                                    <td>{{val.desc}} ({{vname}})</td>
+                                                    <td>{{val.state}}</td>
+                                                    <td>{{val.units}}</td>
+                                                </tr>
+                                            {%- endfor %}
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+<!-- ########### The Component Outputs panel ################################# -->
+                    <div class="col-md-6">
+                        <div class="panel-body">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Outputs</h3>
+                                </div>
+                                <div class="panel-body", align="center">
+                                    <table class="table table-hover" align="left">
+                                        <tr>
+                                            <th>Name</td>
+                                            <th>Value</td>
+                                            <th>Units</td>
+                                        </tr>
+                                        {%- for vname, val in inout.params.outputs.iteritems() %}
+                                            <tr>
+                                                <td>{{val.desc}} ({{vname}})</td>
+                                                <td>{{val.state}}</td>
+                                                <td>{{val.units}}</td>
+                                            </tr>
+                                        {%- endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     {% if inout.plot %}
                         <div class="panel-body", align="center">
                             {{ inout.plot.resources|indent(4)|safe }}
@@ -289,15 +284,13 @@ $('#fileupload').fileupload({
                             {{ inout.plot.div|indent(4)|safe }}
                         </div>
                     {% endif %}
+                    </div>
+                {% endfor %}
+                {% endif %}
                 </div>
-            {% endfor %}
-            {% endif %}
+            </div>
         </div>
     </div>
-</div>
-</div>
-</div>
-</div>
 </div>
 
 {% endblock %}
