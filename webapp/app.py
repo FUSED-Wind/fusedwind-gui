@@ -237,7 +237,13 @@ def webgui(cpnt, app=None):
                     setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
 
             cpnt.run()
-            outputs = traits2json(cpnt)['outputs']
+            io = traits2json(cpnt)
+            sub_comp_data = {}
+            if isinstance(cpnt, Assembly):
+
+                sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                assembly_structure[0]['nodes'] = structure
+                outputs = traits2json(cpnt)['outputs']
 
             try:
                 script, div, plot_resources = prepare_plot(cpnt.plot)
