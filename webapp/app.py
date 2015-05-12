@@ -16,19 +16,25 @@ from flask_wtf.file import FileField
 from werkzeug import secure_filename
 from wtforms.widgets.core  import  html_params
 from wtforms import widgets
+
+
+
 import numpy as np
 import re
 
 from jinja2 import evalcontextfilter, Markup, escape
 
+from webcomponent import *
+
 import yaml
 
+
+## Configuring the Flask app ---------------------------------------------------
 app = Flask(__name__)
 configfile=None
 AppConfig(app, configfile)  # Flask-Appconfig is not necessary, but
                             # highly recommend =)
                             # https://github.com/mbr/flask-appconfig
-
 
 Bootstrap(app)
 Bower(app) # Usefull to use bower-components
@@ -36,28 +42,13 @@ Bower(app) # Usefull to use bower-components
 # in a real app, these should be configured through Flask-Appconfig
 app.config['SECRET_KEY'] = 'devkey'
 
-@app.route('/')
-def hello():
-    provider = str(os.environ.get('PROVIDER', 'world'))
-    return render_template('index.html', form={'hello':'world'})
-
-
-
-#from webcomponent import deploy, start_app, register_Component, webgui
-from paraboloid import Paraboloid
-
-from SEAMTower.SEAMTower import SEAMTower
-from SEAMCosts.SEAMCAPEX import SEAMCAPEX
-from webcomponent import *
-
-from bokeh.charts import Donut, output_file, show
-def donuts(fig):
-    # dict, OrderedDict, lists, arrays and DataFrames are valid inputs
-    xyvalues = [[2., 5., 3., 2.], [4., 1., 4., 0.], [6., 4., 3., 0.]]
-    donut = Donut(xyvalues, ['cpu1', 'cpu2', 'cpu3', 'cpu4'])
-    return donut
-
+## Handeling Forms -------------------------------------------------------------
 def unitfield(units, name):
+    """A simple widget generating function. The nested function is necessary in order
+    to have a different function name for each widget. This whole code should
+    really be moved to the template side, but that would require passing the units
+    along in the form
+    """
     def myfield(field, ul_class='', **kwargs):
         field_id = kwargs.pop('id', field.id)
         html = []
@@ -70,6 +61,8 @@ def unitfield(units, name):
     return myfield
 
 def make_field(k,v):
+    """Create the widget of the field, adds the units when necessary
+    """
     field = type_fields[v['type']]
     if 'units' in v:
         class MyField(field):
@@ -81,81 +74,63 @@ def make_field(k,v):
 def WebGUIForm(dic, run=False):
     """Automagically generate the form from a FUSED I/O dictionary.
     TODO:
-    * Add type validators
-    * Add low/high validators
-    * Add units nice looking extension using 'input-group-addon'
-     (http://getbootstrap.com/components/#input-groups)
+    [ ] Add type validators
+    [ ] Add low/high validators
+    [x] Add units nice looking extension using 'input-group-addon'
+             (http://getbootstrap.com/components/#input-groups)
+    [ ] Move the units formating into the html code directly
     """
-    #field_dict = {k:type_fields[v['type']](k, **prep_field(v)) for k,v in dic.iteritems()}
-    #if run: # Add the submit button
-    #    field_dict['submit'] = SubmitField("Send")
-
-    # 9th level python magic to dynamically create classes, don't try it at home kiddo...
-    #MyForm = type('magicform', (Form,), field_dict)
 
     class MyForm(Form):
         pass
-
 
     # sorting the keys alphabetically
     skeys = dic.keys()
     skeys.sort()
     for k in skeys:
         v = dic[k]
-        try:
-            setattr(MyForm, k, make_field(k,v))
-            #setattr(MyForm, k, type_fields[v['type']](k, **prep_field(v)))
-        except:
-            pass
+        setattr(MyForm, k, make_field(k,v))
 
     if run: # Add the run button
         setattr(MyForm, 'submit', SubmitField("Run"))
 
-    #setattr(MyForm, 'widget', widgets.TableWidget(with_table_tag=True))
-
     return MyForm
 
-class FormLoadInputFile(Form):
-    upload = FileField('Input File')
-    load = SubmitField('Load Inputs')
+try:
+    from bokeh.embed import components
+    from bokeh.plotting import figure
+    from bokeh.charts import  Line
+    from bokeh.resources import INLINE
+    from bokeh.templates import RESOURCES
+    from bokeh.util.string import encode_utf8
+    from bokeh.charts import Donut, output_file, show
+    use_bokeh = True
+except:
+    print 'Bokeh hasnt been installed properly'
+    use_bokeh = False
 
 
+if use_bokeh:
+    def prepare_plot(func, *args, **kwargs):
+        fig = figure()
+        fig = func(fig, *args, **kwargs)
+        # Create a polynomial line graph
 
-from bokeh.embed import components
-from bokeh.plotting import figure
-from bokeh.charts import  Line
-from bokeh.resources import INLINE
-from bokeh.templates import RESOURCES
-from bokeh.util.string import encode_utf8
+        # Configure resources to include BokehJS inline in the document.
+        # For more details see:
+        #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
+        plot_resources = RESOURCES.render(
+            js_raw=INLINE.js_raw,
+            css_raw=INLINE.css_raw,
+            js_files=INLINE.js_files,
+            css_files=INLINE.css_files,
+        )
 
-def test_plot(fig, s,t, title="", color='#000000', _from=0, to=100):
-    xyvalues = OrderedDict(
+        # For more details see:
+        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
+        script, div = components(fig, INLINE)
+        return script, div, plot_resources
 
-    )
-    fig = Line(s, t, color=color, line_width=2, xlabel='Height [m]', ylabel='Mass [kg]',
-        title='Tower mass distribution')
-    return fig
-
-
-def prepare_plot(func, *args, **kwargs):
-    fig = figure()
-    fig = func(fig, *args, **kwargs)
-    # Create a polynomial line graph
-
-    # Configure resources to include BokehJS inline in the document.
-    # For more details see:
-    #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
-    plot_resources = RESOURCES.render(
-        js_raw=INLINE.js_raw,
-        css_raw=INLINE.css_raw,
-        js_files=INLINE.js_files,
-        css_files=INLINE.css_files,
-    )
-
-    # For more details see:
-    #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
-    script, div = components(fig, INLINE)
-    return script, div, plot_resources
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
 
@@ -181,7 +156,7 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
 
     return sub_comp_data, asym_structure
 
-
+## Handeling file upload -------------------------------------------------------
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
     using a yaml library, and return its content as a python object.
@@ -206,6 +181,17 @@ def _handleUpload(files):
 
     return outfiles
 
+
+## Views -----------------------------------------------------------------------
+@app.route('/')
+def hello():
+    """ Welcoming page
+    """
+    provider = str(os.environ.get('PROVIDER', 'world'))
+    return render_template('index.html', form={'hello':'world'})
+
+
+
 @app.route('/upload/', methods=['POST'])
 def upload():
     """Take care of the reception of the file upload. Return a json file
@@ -219,12 +205,6 @@ def upload():
         raise
         return jsonify({'status': 'error'})
 
-@app.route('/download/<hashstr>/<filename>', methods=['GET'])
-def download(hashstr, filename):
-    try:
-        return redirect(_handleDownload(hashstr, filename))
-    except:
-        return jsonify({'status': 'error'})
 
 def webgui(cpnt, app=None):
     cpname = cpnt.__class__.__name__
@@ -233,9 +213,7 @@ def webgui(cpnt, app=None):
 
     def myflask():
         io = traits2json(cpnt)
-        form_load = FormLoadInputFile()
         form_inputs = WebGUIForm(io['inputs'], run=True)()
-        form_outputs = WebGUIForm(io['outputs'])()
 
         assembly_structure = [{'text':cpname,
                                'nodes':[]}]
@@ -246,7 +224,6 @@ def webgui(cpnt, app=None):
             if k in io['inputs']: # Loading only the inputs allowed
                 setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
 
-        # sub-component data
         sub_comp_data = {}
         if isinstance(cpnt, Assembly):
 
@@ -267,20 +244,13 @@ def webgui(cpnt, app=None):
             try:
                 script, div, plot_resources = prepare_plot(cpnt.plot)
             except:
+                # TODO: gracefully inform the user of why he doesnt see his plots
                 script, div, plot_resources = None, None, None
 
-
-            # sub-component data
-            sub_comp_data = {}
-            if isinstance(cpnt, Assembly):
-
-                sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
-                assembly_structure[0]['nodes'] = structure
 
             return render_template('webgui.html',
                         inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
                         outputs=outputs,
-                        load=form_load,
                         name=cpname,
                         plot_script=script, plot_div=div, plot_resources=plot_resources,
                         sub_comp_data=sub_comp_data,
@@ -291,7 +261,7 @@ def webgui(cpnt, app=None):
         # Show the standard form
         return render_template('webgui.html',
             inputs=form_inputs, outputs=None,
-            load=form_load, name=cpname,
+            name=cpname,
             plot_script=None, plot_div=None, plot_resources=None,
             sub_comp_data=sub_comp_data,
             assembly_structure=assembly_structure)
@@ -300,14 +270,20 @@ def webgui(cpnt, app=None):
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
     return app
 
-from SEAM.seam_assemblies import SEAMAssembly
-from openmdao.main.api import set_as_top
-webgui(set_as_top(SEAMTower(20)), app)
-webgui(set_as_top(SEAMCAPEX()), app)
-webgui(set_as_top(SEAMAssembly()), app)
+
 
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
+
+    from openmdao.main.api import set_as_top
+    from SEAM.seam_assemblies import SEAMAssembly
+    from SEAMTower.SEAMTower import SEAMTower
+    from SEAMCosts.SEAMCAPEX import SEAMCAPEX
+
+    webgui(set_as_top(SEAMTower(20)), app)
+    webgui(set_as_top(SEAMCAPEX()), app)
+    webgui(set_as_top(SEAMAssembly()), app)
+
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
