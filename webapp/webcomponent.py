@@ -20,7 +20,8 @@ json2omdao = {
     'Int': Int,
     'Array': Array,
     'Str': Str,
-    'Enum': Enum
+    'Enum': Enum,
+    'Bool': Bool
     }
 
 json2type = {
@@ -28,7 +29,8 @@ json2type = {
     'Int': int,
     'Array': array,
     'Str': str,
-    'Enum': str
+    'Enum': str,
+    'Bool': bool
     }
 
 
@@ -51,7 +53,8 @@ type_fields = {
     'Int':IntegerField,
     'Str':TextField,
     'Array':TextField,
-    'Enum': SelectField
+    'Enum': SelectField,
+    'Bool': BooleanField
 }
 
 def traits2json(cpnt):
