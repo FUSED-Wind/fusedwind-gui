@@ -275,19 +275,19 @@ def webgui(cpnt, app=None):
     return app
 
 
+from openmdao.main.api import set_as_top
+from SEAM.seam_assemblies import SEAMAssembly
+from SEAMTower.SEAMTower import SEAMTower
+from SEAMCosts.SEAMCAPEX import SEAMCAPEX
+
+webgui(set_as_top(SEAMTower(20)), app)
+webgui(set_as_top(SEAMCAPEX()), app)
+webgui(set_as_top(SEAMAssembly()), app)
 
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
 
-    from openmdao.main.api import set_as_top
-    from SEAM.seam_assemblies import SEAMAssembly
-    from SEAMTower.SEAMTower import SEAMTower
-    from SEAMCosts.SEAMCAPEX import SEAMCAPEX
-
-    webgui(set_as_top(SEAMTower(20)), app)
-    webgui(set_as_top(SEAMCAPEX()), app)
-    webgui(set_as_top(SEAMAssembly()), app)
 
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
