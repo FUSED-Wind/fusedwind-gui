@@ -28,6 +28,7 @@ from webcomponent import *
 import json
 import yaml
 
+## Silly comment to test the RSS feed
 
 ## Configuring the Flask app ---------------------------------------------------
 app = Flask(__name__)
