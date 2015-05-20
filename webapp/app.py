@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from openmdao.main.vartree import VariableTree
 
 import os
 
@@ -10,6 +11,7 @@ from flask import Blueprint, request, abort, jsonify, redirect, render_template
 from flask_wtf.file import FileField
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
+from flask import Response
 from flask_wtf import Form, RecaptchaField
 
 from functools import wraps
@@ -204,10 +206,55 @@ def upload():
         return jsonify({'status': 'error'})
 
 
+def get_io_dict(cpnt):
+    io = traits2json(cpnt)
+    out = {}
+    for k in io['inputs']:
+        out[k] = serialize(getattr(cpnt, k))
+    for k in io['outputs']:
+        out[k] = serialize(getattr(cpnt, k))
+    return out
+
+
+def serialize(thing):
+    if isinstance(thing, np.ndarray):
+        return thing.tolist()
+    elif isinstance(thing, np.float64):
+        return float(thing)
+    elif isinstance(thing, Component):
+        return get_io_dict(thing)
+    elif isinstance(thing, VariableTree):
+        out = {}
+        for k in thing.list_vars():
+            out[k] = serialize(getattr(thing, k))
+        return out
+    elif isinstance(thing, float):
+        return thing
+    elif isinstance(thing, int):
+        return thing
+    elif isinstance(thing, str):
+        return thing
+
+    print thing, thing.__class__
+    return '??_' +  str(thing.__class__)
+
+
 def webgui(cpnt, app=None):
     cpname = cpnt.__class__.__name__
     if app == None:
         app = start_app(cpname)
+
+
+    def download():
+        out = get_io_dict(cpnt)
+        r = yaml.dump(out, default_flow_style=False)
+        #print r
+        #print out
+
+        return Response(r, content_type='text/yaml; charset=utf-8')
+
+    download.__name__ = cpname+'_download'
+    app.route('/'+cpname+'/download/', methods=['GET'])(download)
 
     def myflask():
         io = traits2json(cpnt)
@@ -261,7 +308,6 @@ def webgui(cpnt, app=None):
                         assembly_structure=assembly_structure)
 
 
-
         # Show the standard form
         return render_template('webgui.html',
             inputs=form_inputs, outputs=None,
@@ -280,11 +326,11 @@ from SEAM.seam_assemblies import SEAMAssembly
 
 
 webgui(set_as_top(SEAMAssembly()), app)
-try:
-    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
-    webgui(set_as_top(lcoe_csm_assembly()), app)
-except:
-    print 'WARNING: WISDEM not installed'
+#try:
+from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
+webgui(set_as_top(lcoe_csm_assembly()), app)
+#except:
+#    print 'WARNING: WISDEM not installed'
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
