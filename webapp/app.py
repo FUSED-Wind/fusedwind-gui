@@ -321,10 +321,7 @@ def webgui(cpnt, app=None):
 
 
 from openmdao.main.api import set_as_top
-from SEAM.seam_assemblies import SEAMAssembly
 
-
-webgui(set_as_top(SEAMAssembly()), app)
 #try:
 from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
 webgui(set_as_top(lcoe_csm_assembly()), app)
