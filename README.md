@@ -1,12 +1,14 @@
-# SEAM Graphical Web Interface
+# FUSED-Wind Graphical Web Interface
 
-SEAM can be run using a web server providing easy user interaction and graphical representation of the outputs in a web browser.
+The FUSED-Wind GUI provides a web server based interface to FUSED-Wind assemblies (and OpenMDAO assemblies in general) for
+interactive setup and execution of analyses as well as graphical representation of the outputs in a web browser.
+
 
 ## Installing and running on your machine (the hard way)
 ### Installing on your machine
 
 * Install OpenMDAO
-* Install all the DTU-SEAM components
+* Install WISDEM (WISDEM, CommonSE, Turbine_CostsSE, Plant_CostsSE, Plant_FinanceSE, Plant_EnergySE)
 * Install the additional python libraries
 
     $ pip install -r webapp/requirements.txt
