@@ -322,11 +322,13 @@ def webgui(cpnt, app=None):
 
 from openmdao.main.api import set_as_top
 
-#try:
 from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
 webgui(set_as_top(lcoe_csm_assembly()), app)
-#except:
-#    print 'WARNING: WISDEM not installed'
+try:
+    from SEAM.seam_assemblies import SEAMAssembly
+    webgui(set_as_top(SEAMAssembly()), app)
+except:
+    print 'WARNING: SEAM not installed'
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
