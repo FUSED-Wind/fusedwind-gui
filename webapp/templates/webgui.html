@@ -16,6 +16,8 @@
 <script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
+<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
 
 <style>
 .hidden {
@@ -327,8 +329,6 @@ $('#fileupload').fileupload({
                     </script>
                 </div>
 
-                <!--
-                no plots for now since bokeh seems to be in conflict with bootstrap-table
                 {% if plot_div %}
                 <div class="panel-body comp-panels panel-{{name}}">
                     <div class="panel panel-default">
@@ -336,11 +336,12 @@ $('#fileupload').fileupload({
                             <h3 class="panel-title">Plot</h3>
                         </div>
                         <div class="panel-body", align="center">
+                            {{ plot_script|indent(4)|safe }}
                             {{ plot_div|indent(4)|safe }}
                         </div>
                     </div>
                 </div>
-                {% endif %} -->
+                {% endif %}
                 {% endif %}
 
                 {% if sub_comp_data %}
@@ -394,15 +395,13 @@ $('#fileupload').fileupload({
                         }
                     </script>
 
-                    <!--
-                    no plots for now since bokeh seems to be in conflict with bootstrap-table
+
                     {% if inout.plot %}
                         <div class="panel-body", align="center">
-                            {{ inout.plot.resources|indent(4)|safe }}
                             {{ inout.plot.script|indent(4)|safe }}
                             {{ inout.plot.div|indent(4)|safe }}
                         </div>
-                    {% endif %} -->
+                    {% endif %}
                     </div>
                     {% endfor %}
                     {% endif %}

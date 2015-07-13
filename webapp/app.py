@@ -128,7 +128,7 @@ if use_bokeh:
         # For more details see:
         #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
         script, div = components(fig, INLINE)
-        return script, div, plot_resources
+        return script, div
 
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
@@ -145,9 +145,9 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
         tmp = get_io_dict(comp)
         sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
         # no plots for now since bootstrap-table and bokeh seem to be in conflict
-        # if hasattr(comp, "plot"):
-        #     c_script, c_div, c_plot_resources = prepare_plot(comp.plot)
-        #     sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div, 'resources': c_plot_resources}
+        if hasattr(comp, "plot"):
+            c_script, c_div = prepare_plot(comp.plot)
+            sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
 
         if isinstance(comp, Assembly):
 
@@ -311,17 +311,17 @@ def webgui(cpnt, app=None):
                 assembly_structure[0]['nodes'] = structure
                 outputs = get_io_dict(cpnt)['outputs']
             # no plots for now since bootstrap-table and bokeh seem to be in conflict
-            # try:
-            #     script, div, plot_resources = prepare_plot(cpnt.plot)
-            # except:
+            try:
+                script, div = prepare_plot(cpnt.plot)
+            except:
             #     # TODO: gracefully inform the user of why he doesnt see his plots
-            script, div, plot_resources = None, None, None
+                script, div, plot_resources = None, None, None
 
             return render_template('webgui.html',
                         inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
                         outputs=outputs,
                         name=cpname,
-                        plot_script=script, plot_div=div, plot_resources=plot_resources,
+                        plot_script=script, plot_div=div,
                         sub_comp_data=sub_comp_data,
                         assembly_structure=assembly_structure)
 
