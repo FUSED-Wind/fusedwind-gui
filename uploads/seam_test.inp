@@ -51,12 +51,4 @@ sc_frac_flap: 0.3
 site_type: offshore
 tsr: 7.5
 turbulence_int: 0.16
-blade_cost_per_mass: 15.0
-spinner_cost_per_mass: 4.5
-tower_cost_per_mass: 4.0
-SpinnerCostPerMass: 0.0
-BladeCostPerMass: 15.0
-HubCostPerMass: 0.0
-bearing_cost_per_mass: 14.0
-hub_cost_per_mass: 3.5
-infra_cost: 0.0
+turbine_number: 100

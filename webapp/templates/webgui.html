@@ -2,9 +2,16 @@
 
 {% block styles %}
 {{super()}}
+<script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
+
+<link rel="stylesheet" href="{{ bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.css')}}">
+<script src="{{bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.js')}}"></script>
+<script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
 <style>
 .hidden {
   display: none !important;
@@ -17,7 +24,6 @@
 
 {% block scripts %}
 {{super()}}
-<script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <script src="{{ bower_url_for('bootstrap-treeview', filename='src/js/bootstrap-treeview.js') }}"></script>
 <script>
 // The treeview script ---------------------------------------------------------
@@ -67,6 +73,91 @@ $('#fileupload').fileupload({
             });
         }
     });
+
+
+
+    function expandTable($detail, row) {
+        $detail.html();
+        if (row.type == 'Array') {
+            buildArrayTable($detail.html('<p><b>Description:</b> ' + row.desc + '</p>' +
+                                    '<p><b>Units:</b> ' + row.units + '</p>' +
+                                    '<table data-show-export="true"></table>').find('table'), row);
+        }
+        else if (row.type == 'VarTree') {
+            buildVTTable($detail.html('<p><b>Description:</b> ' + row.state.desc + '</p>' +
+                                    '<table data-show-export="true">' +
+                                        '<thead>' +
+                                        '<tr>' +
+                                            '<th data-field="name">Name</th>'+
+                                            '<th data-field="state">Value</th>'+
+                                        '</tr>'+
+                                        '</thead></table>').find('table'), row.state);
+
+        }
+        else {
+            $detail.html('<p><b>Description:</b> ' + row.desc + '</p>' +
+                         '<p><b>Units:</b> ' + row.units + '</p>' +
+                         '<p><b>Value:</b> ' + row.state + '</p>');
+        }
+    }
+
+    function buildVTTable($el, vtdata) {
+
+        var data = [], row = []
+        for (var key in vtdata) {
+            row = {};
+            if (vtdata.hasOwnProperty(key)) {
+                row['name'] = key ;
+                row['state'] = vtdata[key];
+            }
+            data.push(row)
+        }
+        $el.bootstrapTable({data: data});
+    }
+
+    function buildArrayTable($el, rowdata) {
+        var i, j, row, cell,
+                columns = [],
+                data = [];
+        var row0 = rowdata.state[0]
+        if (row0.length >= 2){
+            for (i = 0; i < row0.length; i++) {
+                columns.push({
+                    field: 'field' + i,
+                    title: 'Col' + i,
+                    sortable: true
+                });
+
+            }
+            for(var i = 0; i < rowdata.state.length; i++) {
+                var r = rowdata.state[i]
+                row = {};
+                for(var j = 0; j < r.length; j++) {
+                    row['field' + j] = r[j];
+
+                }
+                data.push(row);
+            }
+        }
+        else {
+                columns.push({
+                    field: 'field0',
+                    title: 'Col0',
+                    sortable: true
+                });
+                for(var i = 0; i < rowdata.state.length; i++) {
+                    var r = rowdata.state[i]
+                    row = {};
+                    row['field0'] = rowdata.state[i];
+                    data.push(row);
+                }
+        }
+
+        $el.bootstrapTable({
+            columns: columns,
+            data: data
+        });
+    }
 </script>
 
 {% endblock %}
@@ -183,31 +274,57 @@ $('#fileupload').fileupload({
 
 <!-- ###################### The Outputs panel ########################### -->
                 {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-                    <div class="panel panel-body  comp-panels panel-{{name}}">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Outputs</h3>
-                            </div>
-                            <div class="panel-body", align="center">
-                                <table class="table table-hover" align="left">
-                                    <tr>
-                                        <th>Name</td>
-                                        <th>Value</td>
-                                        <th>Units</td>
-                                    </tr>
-                                    {%- for vname, val in outputs.iteritems() %}
-                                    <tr>
-                                        <td>{{val.desc}}</td>
-                                        <td>{{val.state}}</td>
-                                        <td>{{val.units}}</td>
-                                    </tr>
-                                    {%- endfor %}
-                                </table>
-
-                            </div>
+                <div class="panel panel-body  comp-panels panel-{{name}}">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Outputs</h3>
+                        </div>
+                        <div class="panel-body", align="center">
+                            <table class="table"
+                                   id="global-outputs-table"
+                                   data-toggle="global-outputs-table"
+                                   data-sort-name="iotype"
+                                   data-show-columns="true"
+                                   data-search="true"
+                                   data-show-refresh="true"
+                                   data-show-toggle="true"
+                                   data-show-export="true"
+                                   data-detail-view="true">
+                                <thead>
+                                <tr>
+                                    <th data-field="name">Name</th>
+                                    <th data-field="state" data-formatter='validateOutputs'>Value</th>
+                                    <th data-field="units">Units</th>
+                                    <th data-field="iotype">Iotype</th>
+                                </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
+                    <script>
+                        window['global-outputs-data'] = {{ outputs | tojson | safe }};
+                        console.log(window['global-outputs-data'])
+                        $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
+                                               onExpandRow: function (index, row, $detail) {
+                                                   expandTable($detail, row);
+                                               }
+                        });
+                        function validateOutputs(value, row) {
+                            if (row.type == 'Array') {
+                                return 'Array data';
+                            }
+                            else if (row.type == 'VarTree') {
+                                return 'Vartree data';
+                            }
+                            else {
+                                return row.state;
+                            }
+                        }
+                    </script>
+                </div>
 
+                <!--
+                no plots for now since bokeh seems to be in conflict with bootstrap-table
                 {% if plot_div %}
                 <div class="panel-body comp-panels panel-{{name}}">
                     <div class="panel panel-default">
@@ -219,83 +336,75 @@ $('#fileupload').fileupload({
                         </div>
                     </div>
                 </div>
+                {% endif %} -->
                 {% endif %}
-            {% endif %}
 
-            {% if sub_comp_data %}
-            {% for field, inout in sub_comp_data.iteritems() %}
-            <div class="panel-body hidden comp-panels panel-{{field}}">
-<!-- ############## The Component Input panel ############################## -->
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">{{field}}</h3>
-                    </div>
-                    <div class="panel-body", align="center">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="panel-body">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <h3 class="panel-title">Inputs</h3>
-                                        </div>
-                                        <div class="panel-body", align="center">
-                                            <table class="table table-hover" align="left">
-                                                <tr>
-                                                    <th>Name</td>
-                                                    <th>Value</td>
-                                                    <th>Units</td>
-                                                </tr>
-                                                {%- for vname, val in inout.params.inputs.iteritems() %}
-                                                    <tr>
-                                                        <td>{{val.desc}} ({{vname}})</td>
-                                                        <td>{{val.state}}</td>
-                                                        <td>{{val.units}}</td>
-                                                    </tr>
-                                                {%- endfor %}
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-    <!-- ########### The Component Outputs panel ################################# -->
-                            <div class="col-md-6">
-                                <div class="panel-body">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            <h3 class="panel-title">Outputs</h3>
-                                        </div>
-                                        <div class="panel-body", align="center">
-                                            <table class="table table-hover" align="left">
-                                                <tr>
-                                                    <th>Name</td>
-                                                    <th>Value</td>
-                                                    <th>Units</td>
-                                                </tr>
-                                                {%- for vname, val in inout.params.outputs.iteritems() %}
-                                                    <tr>
-                                                        <td>{{val.desc}} ({{vname}})</td>
-                                                        <td>{{val.state}}</td>
-                                                        <td>{{val.units}}</td>
-                                                    </tr>
-                                                {%- endfor %}
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                {% if sub_comp_data %}
+
+                {% for field, inout in sub_comp_data.iteritems() %}
+                <div class="panel-body hidden comp-panels panel-{{field}}">
+    <!-- ############## The Component Input panel ############################## -->
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">{{field}}</h3>
                         </div>
-                        {% if inout.plot %}
+                        <div class="panel-body", align="center">
+                            <table class="table"
+                                   id="{{field}}-table"
+                                   data-toggle="{{field}}-table"
+                                   data-sort-name="iotype"
+                                   data-show-columns="true"
+                                   data-search="true"
+                                   data-show-refresh="true"
+                                   data-show-toggle="true"
+                                   data-show-export="true"
+                                   data-detail-view="true">
+                                <thead>
+                                <tr>
+                                    <th data-field="name">Name</th>
+                                    <th data-field="state" data-formatter='validateOutputs'>Value</th>
+                                    <th data-field="units">Units</th>
+                                    <th data-field="iotype">Iotype</th>
+                                </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                    <script>
+                        window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
+                        console.log('#{{field}}-table')
+                        console.log(window['{{field}}-data'])
+
+                        $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
+                                               onExpandRow: function (index, row, $detail) {
+                                                   expandTable($detail, row);
+                                               }
+                        });
+                        function validateOutputs(value, row) {
+                            if (row.type == 'Array') {
+                                return 'Array data';
+                            }
+                            else if (row.type == 'VarTree') {
+                                return 'Vartree data';
+                            }
+                            else {
+                                return row.state;
+                            }
+                        }
+                    </script>
+
+                    <!--
+                    no plots for now since bokeh seems to be in conflict with bootstrap-table
+                    {% if inout.plot %}
                         <div class="panel-body", align="center">
                             {{ inout.plot.resources|indent(4)|safe }}
                             {{ inout.plot.script|indent(4)|safe }}
                             {{ inout.plot.div|indent(4)|safe }}
                         </div>
-                        {% endif %}
+                    {% endif %} -->
                     </div>
-                </div>
-            </div>
-                {% endfor %}
-                {% endif %}
+                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
         </div>

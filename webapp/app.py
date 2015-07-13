@@ -142,11 +142,12 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
             'text':cname,
             'href':'#collapse-%s'%(cname)})
 
-        inout = traits2json(comp)
-        sub_comp_data[cname]['params'] = inout
-        if hasattr(comp, "plot"):
-            c_script, c_div, c_plot_resources = prepare_plot(comp.plot)
-            sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div, 'resources': c_plot_resources}
+        tmp = get_io_dict(comp)
+        sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
+        # no plots for now since bootstrap-table and bokeh seem to be in conflict
+        # if hasattr(comp, "plot"):
+        #     c_script, c_div, c_plot_resources = prepare_plot(comp.plot)
+        #     sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div, 'resources': c_plot_resources}
 
         if isinstance(comp, Assembly):
 
@@ -205,14 +206,34 @@ def upload():
         return jsonify({'status': 'error'})
 
 
+def traits2json(cpnt):
+    """Get the traits information about the component and return a json dictionary"""
+
+    # I/O are separated in two lists with a dict for each variable
+    out = {'inputs':[], 'outputs':[]}
+    for ty, se in zip(['inputs', 'outputs'],
+                    [set(cpnt.list_inputs()).difference(Assembly().list_inputs()),
+                     set(cpnt.list_outputs()).difference(Assembly().list_outputs())]):
+        for s in se:
+            t = cpnt.get_trait(s)
+            var = {'name':s}
+            var['type'] = t.trait_type.__class__.__name__
+            for d in ['iotype','desc', 'units', 'high', 'low','values']:
+                val = getattr(t, d)
+                if not val == None:
+                    var[d] = val
+            var['state'] = getattr(cpnt, s)
+            out[ty].append(var)
+    return out
+
 def get_io_dict(cpnt):
     io = traits2json(cpnt)
-    out = {}
-    for k in io['inputs']:
-        out[k] = serialize(getattr(cpnt, k))
-    for k in io['outputs']:
-        out[k] = serialize(getattr(cpnt, k))
-    return out
+
+    for i, k in enumerate(io['inputs']):
+        io['inputs'][i]['state'] = serialize(getattr(cpnt, k['name']))
+    for i, k in enumerate(io['outputs']):
+        io['outputs'][i]['state'] = serialize(getattr(cpnt, k['name']))
+    return io
 
 
 def serialize(thing):
@@ -234,7 +255,6 @@ def serialize(thing):
     elif isinstance(thing, str):
         return thing
 
-    print thing, thing.__class__
     return '??_' +  str(thing.__class__)
 
 
@@ -256,7 +276,7 @@ def webgui(cpnt, app=None):
     app.route('/'+cpname+'/download/', methods=['GET'])(download)
 
     def myflask():
-        io = traits2json(cpnt)
+        io = traits2jsondict(cpnt)
         form_inputs = WebGUIForm(io['inputs'], run=True)()
 
         assembly_structure = [{'text':cpname,
@@ -283,20 +303,19 @@ def webgui(cpnt, app=None):
                     setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
 
             cpnt.run()
-            io = traits2json(cpnt)
+            io = traits2jsondict(cpnt)
             sub_comp_data = {}
             if isinstance(cpnt, Assembly):
 
                 sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
                 assembly_structure[0]['nodes'] = structure
-                outputs = traits2json(cpnt)['outputs']
-
-            try:
-                script, div, plot_resources = prepare_plot(cpnt.plot)
-            except:
-                # TODO: gracefully inform the user of why he doesnt see his plots
-                script, div, plot_resources = None, None, None
-
+                outputs = get_io_dict(cpnt)['outputs']
+            # no plots for now since bootstrap-table and bokeh seem to be in conflict
+            # try:
+            #     script, div, plot_resources = prepare_plot(cpnt.plot)
+            # except:
+            #     # TODO: gracefully inform the user of why he doesnt see his plots
+            script, div, plot_resources = None, None, None
 
             return render_template('webgui.html',
                         inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
@@ -324,6 +343,13 @@ from openmdao.main.api import set_as_top
 
 from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
 webgui(set_as_top(lcoe_csm_assembly()), app)
+try:
+    from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
+    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+    webgui(lcoe_se, app)
+except:
+    print 'lcoe_se_seam_assembly could not be loaded!'
+
 try:
     from SEAM.seam_assemblies import SEAMAssembly
     webgui(set_as_top(SEAMAssembly()), app)

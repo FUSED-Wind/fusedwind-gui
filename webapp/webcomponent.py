@@ -57,7 +57,7 @@ type_fields = {
     'Bool': BooleanField
 }
 
-def traits2json(cpnt):
+def traits2jsondict(cpnt):
     """Get the traits information about the component and return a json dictionary"""
     out = {'inputs':{}, 'outputs':{}}
     for ty, se in zip(['inputs', 'outputs'],
