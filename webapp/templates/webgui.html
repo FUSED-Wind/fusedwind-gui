@@ -2,6 +2,10 @@
 
 {% block styles %}
 {{super()}}
+<!-- <link
+    href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
+    rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"> -->
 <script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
@@ -12,6 +16,7 @@
 <script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
+
 <style>
 .hidden {
   display: none !important;
@@ -303,7 +308,6 @@ $('#fileupload').fileupload({
                     </div>
                     <script>
                         window['global-outputs-data'] = {{ outputs | tojson | safe }};
-                        console.log(window['global-outputs-data'])
                         $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
                                                onExpandRow: function (index, row, $detail) {
                                                    expandTable($detail, row);
@@ -372,9 +376,6 @@ $('#fileupload').fileupload({
                     </div>
                     <script>
                         window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
-                        console.log('#{{field}}-table')
-                        console.log(window['{{field}}-data'])
-
                         $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
                                                onExpandRow: function (index, row, $detail) {
                                                    expandTable($detail, row);
