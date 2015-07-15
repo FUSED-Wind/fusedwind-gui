@@ -3,7 +3,7 @@ from openmdao.main.vartree import VariableTree
 
 import os
 
-from flask import Flask, request, render_template, flash
+from flask import Flask, request, render_template, flash, make_response
 from wtforms.widgets import TextArea
 from flask.ext.mail import Message, Mail
 from flask.ext.bower import Bower
@@ -266,14 +266,44 @@ def webgui(cpnt, app=None):
 
     def download():
         out = get_io_dict(cpnt)
-        r = yaml.dump(out, default_flow_style=False)
-        #print r
-        #print out
+        params = {}
+        for param in out['inputs']:
+            params[param['name']] = param['state']
+        r = yaml.dump(params, default_flow_style=False)
 
-        return Response(r, content_type='text/yaml; charset=utf-8')
+        response = make_response(r)
+        response.headers["Content-Disposition"] = "attachment; filename=fused_inputs.yaml"
+        return response
+        # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
 
     download.__name__ = cpname+'_download'
     app.route('/'+cpname+'/download/', methods=['GET'])(download)
+
+    def download_full():
+        out = get_io_dict(cpnt)
+        cmp_data, _ = build_hierarchy(cpnt, {}, [])
+        params = {}
+        top_name = cpnt.__class__.__name__
+        params[top_name] = {}
+        for param in out['inputs'] + out['outputs']:
+            pname = param['name']
+            params[top_name][pname] = param['state']
+
+        for cmp_name in cmp_data:
+            params[cmp_name] = {}
+            for param in cmp_data[cmp_name]['params']:
+                pname = param['name']
+                params[cmp_name][pname] = param['state']
+
+        r = yaml.dump(params, default_flow_style=False)
+
+        response = make_response(r)
+        response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
+        return response
+        # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
+
+    download_full.__name__ = cpname+'_download_full'
+    app.route('/'+cpname+'/download_full/', methods=['GET'])(download_full)
 
     def myflask():
         io = traits2jsondict(cpnt)

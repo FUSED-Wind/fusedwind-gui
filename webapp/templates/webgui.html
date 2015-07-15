@@ -162,9 +162,11 @@ $('#fileupload').fileupload({
 
         $el.bootstrapTable({
             columns: columns,
-            data: data
+            data: data,
+            height: getHeight()
         });
     }
+
 </script>
 
 {% endblock %}
@@ -203,14 +205,42 @@ $('#fileupload').fileupload({
 
     <div class="container-fluid">
         <div class="panel panel-default">
+            <div class="panel-body">
+                <span class="btn btn-success fileinput-button">
+                    <i class="glyphicon glyphicon-plus"></i>
+                    <span>Load inputs</span>
+                    <input id="fileupload" type="file" name="files[]" multiple>
+                </span>
+                <div class="btn-group">
+
+                  <button type="button" class="btn nohover btn-success">Save</button>
+                  <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">Toggle Dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+                    <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+                    <!-- <li role="separator" class="divider"></li>
+                    <li><a href="#">Separated link</a></li> -->
+
+                  </ul>
+                </div>
+                <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick='document.getElementById("global-inputs-form").submit()' value="Run">
+                <form id="download-inputs-form" method="get" action="/{{ name }}/download/"></form>
+                <form id="download-full-model"  method="get" action="/{{ name }}/download_full/"></form>
+            </div>
             <div class="row">
                 <div class="col-md-2">
+
                     <div class="panel-body">
+
                         <!-- {{ wtf.quick_form(inputs, form_type='horizontal',
                         button_map={'submit_button': 'primary'})}} -->
 
 <!-- ########################## The Assembly navigation panel ############## -->
                         <div class="panel panel-default" id='panel-'>
+
                             <div class="panel-heading">
                             <h3 class="panel-title">
                                 <a data-target="#collapse-tree"
@@ -221,12 +251,9 @@ $('#fileupload').fileupload({
                             </div>
 
                             <!-- <div id="collapse-tree" class="panel panel-default" > -->
-                                    <div id="assembly-tree"></div>
+                            <div id="assembly-tree"></div>
                             </div>
                         </div>
-                    <form method="get" action="/{{ name }}/download/" class="form">
-                        <input class="btn btn-primary col-md-6" id="download" name="download" type="submit" value="Download">
-                    </form>
                     </div>
                 <div class="col-md-3">
                     <div class="panel-body">
@@ -235,8 +262,11 @@ $('#fileupload').fileupload({
                             <div class="panel-heading">
                                 <h3 class="panel-title">Global inputs</h3>
                             </div>
-                            <div class="panel-body", align="center">
-                                <form method="post" class="form">
+                            <div class="panel-body"
+                                 align="center" id='global-inputs-panel'>
+
+                                <form method="post" class="form" id='global-inputs-form'>
+
 
                                     {{ inputs.hidden_tag() }}
                                     {{ wtf.form_errors(inputs, hiddens='only') }}
@@ -260,19 +290,15 @@ $('#fileupload').fileupload({
                                     {%- endif %}
                                     {%- endfor %}
                                 </table>
-                                <input class="btn btn-primary col-md-6" id="submit" name="submit" type="submit" value="Run">
+
                             </form>
-                            <form style="margin: 0px;" id="form-upload" enctype="multipart/form-data">
-                                <span class="btn btn-success fileinput-button col-md-6">
-                                    <i class="glyphicon glyphicon-plus"></i>
-                                    <span>Load Input File</span>
-                                    <input id="fileupload" type="file" name="files[]" multiple>
-                                </span>
-                            </form>
-                                <div id="progress">
-                                    <div class="bar" style="width: 0%;"></div>
-                                </div>
                             </div>
+                            <script>
+                                var height = String($(window).height() - $('h1').outerHeight(true))+'px';
+                                console.log(height)
+                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = height;
+                                document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                            </script>
                         </div>
                     </div>
                 </div>
@@ -311,10 +337,11 @@ $('#fileupload').fileupload({
                     <script>
                         window['global-outputs-data'] = {{ outputs | tojson | safe }};
                         $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
-                                               onExpandRow: function (index, row, $detail) {
-                                                   expandTable($detail, row);
-                                               }
-                        });
+                                                                   height: getHeight(),
+                                                                   onExpandRow: function (index, row, $detail) {
+                                                                   expandTable($detail, row);
+                                                                   }
+                                                                  });
                         function validateOutputs(value, row) {
                             if (row.type == 'Array') {
                                 return 'Array data';
@@ -325,6 +352,9 @@ $('#fileupload').fileupload({
                             else {
                                 return row.state;
                             }
+                        }
+                        function getHeight() {
+                            return $(window).height() - $('h1').outerHeight(true);
                         }
                     </script>
                 </div>
@@ -378,10 +408,11 @@ $('#fileupload').fileupload({
                     <script>
                         window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
                         $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
-                                               onExpandRow: function (index, row, $detail) {
-                                                   expandTable($detail, row);
-                                               }
-                        });
+                                                              height: getHeight(),
+                                                              onExpandRow: function (index, row, $detail) {
+                                                                  expandTable($detail, row);
+                                                              }
+                                                             });
                         function validateOutputs(value, row) {
                             if (row.type == 'Array') {
                                 return 'Array data';
