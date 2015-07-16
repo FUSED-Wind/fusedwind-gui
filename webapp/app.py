@@ -339,7 +339,9 @@ def webgui(cpnt, app=None):
 
                 sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
                 assembly_structure[0]['nodes'] = structure
-                outputs = get_io_dict(cpnt)['outputs']
+                # show both inputs and outputs in right side table
+                outputs = get_io_dict(cpnt)
+                combIO = outputs['inputs'] + outputs['outputs']
             # no plots for now since bootstrap-table and bokeh seem to be in conflict
             try:
                 script, div = prepare_plot(cpnt.plot)
@@ -349,7 +351,7 @@ def webgui(cpnt, app=None):
 
             return render_template('webgui.html',
                         inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                        outputs=outputs,
+                        outputs=combIO,
                         name=cpname,
                         plot_script=script, plot_div=div,
                         sub_comp_data=sub_comp_data,
@@ -379,6 +381,12 @@ try:
     webgui(lcoe_se, app)
 except:
     print 'lcoe_se_seam_assembly could not be loaded!'
+try:
+    from wisdem.lcoe.lcoe_se_seam_opt import create_example_se_opt
+    lcoe_opt = create_example_se_opt('I', 0., True, False, False,False,False, '')
+    webgui(lcoe_opt, app)
+except:
+    print 'lcoe_se_seam_opt could not be loaded!'
 
 try:
     from SEAM.seam_assemblies import SEAMAssembly
