@@ -165,11 +165,12 @@ def _handleUpload(files):
         return None
 
     outfiles = []
-
+    import tempfile
+    tmpdir = tempfile.gettempdir()
     for upload_file in files.getlist('files[]'):
-        upload_file.save('/tmp/' + upload_file.filename)
+        upload_file.save(os.path.join(tmpdir, upload_file.filename))
 
-        with open('/tmp/'+upload_file.filename, 'r') as f:
+        with open(os.path.join(tmpdir, upload_file.filename), 'r') as f:
             inputs = yaml.load(f)
 
         print inputs
@@ -346,7 +347,7 @@ def webgui(cpnt, app=None):
             try:
                 script, div = prepare_plot(cpnt.plot)
             except:
-            #     # TODO: gracefully inform the user of why he doesnt see his plots
+                # TODO: gracefully inform the user of why he doesnt see his plots
                 script, div, plot_resources = None, None, None
 
             return render_template('webgui.html',
@@ -372,9 +373,11 @@ def webgui(cpnt, app=None):
 
 
 from openmdao.main.api import set_as_top
-
-from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
-webgui(set_as_top(lcoe_csm_assembly()), app)
+try:
+    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
+    webgui(set_as_top(lcoe_csm_assembly()), app)
+except:
+    pass
 try:
     from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
