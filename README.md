@@ -13,13 +13,21 @@ interactive setup and execution of analyses as well as graphical representation 
 
     $ pip install -r webapp/requirements.txt
 
+* Install the fusedwind-gui package:
+
+    $ python setup.py install
+
+To be able to edit the source of the package and not have to re-install it instead run:
+
+    $ python setup.py develop
+
 ### Starting the web app
 
-To run the web app locally on your machine activate your OpenMDAO virtual environment and issue the command
+The installed package adds an executable file in your bin directory, so to run the web app locally on your machine activate your OpenMDAO virtual environment and issue the command
 
-    $ python run.py
+    $ fusedwindGUI
 
-In a web browser open the page http://localhost:5000/
+which can be issued from any location. In a web browser open the page http://localhost:5000/
 
 ## Working with Docker (the easier way, if you have docker)
 
