@@ -3,7 +3,7 @@ from openmdao.main.vartree import VariableTree
 
 import os
 
-from flask import Flask, request, render_template, flash, make_response
+from flask import Flask, flash, request, render_template, flash, make_response
 from wtforms.widgets import TextArea
 from flask.ext.mail import Message, Mail
 from flask.ext.bower import Bower
@@ -28,18 +28,8 @@ from webcomponent import *
 import json
 import yaml
 
-## Configuring the Flask app ---------------------------------------------------
-app = Flask(__name__)
-configfile=None
-AppConfig(app, configfile)  # Flask-Appconfig is not necessary, but
-                            # highly recommend =)
-                            # https://github.com/mbr/flask-appconfig
+from webapp import app, session
 
-Bootstrap(app)
-Bower(app) # Usefull to use bower-components
-
-# in a real app, these should be configured through Flask-Appconfig
-app.config['SECRET_KEY'] = 'devkey'
 
 ## Handeling Forms -------------------------------------------------------------
 def unitfield(units, name):
@@ -261,6 +251,10 @@ def serialize(thing):
 
 def webgui(cpnt, app=None):
     cpname = cpnt.__class__.__name__
+
+    # dictionary for recorded cases
+    cpnt.gui_recorder = {}
+
     if app == None:
         app = start_app(cpname)
 
@@ -278,9 +272,30 @@ def webgui(cpnt, app=None):
         # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
 
     download.__name__ = cpname+'_download'
-    app.route('/'+cpname+'/download/', methods=['GET'])(download)
+    app.route('/'+cpname+'/download', methods=['GET'])(download)
 
     def download_full():
+
+        if len(cpnt.gui_recorder.keys()) == 0:
+            record_case()
+            r = cpnt.gui_recorder['recorder']
+
+        r = yaml.dump(cpnt.gui_recorder['recorder'], default_flow_style=False)
+        response = make_response(r)
+        response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
+        return response
+        # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
+
+    download_full.__name__ = cpname+'_download_full'
+    app.route('/'+cpname+'/download_full', methods=['GET'])(download_full)
+
+    def record_case():
+
+        if 'counter' in cpnt.gui_recorder.keys():
+            cpnt.gui_recorder['counter'] += 1
+        else:
+            cpnt.gui_recorder['counter'] = 1
+
         out = get_io_dict(cpnt)
         cmp_data, _ = build_hierarchy(cpnt, {}, [])
         params = {}
@@ -296,17 +311,28 @@ def webgui(cpnt, app=None):
                 pname = param['name']
                 params[cmp_name][pname] = param['state']
 
-        r = yaml.dump(params, default_flow_style=False)
+        try:
+            cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
+        except:
+            cpnt.gui_recorder['recorder'] = {}
+            cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
+        flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
+        return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
-        response = make_response(r)
-        response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
-        return response
-        # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
+    record_case.__name__ = cpname+'_record_case'
+    app.route('/'+cpname+'/record_case', methods=['POST'])(record_case)
 
-    download_full.__name__ = cpname+'_download_full'
-    app.route('/'+cpname+'/download_full/', methods=['GET'])(download_full)
+    def clear_recorder():
+
+        cpnt.gui_recorder = {}
+        flash('Recorder cleared!', category='message')
+        return 'All cases cleared successfully!'
+
+    clear_recorder.__name__ = cpname+'_clear_recorder'
+    app.route('/'+cpname+'/clear_recorder', methods=['POST'])(clear_recorder)
 
     def myflask():
+
         io = traits2jsondict(cpnt)
         form_inputs = WebGUIForm(io['inputs'], run=True)()
 
@@ -371,35 +397,11 @@ def webgui(cpnt, app=None):
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
     return app
 
-
-from openmdao.main.api import set_as_top
-try:
-    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
-    webgui(set_as_top(lcoe_csm_assembly()), app)
-except:
-    pass
-try:
-    from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
-    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
-    webgui(lcoe_se, app)
-except:
-    print 'lcoe_se_seam_assembly could not be loaded!'
-try:
-    from wisdem.lcoe.lcoe_se_seam_opt import create_example_se_opt
-    lcoe_opt = create_example_se_opt('I', 0., True, False, False,False,False, '')
-    webgui(lcoe_opt, app)
-except:
-    print 'lcoe_se_seam_opt could not be loaded!'
-
-try:
-    from SEAM.seam_assemblies import SEAMAssembly
-    webgui(set_as_top(SEAMAssembly()), app)
-except:
-    print 'WARNING: SEAM not installed'
-
-if __name__ == '__main__':
-    # Bind to PORT if defined, otherwise default to 5000.
-
-
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+#
+#
+# if __name__ == '__main__':
+#     # Bind to PORT if defined, otherwise default to 5000.
+#
+#
+#     port = int(os.environ.get('PORT', 5000))
+#     app.run(host='0.0.0.0', port=port, debug=True)
