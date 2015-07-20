@@ -28,7 +28,7 @@ from webcomponent import *
 import json
 import yaml
 
-from webapp import app, session
+from fusedwindGUI import app, session
 
 
 ## Handeling Forms -------------------------------------------------------------
