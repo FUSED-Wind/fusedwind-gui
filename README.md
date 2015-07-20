@@ -17,7 +17,7 @@ interactive setup and execution of analyses as well as graphical representation 
 
 To run the web app locally on your machine activate your OpenMDAO virtual environment and issue the command
 
-    $ python webapp/app.py
+    $ python run.py
 
 In a web browser open the page http://localhost:5000/
 
