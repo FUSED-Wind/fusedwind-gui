@@ -8,8 +8,7 @@ interactive setup and execution of analyses as well as graphical representation 
 ### Installing on your machine
 
 * Install OpenMDAO
-* Install WISDEM (WISDEM, CommonSE, Turbine_CostsSE, Plant_CostsSE, Plant_FinanceSE, Plant_EnergySE)
-* Install the additional python libraries
+* Install the additional python libraries needed by the GUI
 
     $ pip install -r webapp/requirements.txt
 
@@ -20,6 +19,20 @@ interactive setup and execution of analyses as well as graphical representation 
 To be able to edit the source of the package and not have to re-install it instead run:
 
     $ python setup.py develop
+
+Note that the installer automatically installs all required WISDEM and SEAM packages into the ``src`` directory.
+
+### Building the docs
+
+The documentation for all the installed WISDEM and SEAM modules can be built by navigating to the ``src`` directory and typing:
+
+    $ make html
+
+To view them open ``_build/html/index.html``. To make them visible from the web GUI directly copy them to the ``fusedwindGUI/static`` directory:
+
+    $ cp -r src/_build/html fusedwindGUI/static/docs
+
+TODO: make this step part of the build process.
 
 ### Starting the web app
 
