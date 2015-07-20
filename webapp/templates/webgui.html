@@ -84,8 +84,8 @@ $('#fileupload').fileupload({
         }
     });
 
-
-
+</script>
+<script>
     function expandTable($detail, row) {
         $detail.html();
         if (row.type == 'Array') {
@@ -169,7 +169,8 @@ $('#fileupload').fileupload({
             height: getHeight()
         });
     }
-
+</script>
+<script>
     function showalert(message,alerttype) {
 
         $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +  alerttype + '" role="alert"><a class="close" data-dismiss="alert">×</a><span>'+message+'</span></div>')
@@ -181,7 +182,8 @@ $('#fileupload').fileupload({
 
             }, 2000);
         }
-
+</script>
+<script>
      function record_case() {
          console.log('calling record_case')
          $.ajax({
