@@ -233,12 +233,11 @@ $('#fileupload').fileupload({
 
 {% block content %}
 
-<div class="container-fluid">
-    <div class="page-header">
-        <!-- <img src="static/dtuwind.png" align='right' class='media-right' width=30%> -->
+<div class="container-fluid" id="navigation-bar">
+    <!-- <div class="page-header">
         <h1>FUSED-Wind</h1>
         <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
-    </div>
+    </div> -->
     <ul class="nav nav-tabs">
         <li role="presentation"><a href="/">Home</a></li>
         <li role="presentation" class="dropdown">
@@ -255,7 +254,7 @@ $('#fileupload').fileupload({
     <div class="container-fluid id=maincontent">
         <div class="container-fluid" id="alert_placeholder"></div>
         <div class="panel panel-default">
-            <div class="panel-body">
+            <div class="panel-body" id='button-panel'>
                 <span class="btn btn-success fileinput-button">
                     <i class="glyphicon glyphicon-plus"></i>
                     <span>Load inputs</span>
@@ -289,17 +288,17 @@ $('#fileupload').fileupload({
                         <div class="panel panel-default" id='panel-'>
 
                             <div class="panel-heading">
-                            <h3 class="panel-title">
-                                <a data-target="#collapse-tree"
-                                href="#collapse-tree" >
-                                System Hierarchy
-                                </a>
-                            </h3>
+                                <h3 class="panel-title">
+                                    <a data-target="#collapse-tree"
+                                    href="#collapse-tree" >
+                                    System Hierarchy
+                                    </a>
+                                </h3>
                             </div>
                             <div id="assembly-tree"></div>
-                            </div>
                         </div>
                     </div>
+                </div>
                 <div class="col-md-3">
                     <div class="panel-body">
 <!-- ########################## The Inputs panel ###    ######################## -->
@@ -337,8 +336,14 @@ $('#fileupload').fileupload({
                             </form>
                             </div>
                             <script>
-                                var height = String($(window).height() - $('h1').outerHeight(true))+'px';
-                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = height;
+                            function getHeight() {
+                                var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                                var h_btn = document.getElementById('button-panel').offsetHeight;
+                                var h_win = $(window).height() - h_nav - h_btn - 50;
+                                return String(h_win)+'px'
+                            }
+                                console.log(getHeight())
+                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
                                 document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
                             </script>
                         </div>
@@ -397,7 +402,10 @@ $('#fileupload').fileupload({
                             }
                         }
                         function getHeight() {
-                            return $(window).height() - $('h1').outerHeight(true);
+                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                            var h_btn = document.getElementById('button-panel').offsetHeight;
+                            console.log(h_nav, h_btn)
+                            return $(window).height() - h_nav - h_btn - 50;
                         }
                     </script>
                 </div>
@@ -469,7 +477,9 @@ $('#fileupload').fileupload({
                             }
                         }
                         function getHeight() {
-                            return $(window).height() - $('h1').outerHeight(true);
+                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                            var h_btn = document.getElementById('button-panel').offsetHeight;
+                            return $(window).height() - h_nav - h_btn - 50;
                         }
                     </script>
 
@@ -488,5 +498,5 @@ $('#fileupload').fileupload({
         </div>
     </div>
 </div>
-</div>
+
 {% endblock %}
