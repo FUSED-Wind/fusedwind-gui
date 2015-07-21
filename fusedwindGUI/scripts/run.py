@@ -25,12 +25,16 @@ def main():
         webgui(lcoe_opt, app)
     except:
         print 'lcoe_se_seam_opt could not be loaded!'
-    
+
     try:
         from SEAM.seam_assemblies import SEAMAssembly
         webgui(set_as_top(SEAMAssembly()), app)
     except:
         print 'WARNING: SEAM not installed'
-    
+
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
+if __name__ == '__main__':
+
+    main()
