@@ -41,6 +41,8 @@ def prep_field(dic):
     out = {}
     if 'desc' in dic:
         out['description'] = dic['desc']
+    if 'group' in dic:
+    		out['description'] += ": " + dic['group']
     if 'default' in dic:
         out['default'] = dic['default']
     if 'values' in dic:
@@ -67,7 +69,7 @@ def traits2jsondict(cpnt):
             t = cpnt.get_trait(s)
             out[ty][s] = {}
             out[ty][s]['type'] = t.trait_type.__class__.__name__
-            for d in ['desc', 'default', 'units', 'high', 'low','values']:
+            for d in ['desc', 'default', 'units', 'high', 'low','values','group']:
                 val = getattr(t, d)
                 if not val == None:
                     out[ty][s][d] = val

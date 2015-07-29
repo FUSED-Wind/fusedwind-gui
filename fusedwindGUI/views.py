@@ -133,7 +133,8 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
             'href':'#collapse-%s'%(cname)})
 
         tmp = get_io_dict(comp)
-        sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
+        sub_comp_data[cname]['params_in'] = tmp['inputs']
+        sub_comp_data[cname]['params_out'] = tmp['outputs']
         # no plots for now since bootstrap-table and bokeh seem to be in conflict
         if hasattr(comp, "plot"):
             c_script, c_div = prepare_plot(comp.plot)
@@ -209,7 +210,7 @@ def traits2json(cpnt):
             t = cpnt.get_trait(s)
             var = {'name':s}
             var['type'] = t.trait_type.__class__.__name__
-            for d in ['iotype','desc', 'units', 'high', 'low','values']:
+            for d in ['iotype','desc', 'units', 'high', 'low','values', 'group']:
                 val = getattr(t, d)
                 if not val == None:
                     var[d] = val

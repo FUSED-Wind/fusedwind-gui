@@ -319,21 +319,69 @@ $('#fileupload').fileupload({
                                             <th>Parameter</td>
                                             <th>Value</td>
                                         </tr>
-                                    {%- for field in inputs %}
-                                    {% if field.name not in ('csrf_token', 'submit') %}
-                                    <tr>
-                                        <td>{{field.description}} ({{field.name}})</td>
-                                        <td>
-                                            <div id='trigger-{{field.name|safe}}'>
-                                                {{field(class="form-control")|safe}}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {%- endif %}
-                                    {%- endfor %}
+		                                    {%- for field in inputs %}
+		                                    {% if field.name not in ('csrf_token', 'submit') %}
+		                                    {%- if 'Global' in field.description %}
+		                                    <tr>
+		                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
+		                                        <td>
+		                                            <div id='trigger-{{field.name|safe}}'>
+		                                                {{field(class="form-control")|safe}}
+		                                            </div>
+		                                        </td>
+		                                    </tr>
+		                                    {%- endif %}
+		                                    {%- endif %}
+		                                    {%- endfor %}
                                 </table>
 
-                            </form>
+                            		</form>
+                            </div>
+                            <script>
+                            function getHeight() {
+                                var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                                var h_btn = document.getElementById('button-panel').offsetHeight;
+                                var h_win = $(window).height() - h_nav - h_btn - 50;
+                                return String(h_win)+'px'
+                            }
+                                console.log(getHeight())
+                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                                document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                            </script>
+                        </div>
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Secondary inputs</h3>
+                            </div>
+                            <div class="panel-body"
+                                 align="center" id='secondary-inputs-panel'>
+
+                                <form method="post" class="form" id='secondary-inputs-form'>
+                                    {{ inputs.hidden_tag() }}
+                                    {{ wtf.form_errors(inputs, hiddens='only') }}
+                                    <table class="table table-hover" align="left">
+                                        <col width="55%">
+                                        <col width="45%">
+                                        <tr>
+                                            <th>Parameter</td>
+                                            <th>Value</td>
+                                        </tr>
+		                                    {%- for field in inputs %}
+		                                    {% if field.name not in ('csrf_token', 'submit') %}
+		                                    {%- if 'Global' not in field.description %}
+		                                    <tr>
+		                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
+		                                        <td>
+		                                            <div id='trigger-{{field.name|safe}}'>
+		                                                {{field(class="form-control")|safe}}
+		                                            </div>
+		                                        </td>
+		                                    </tr>
+		                                    {%- endif %}
+		                                    {%- endif %}
+		                                    {%- endfor %}
+                                </table>
+
+                            		</form>
                             </div>
                             <script>
                             function getHeight() {
@@ -434,31 +482,53 @@ $('#fileupload').fileupload({
                         <div class="panel-heading">
                             <h3 class="panel-title">{{field}}</h3>
                         </div>
-                        <div class="panel-body", align="center">
-                            <table class="table"
-                                   id="{{field}}-table"
-                                   data-toggle="{{field}}-table"
-                                   data-sort-name="iotype"
-                                   data-show-columns="true"
-                                   data-search="true"
-                                   data-show-refresh="true"
-                                   data-show-toggle="true"
-                                   data-show-export="true"
-                                   data-detail-view="true">
-                                <thead>
-                                <tr>
-                                    <th data-field="name">Name</th>
-                                    <th data-field="desc">Description</th>
-                                    <th data-field="state" data-formatter='validateOutputs'>Value</th>
-                                    <th data-field="units">Units</th>
-                                    <th data-field="iotype">Iotype</th>
-                                </tr>
-                                </thead>
-                            </table>
-                        </div>
+		                        <div class="panel-heading">Outputs</div>
+		                        <div class="panel-body", align="center">
+		                            <table class="table"
+		                                   id="{{field}}-table"
+		                                   data-toggle="{{field}}-table"
+		                                   data-sort-name="iotype"
+		                                   data-show-columns="true"
+		                                   data-search="true"
+		                                   data-show-refresh="true"
+		                                   data-show-toggle="true"
+		                                   data-show-export="true"
+		                                   data-detail-view="true">
+		                                <thead>
+		                                <tr>
+		                                    <th data-field="name">Name</th>
+		                                    <th data-field="desc">Description</th>
+		                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
+		                                    <th data-field="units">Units</th>
+		                                </tr>
+		                                </thead>
+		                            </table>
+		                        </div>
+		                        <div class="panel-heading">Inputs</div>
+		                        <div class="panel-body", align="center">
+		                            <table class="table2"
+		                                   id="{{field}}-table2"
+		                                   data-toggle="{{field}}-table2"
+		                                   data-sort-name="iotype"
+		                                   data-show-columns="true"
+		                                   data-search="true"
+		                                   data-show-refresh="true"
+		                                   data-show-toggle="true"
+		                                   data-show-export="true"
+		                                   data-detail-view="true">
+		                                <thead>
+		                                <tr>
+		                                    <th data-field="name">Name</th>
+		                                    <th data-field="desc">Description</th>
+		                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
+		                                    <th data-field="units">Units</th>
+		                                </tr>
+		                                </thead>
+		                            </table>
+		                        </div>
                     </div>
                     <script>
-                        window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
+                        window['{{field}}-data'] = {{ inout['params_out'] | tojson | safe }};
                         $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
                                                               height: getHeight(),
                                                               onExpandRow: function (index, row, $detail) {
@@ -470,7 +540,7 @@ $('#fileupload').fileupload({
                                 return 'Array data';
                             }
                             else if (row.type == 'VarTree') {
-                                return 'Vartree data';
+                                return 'Variable Collection';
                             }
                             else {
                                 return row.state;
@@ -479,7 +549,32 @@ $('#fileupload').fileupload({
                         function getHeight() {
                             var h_nav = document.getElementById('navigation-bar').offsetHeight;
                             var h_btn = document.getElementById('button-panel').offsetHeight;
-                            return $(window).height() - h_nav - h_btn - 50;
+                            return $(window).height() - h_nav - h_btn - 350;
+                        }
+                    </script>
+                    <script>
+                        window['{{field}}-data'] = {{ inout['params_in'] | tojson | safe }};
+                        $('#{{field}}-table2').bootstrapTable({data: window['{{field}}-data'],
+                                                              height: getHeight(),
+                                                              onExpandRow: function (index, row, $detail) {
+                                                                  expandTable($detail, row);
+                                                              }
+                                                             });
+                        function validateOutputs(value, row) {
+                            if (row.type == 'Array') {
+                                return 'Array data';
+                            }
+                            else if (row.type == 'VarTree') {
+                                return 'Variable Collection';
+                            }
+                            else {
+                                return row.state;
+                            }
+                        }
+                        function getHeight() {
+                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                            var h_btn = document.getElementById('button-panel').offsetHeight;
+                            return $(window).height() - h_nav - h_btn;
                         }
                     </script>
 
