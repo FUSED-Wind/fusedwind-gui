@@ -233,11 +233,12 @@ $('#fileupload').fileupload({
 
 {% block content %}
 
+<!-- Navigation bar -->
 <div class="container-fluid" id="navigation-bar">
-    <!-- <div class="page-header">
+    <div class="page-header">
         <h1>FUSED-Wind</h1>
         <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
-    </div> -->
+    </div>
     <ul class="nav nav-tabs">
         <li role="presentation"><a href="/">Home</a></li>
         <li role="presentation" class="dropdown">
@@ -251,166 +252,264 @@ $('#fileupload').fileupload({
         <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
     </ul>
 </div>
-    <div class="container-fluid id=maincontent">
-        <div class="container-fluid" id="alert_placeholder"></div>
-        <div class="panel panel-default">
-            <div class="panel-body" id='button-panel'>
-                <span class="btn btn-success fileinput-button">
-                    <i class="glyphicon glyphicon-plus"></i>
-                    <span>Load inputs</span>
-                    <input id="fileupload" type="file" name="files[]" multiple>
-                </span>
-                <div class="btn-group">
-                  <button type="button" class="btn nohover btn-success">Save</button>
-                  <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="caret"></span>
-                    <span class="sr-only">Toggle Dropdown</span>
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
-                    <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
-                    <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
-                    <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
-                    <!-- <li role="separator" class="divider"></li>
-                    <li><a href="#">Separated link</a></li> -->
-                  </ul>
-                </div>
-                <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
-                <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
-                <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
-            </div>
-            <div class="panel-body">
-            <div class="row">
-                <div class="col-md-2">
 
-                    <div class="panel-body">
+<!-- ################### Main Content ################### -->
+<div class="container-fluid id=maincontent">
+    <div class="container-fluid" id="alert_placeholder">
+    </div>
+    <div class="panel panel-default">
+
+<!-- ####################  Buttons to run scripts ################### -->
+		    <div class="panel-body" id='button-panel'>
+		        <span class="btn btn-success fileinput-button">
+		            <i class="glyphicon glyphicon-plus"></i>
+		            <span>Load inputs</span>
+		            <input id="fileupload" type="file" name="files[]" multiple>
+		        </span>
+		        <div class="btn-group">
+		          <button type="button" class="btn nohover btn-success">Save</button>
+		          <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		            <span class="caret"></span>
+		            <span class="sr-only">Toggle Dropdown</span>
+		          </button>
+		          <ul class="dropdown-menu">
+		            <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+		            <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
+		            <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
+		            <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+		            <!-- <li role="separator" class="divider"></li>
+		            <li><a href="#">Separated link</a></li> -->
+		          </ul>
+		        </div>
+		        <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
+		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
+		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
+		    </div>
+
+<!-- ################### divider to rest of content ################### --> 
+		    <div class="panel-body">
+		    <div class="row">
+
 <!-- ########################## The Assembly navigation panel ############## -->
-                        <div class="panel panel-default" id='panel-'>
+            <div class="col-md-2">
+                <div class="panel-body">
+                    <div class="panel panel-default" id='panel-'>
 
-                            <div class="panel-heading">
-                                <h3 class="panel-title">
-                                    <a data-target="#collapse-tree"
-                                    href="#collapse-tree" >
-                                    System Hierarchy
-                                    </a>
-                                </h3>
-                            </div>
-                            <div id="assembly-tree"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="panel-body">
-<!-- ########################## The Inputs panel ###    ######################## -->
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Global inputs</h3>
-                            </div>
-                            <div class="panel-body"
-                                 align="center" id='global-inputs-panel'>
-
-                                <form method="post" class="form" id='global-inputs-form'>
-                                    {{ inputs.hidden_tag() }}
-                                    {{ wtf.form_errors(inputs, hiddens='only') }}
-                                    <table class="table table-hover" align="left">
-                                        <col width="55%">
-                                        <col width="45%">
-                                        <tr>
-                                            <th>Parameter</td>
-                                            <th>Value</td>
-                                        </tr>
-		                                    {%- for field in inputs %}
-		                                    {% if field.name not in ('csrf_token', 'submit') %}
-		                                    {%- if 'Global' in field.description %}
-		                                    <tr>
-		                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
-		                                        <td>
-		                                            <div id='trigger-{{field.name|safe}}'>
-		                                                {{field(class="form-control")|safe}}
-		                                            </div>
-		                                        </td>
-		                                    </tr>
-		                                    {%- endif %}
-		                                    {%- endif %}
-		                                    {%- endfor %}
-                                </table>
-
-                            		</form>
-                            </div>
-                            <script>
-                            function getHeight() {
-                                var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                                var h_btn = document.getElementById('button-panel').offsetHeight;
-                                var h_win = $(window).height() - h_nav - h_btn - 50;
-                                return String(h_win)+'px'
-                            }
-                                console.log(getHeight())
-                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-                                document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                            </script>
-                        </div>
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Secondary inputs</h3>
-                            </div>
-                            <div class="panel-body"
-                                 align="center" id='secondary-inputs-panel'>
-
-                                <form method="post" class="form" id='secondary-inputs-form'>
-                                    {{ inputs.hidden_tag() }}
-                                    {{ wtf.form_errors(inputs, hiddens='only') }}
-                                    <table class="table table-hover" align="left">
-                                        <col width="55%">
-                                        <col width="45%">
-                                        <tr>
-                                            <th>Parameter</td>
-                                            <th>Value</td>
-                                        </tr>
-		                                    {%- for field in inputs %}
-		                                    {% if field.name not in ('csrf_token', 'submit') %}
-		                                    {%- if 'Global' not in field.description %}
-		                                    <tr>
-		                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
-		                                        <td>
-		                                            <div id='trigger-{{field.name|safe}}'>
-		                                                {{field(class="form-control")|safe}}
-		                                            </div>
-		                                        </td>
-		                                    </tr>
-		                                    {%- endif %}
-		                                    {%- endif %}
-		                                    {%- endfor %}
-                                </table>
-
-                            		</form>
-                            </div>
-                            <script>
-                            function getHeight() {
-                                var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                                var h_btn = document.getElementById('button-panel').offsetHeight;
-                                var h_win = $(window).height() - h_nav - h_btn - 50;
-                                return String(h_win)+'px'
-                            }
-                                console.log(getHeight())
-                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-                                document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                            </script>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-7">
-
-<!-- ###################### The Outputs panel ########################### -->
-                {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-                <div class="panel panel-body  comp-panels panel-{{name}}">
-                    <div class="panel panel-default">
                         <div class="panel-heading">
-                            <h3 class="panel-title">Outputs</h3>
+                            <h3 class="panel-title">
+                                <a data-target="#collapse-tree"
+                                href="#collapse-tree" >
+                                System Hierarchy
+                                </a>
+                            </h3>
                         </div>
+                        <div id="assembly-tree"></div>
+                    </div>
+                </div>
+            </div>
+
+<!-- ########################## The Inputs panel ###    ######################## -->
+            <div class="col-md-3">
+                <div class="panel-body">
+                	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingOne"> 
+                            		<h3 class="panel-title">
+                            		<a role="button" data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            		Global Inputs
+                            	  </a>
+                            		</h3>
+                            </div>
+                            <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+		                            <div class="panel-body"
+		                                 align="center" id='global-inputs-panel'>
+		
+		                                <form method="post" class="form" id='global-inputs-form'>
+		                                    {{ inputs.hidden_tag() }}
+		                                    {{ wtf.form_errors(inputs, hiddens='only') }}
+		                                    <table class="table table-hover" align="left">
+		                                        <col width="55%">
+		                                        <col width="45%">
+		                                        <tr>
+		                                            <th>Parameter</td>
+		                                            <th>Value</td>
+		                                        </tr>
+				                                    {%- for field in inputs %}
+				                                    {% if field.name not in ('csrf_token', 'submit') %}
+				                                    {%- if 'Global' in field.description %}
+				                                    <tr>
+				                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
+				                                        <td>
+				                                            <div id='trigger-{{field.name|safe}}'>
+				                                                {{field(class="form-control")|safe}}
+				                                            </div>
+				                                        </td>
+				                                    </tr>
+				                                    {%- endif %}
+				                                    {%- endif %}
+				                                    {%- endfor %}
+		                                </table>
+		
+		                            		</form>
+		                            </div>
+		                            <script>
+		                            function getHeight() {
+		                                var h_nav = document.getElementById('navigation-bar').offsetHeight;
+		                                var h_btn = document.getElementById('button-panel').offsetHeight;
+		                                var h_win = $(window).height() - h_nav - h_btn - 50;
+		                                return String(h_win)+'px'
+		                            }
+		                                console.log(getHeight())
+		                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+		                                document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+		                            </script>
+		                        </div>
+                    		</div>
+
+		                    <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingTwo"> 
+                            		<h3 class="panel-title">
+                            		<a role="button" data-toggle="collapse" href="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                            		Secondary Inputs
+                            	  </a>
+                            		</h3>
+                            </div>
+		                        <div id="collapseTwo" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingTwo">
+				                        <div class="panel-body"
+				                             align="center" id='secondary-inputs-panel'>
+				
+				                            <form method="post" class="form" id='secondary-inputs-form'>
+				                                {{ inputs.hidden_tag() }}
+				                                {{ wtf.form_errors(inputs, hiddens='only') }}
+				                                <table class="table table-hover" align="left">
+				                                    <col width="55%">
+				                                    <col width="45%">
+				                                    <tr>
+				                                        <th>Parameter</td>
+				                                        <th>Value</td>
+				                                    </tr>
+				                                    {%- for field in inputs %}
+				                                    {% if field.name not in ('csrf_token', 'submit') %}
+				                                    {%- if 'Global' not in field.description %}
+				                                    <tr>
+				                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
+				                                        <td>
+				                                            <div id='trigger-{{field.name|safe}}'>
+				                                                {{field(class="form-control")|safe}}
+				                                            </div>
+				                                        </td>
+				                                    </tr>
+				                                    {%- endif %}
+				                                    {%- endif %}
+				                                    {%- endfor %}
+				                            </table>
+				
+				                        		</form>
+				                        </div>
+				                        <script>
+				                        function getHeight() {
+				                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+				                            var h_btn = document.getElementById('button-panel').offsetHeight;
+				                            var h_win = $(window).height() - h_nav - h_btn - 50;
+				                            return String(h_win)+'px'
+				                        }
+				                            console.log(getHeight())
+				                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+				                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+				                        </script>
+				                    </div>
+				                </div>   
+                    </div>
+            		</div>
+            </div>
+<!-- ###################### The Outputs panel ########################### -->
+            <div class="col-md-7">
+            {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+            <div class="panel panel-body  comp-panels panel-{{name}}">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Outputs</h3>
+                    </div>
+                    <div class="panel-body", align="center">
+                        <table class="table"
+                               id="global-outputs-table"
+                               data-toggle="global-outputs-table"
+                               data-sort-name="iotype"
+                               data-show-columns="true"
+                               data-search="true"
+                               data-show-refresh="true"
+                               data-show-toggle="true"
+                               data-show-export="true"
+                               data-detail-view="true">
+                            <thead>
+                            <tr>
+                                <th data-field="name">Name</th>
+                                <th data-field="desc">Description</th>
+                                <th data-field="state" data-formatter='validateOutputs'>Value</th>
+                                <th data-field="units">Units</th>
+                                <th data-field="iotype">Iotype</th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+                <script>
+                    window['global-outputs-data'] = {{ outputs | tojson | safe }};
+                    $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
+                                                               height: getHeight(),
+                                                               onExpandRow: function (index, row, $detail) {
+                                                               expandTable($detail, row);
+                                                               }
+                                                              });
+                    function validateOutputs(value, row) {
+                        if (row.type == 'Array') {
+                            return 'Array data';
+                        }
+                        else if (row.type == 'VarTree') {
+                            return 'Vartree data';
+                        }
+                        else {
+                            return row.state;
+                        }
+                    }
+                    function getHeight() {
+                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                        var h_btn = document.getElementById('button-panel').offsetHeight;
+                        console.log(h_nav, h_btn)
+                        return $(window).height() - h_nav - h_btn - 50;
+                    }
+                </script>
+            </div>
+
+            {% if plot_div %}
+            <div class="panel-body comp-panels panel-{{name}}">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Plot</h3>
+                    </div>
+                    <div class="panel-body", align="center">
+                        {{ plot_script|indent(4)|safe }}
+                        {{ plot_div|indent(4)|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if sub_comp_data %}
+
+            {% for field, inout in sub_comp_data.iteritems() %}
+            <div class="panel-body hidden comp-panels panel-{{field}}">
+<!-- ############## The Component Input panel ############################## -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">{{field}}</h3>
+                    </div>
+                        <div class="panel-heading">Outputs</div>
                         <div class="panel-body", align="center">
                             <table class="table"
-                                   id="global-outputs-table"
-                                   data-toggle="global-outputs-table"
+                                   id="{{field}}-table"
+                                   data-toggle="{{field}}-table"
                                    data-sort-name="iotype"
                                    data-show-columns="true"
                                    data-search="true"
@@ -422,176 +521,102 @@ $('#fileupload').fileupload({
                                 <tr>
                                     <th data-field="name">Name</th>
                                     <th data-field="desc">Description</th>
-                                    <th data-field="state" data-formatter='validateOutputs'>Value</th>
+                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
                                     <th data-field="units">Units</th>
-                                    <th data-field="iotype">Iotype</th>
                                 </tr>
                                 </thead>
                             </table>
                         </div>
-                    </div>
-                    <script>
-                        window['global-outputs-data'] = {{ outputs | tojson | safe }};
-                        $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
-                                                                   height: getHeight(),
-                                                                   onExpandRow: function (index, row, $detail) {
-                                                                   expandTable($detail, row);
-                                                                   }
-                                                                  });
-                        function validateOutputs(value, row) {
-                            if (row.type == 'Array') {
-                                return 'Array data';
-                            }
-                            else if (row.type == 'VarTree') {
-                                return 'Vartree data';
-                            }
-                            else {
-                                return row.state;
-                            }
-                        }
-                        function getHeight() {
-                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                            var h_btn = document.getElementById('button-panel').offsetHeight;
-                            console.log(h_nav, h_btn)
-                            return $(window).height() - h_nav - h_btn - 50;
-                        }
-                    </script>
-                </div>
-
-                {% if plot_div %}
-                <div class="panel-body comp-panels panel-{{name}}">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">Plot</h3>
-                        </div>
+                        <div class="panel-heading">Inputs</div>
                         <div class="panel-body", align="center">
-                            {{ plot_script|indent(4)|safe }}
-                            {{ plot_div|indent(4)|safe }}
+                            <table class="table2"
+                                   id="{{field}}-table2"
+                                   data-toggle="{{field}}-table2"
+                                   data-sort-name="iotype"
+                                   data-show-columns="true"
+                                   data-search="true"
+                                   data-show-refresh="true"
+                                   data-show-toggle="true"
+                                   data-show-export="true"
+                                   data-detail-view="true">
+                                <thead>
+                                <tr>
+                                    <th data-field="name">Name</th>
+                                    <th data-field="desc">Description</th>
+                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
+                                    <th data-field="units">Units</th>
+                                </tr>
+                                </thead>
+                            </table>
                         </div>
-                    </div>
                 </div>
-                {% endif %}
-                {% endif %}
+                <script>
+                    window['{{field}}-data'] = {{ inout['params_out'] | tojson | safe }};
+                    $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
+                                                          height: getHeight(),
+                                                          onExpandRow: function (index, row, $detail) {
+                                                              expandTable($detail, row);
+                                                          }
+                                                         });
+                    function validateOutputs(value, row) {
+                        if (row.type == 'Array') {
+                            return 'Array data';
+                        }
+                        else if (row.type == 'VarTree') {
+                            return 'Variable Collection';
+                        }
+                        else {
+                            return row.state;
+                        }
+                    }
+                    function getHeight() {
+                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                        var h_btn = document.getElementById('button-panel').offsetHeight;
+                        return $(window).height() - h_nav - h_btn - 350;
+                    }
+                </script>
+                <script>
+                    window['{{field}}-data'] = {{ inout['params_in'] | tojson | safe }};
+                    $('#{{field}}-table2').bootstrapTable({data: window['{{field}}-data'],
+                                                          height: getHeight(),
+                                                          onExpandRow: function (index, row, $detail) {
+                                                              expandTable($detail, row);
+                                                          }
+                                                         });
+                    function validateOutputs(value, row) {
+                        if (row.type == 'Array') {
+                            return 'Array data';
+                        }
+                        else if (row.type == 'VarTree') {
+                            return 'Variable Collection';
+                        }
+                        else {
+                            return row.state;
+                        }
+                    }
+                    function getHeight() {
+                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                        var h_btn = document.getElementById('button-panel').offsetHeight;
+                        return $(window).height() - h_nav - h_btn;
+                    }
+                </script>
 
-                {% if sub_comp_data %}
 
-                {% for field, inout in sub_comp_data.iteritems() %}
-                <div class="panel-body hidden comp-panels panel-{{field}}">
-    <!-- ############## The Component Input panel ############################## -->
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">{{field}}</h3>
-                        </div>
-		                        <div class="panel-heading">Outputs</div>
-		                        <div class="panel-body", align="center">
-		                            <table class="table"
-		                                   id="{{field}}-table"
-		                                   data-toggle="{{field}}-table"
-		                                   data-sort-name="iotype"
-		                                   data-show-columns="true"
-		                                   data-search="true"
-		                                   data-show-refresh="true"
-		                                   data-show-toggle="true"
-		                                   data-show-export="true"
-		                                   data-detail-view="true">
-		                                <thead>
-		                                <tr>
-		                                    <th data-field="name">Name</th>
-		                                    <th data-field="desc">Description</th>
-		                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
-		                                    <th data-field="units">Units</th>
-		                                </tr>
-		                                </thead>
-		                            </table>
-		                        </div>
-		                        <div class="panel-heading">Inputs</div>
-		                        <div class="panel-body", align="center">
-		                            <table class="table2"
-		                                   id="{{field}}-table2"
-		                                   data-toggle="{{field}}-table2"
-		                                   data-sort-name="iotype"
-		                                   data-show-columns="true"
-		                                   data-search="true"
-		                                   data-show-refresh="true"
-		                                   data-show-toggle="true"
-		                                   data-show-export="true"
-		                                   data-detail-view="true">
-		                                <thead>
-		                                <tr>
-		                                    <th data-field="name">Name</th>
-		                                    <th data-field="desc">Description</th>
-		                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
-		                                    <th data-field="units">Units</th>
-		                                </tr>
-		                                </thead>
-		                            </table>
-		                        </div>
+                {% if inout.plot %}
+                    <div class="panel-body", align="center">
+                        {{ inout.plot.script|indent(4)|safe }}
+                        {{ inout.plot.div|indent(4)|safe }}
                     </div>
-                    <script>
-                        window['{{field}}-data'] = {{ inout['params_out'] | tojson | safe }};
-                        $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
-                                                              height: getHeight(),
-                                                              onExpandRow: function (index, row, $detail) {
-                                                                  expandTable($detail, row);
-                                                              }
-                                                             });
-                        function validateOutputs(value, row) {
-                            if (row.type == 'Array') {
-                                return 'Array data';
-                            }
-                            else if (row.type == 'VarTree') {
-                                return 'Variable Collection';
-                            }
-                            else {
-                                return row.state;
-                            }
-                        }
-                        function getHeight() {
-                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                            var h_btn = document.getElementById('button-panel').offsetHeight;
-                            return $(window).height() - h_nav - h_btn - 350;
-                        }
-                    </script>
-                    <script>
-                        window['{{field}}-data'] = {{ inout['params_in'] | tojson | safe }};
-                        $('#{{field}}-table2').bootstrapTable({data: window['{{field}}-data'],
-                                                              height: getHeight(),
-                                                              onExpandRow: function (index, row, $detail) {
-                                                                  expandTable($detail, row);
-                                                              }
-                                                             });
-                        function validateOutputs(value, row) {
-                            if (row.type == 'Array') {
-                                return 'Array data';
-                            }
-                            else if (row.type == 'VarTree') {
-                                return 'Variable Collection';
-                            }
-                            else {
-                                return row.state;
-                            }
-                        }
-                        function getHeight() {
-                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                            var h_btn = document.getElementById('button-panel').offsetHeight;
-                            return $(window).height() - h_nav - h_btn;
-                        }
-                    </script>
-
-
-                    {% if inout.plot %}
-                        <div class="panel-body", align="center">
-                            {{ inout.plot.script|indent(4)|safe }}
-                            {{ inout.plot.div|indent(4)|safe }}
-                        </div>
-                    {% endif %}
-                    </div>
-                    {% endfor %}
-                    {% endif %}
+                {% endif %}
                 </div>
+                {% endfor %}
+                {% endif %}
             </div>
+
+<!-- ################### ending dividers ################### -->
         </div>
-    </div>
+        </div>
+  	</div>
 </div>
 
 {% endblock %}
