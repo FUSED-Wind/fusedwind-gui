@@ -41,8 +41,6 @@ def prep_field(dic):
     out = {}
     if 'desc' in dic:
         out['description'] = dic['desc']
-    if 'group' in dic:
-    		out['description'] += ": " + dic['group']
     if 'default' in dic:
         out['default'] = dic['default']
     if 'values' in dic:

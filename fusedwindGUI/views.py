@@ -76,6 +76,7 @@ def WebGUIForm(dic, run=False):
     # sorting the keys alphabetically
     skeys = dic.keys()
     skeys.sort()
+    print skeys
     for k in skeys:
         v = dic[k]
         setattr(MyForm, k, make_field(k,v))
@@ -133,8 +134,7 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
             'href':'#collapse-%s'%(cname)})
 
         tmp = get_io_dict(comp)
-        sub_comp_data[cname]['params_in'] = tmp['inputs']
-        sub_comp_data[cname]['params_out'] = tmp['outputs']
+        sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
         # no plots for now since bootstrap-table and bokeh seem to be in conflict
         if hasattr(comp, "plot"):
             c_script, c_div = prepare_plot(comp.plot)
@@ -337,6 +337,22 @@ def webgui(cpnt, app=None):
         io = traits2jsondict(cpnt)
         form_inputs = WebGUIForm(io['inputs'], run=True)()
 
+        group_list = []
+        group_dic = {}
+        skeys = io['inputs'].keys()
+        skeys.sort()
+        for k in skeys:
+            v = io['inputs'][k]
+            if 'group' in v.keys():
+                if v['group'] not in group_list:
+                    group_list.append(v['group'])
+                group_dic[k] = v['group']
+
+
+        group_list.sort()
+        if 'Global' in group_list:
+            group_list.insert(0, group_list.pop(group_list.index('Global')))
+
         assembly_structure = [{'text':cpname,
                                'nodes':[]}]
 
@@ -355,7 +371,6 @@ def webgui(cpnt, app=None):
         if request.method == 'POST': # Receiving a POST request
 
             inputs =  request.form.to_dict()
-
             for k in inputs.keys():
                 if k in io['inputs']: # Loading only the inputs allowed
                     setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
@@ -383,7 +398,9 @@ def webgui(cpnt, app=None):
                         name=cpname,
                         plot_script=script, plot_div=div,
                         sub_comp_data=sub_comp_data,
-                        assembly_structure=assembly_structure)
+                        assembly_structure=assembly_structure,
+                        group_list=group_list,
+                        group_dic=group_dic)
 
 
         # Show the standard form
@@ -392,7 +409,9 @@ def webgui(cpnt, app=None):
             name=cpname,
             plot_script=None, plot_div=None, plot_resources=None,
             sub_comp_data=sub_comp_data,
-            assembly_structure=assembly_structure)
+            assembly_structure=assembly_structure,
+            group_list=group_list,
+            group_dic=group_dic)
 
     myflask.__name__ = cpname
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)

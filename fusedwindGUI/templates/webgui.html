@@ -311,20 +311,25 @@ $('#fileupload').fileupload({
 <!-- ########################## The Inputs panel ###    ######################## -->
             <div class="col-md-3">
                 <div class="panel-body">
+		            <form method="post" class="form" id='global-inputs-form'>
                 	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                	  	  {%- for group in group_list %}
                         <div class="panel panel-default">
                             <div class="panel-heading" role="tab" id="headingOne"> 
                             		<h3 class="panel-title">
-                            		<a role="button" data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                            		Global Inputs
+                            		<a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                            		{{group}} Inputs
                             	  </a>
                             		</h3>
                             </div>
-                            <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                            {%- if group == 'Global' %}
+                            <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
+                            {%- else %}
+                            <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                            {%- endif %}
 		                            <div class="panel-body"
 		                                 align="center" id='global-inputs-panel'>
-		
-		                                <form method="post" class="form" id='global-inputs-form'>
+
 		                                    {{ inputs.hidden_tag() }}
 		                                    {{ wtf.form_errors(inputs, hiddens='only') }}
 		                                    <table class="table table-hover" align="left">
@@ -335,10 +340,10 @@ $('#fileupload').fileupload({
 		                                            <th>Value</td>
 		                                        </tr>
 				                                    {%- for field in inputs %}
-				                                    {% if field.name not in ('csrf_token', 'submit') %}
-				                                    {%- if 'Global' in field.description %}
+				                                    {%- if field.name not in ('csrf_token', 'submit') %}
+				                                    {%- if group_dic[field.name] == group %}
 				                                    <tr>
-				                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
+				                                        <td>{{field.description}} ({{field.name}})</td>
 				                                        <td>
 				                                            <div id='trigger-{{field.name|safe}}'>
 				                                                {{field(class="form-control")|safe}}
@@ -349,77 +354,24 @@ $('#fileupload').fileupload({
 				                                    {%- endif %}
 				                                    {%- endfor %}
 		                                </table>
-		
-		                            		</form>
 		                            </div>
-		                            <script>
-		                            function getHeight() {
-		                                var h_nav = document.getElementById('navigation-bar').offsetHeight;
-		                                var h_btn = document.getElementById('button-panel').offsetHeight;
-		                                var h_win = $(window).height() - h_nav - h_btn - 50;
-		                                return String(h_win)+'px'
-		                            }
-		                                console.log(getHeight())
-		                                document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-		                                document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-		                            </script>
 		                        </div>
                     		</div>
+                    		{%- endfor %}
 
-		                    <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingTwo"> 
-                            		<h3 class="panel-title">
-                            		<a role="button" data-toggle="collapse" href="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
-                            		Secondary Inputs
-                            	  </a>
-                            		</h3>
-                            </div>
-		                        <div id="collapseTwo" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingTwo">
-				                        <div class="panel-body"
-				                             align="center" id='secondary-inputs-panel'>
-				
-				                            <form method="post" class="form" id='secondary-inputs-form'>
-				                                {{ inputs.hidden_tag() }}
-				                                {{ wtf.form_errors(inputs, hiddens='only') }}
-				                                <table class="table table-hover" align="left">
-				                                    <col width="55%">
-				                                    <col width="45%">
-				                                    <tr>
-				                                        <th>Parameter</td>
-				                                        <th>Value</td>
-				                                    </tr>
-				                                    {%- for field in inputs %}
-				                                    {% if field.name not in ('csrf_token', 'submit') %}
-				                                    {%- if 'Global' not in field.description %}
-				                                    <tr>
-				                                        <td>{{field.description[:-8]}} ({{field.name}})</td>
-				                                        <td>
-				                                            <div id='trigger-{{field.name|safe}}'>
-				                                                {{field(class="form-control")|safe}}
-				                                            </div>
-				                                        </td>
-				                                    </tr>
-				                                    {%- endif %}
-				                                    {%- endif %}
-				                                    {%- endfor %}
-				                            </table>
-				
-				                        		</form>
-				                        </div>
-				                        <script>
-				                        function getHeight() {
-				                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
-				                            var h_btn = document.getElementById('button-panel').offsetHeight;
-				                            var h_win = $(window).height() - h_nav - h_btn - 50;
-				                            return String(h_win)+'px'
-				                        }
-				                            console.log(getHeight())
-				                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-				                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-				                        </script>
-				                    </div>
-				                </div>   
+												<script>
+                        function getHeight() {
+                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                            var h_btn = document.getElementById('button-panel').offsetHeight;
+                            var h_win = $(window).height() - h_nav - h_btn - 50;
+                            return String(h_win)+'px'
+                        }
+                            console.log(getHeight())
+                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                        </script>  
                     </div>
+				        </form>
             		</div>
             </div>
 <!-- ###################### The Outputs panel ########################### -->
@@ -428,7 +380,7 @@ $('#fileupload').fileupload({
             <div class="panel panel-body  comp-panels panel-{{name}}">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Outputs</h3>
+                        <h3 class="panel-title">Model output results and current input states</h3>
                     </div>
                     <div class="panel-body", align="center">
                         <table class="table"
@@ -505,7 +457,7 @@ $('#fileupload').fileupload({
                     <div class="panel-heading">
                         <h3 class="panel-title">{{field}}</h3>
                     </div>
-                        <div class="panel-heading">Outputs</div>
+                        <div class="panel-heading">Inputs & Outputs</div>
                         <div class="panel-body", align="center">
                             <table class="table"
                                    id="{{field}}-table"
@@ -527,31 +479,9 @@ $('#fileupload').fileupload({
                                 </thead>
                             </table>
                         </div>
-                        <div class="panel-heading">Inputs</div>
-                        <div class="panel-body", align="center">
-                            <table class="table2"
-                                   id="{{field}}-table2"
-                                   data-toggle="{{field}}-table2"
-                                   data-sort-name="iotype"
-                                   data-show-columns="true"
-                                   data-search="true"
-                                   data-show-refresh="true"
-                                   data-show-toggle="true"
-                                   data-show-export="true"
-                                   data-detail-view="true">
-                                <thead>
-                                <tr>
-                                    <th data-field="name">Name</th>
-                                    <th data-field="desc">Description</th>
-                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
-                                    <th data-field="units">Units</th>
-                                </tr>
-                                </thead>
-                            </table>
-                        </div>
                 </div>
                 <script>
-                    window['{{field}}-data'] = {{ inout['params_out'] | tojson | safe }};
+                    window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
                     $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
                                                           height: getHeight(),
                                                           onExpandRow: function (index, row, $detail) {
@@ -575,32 +505,6 @@ $('#fileupload').fileupload({
                         return $(window).height() - h_nav - h_btn - 350;
                     }
                 </script>
-                <script>
-                    window['{{field}}-data'] = {{ inout['params_in'] | tojson | safe }};
-                    $('#{{field}}-table2').bootstrapTable({data: window['{{field}}-data'],
-                                                          height: getHeight(),
-                                                          onExpandRow: function (index, row, $detail) {
-                                                              expandTable($detail, row);
-                                                          }
-                                                         });
-                    function validateOutputs(value, row) {
-                        if (row.type == 'Array') {
-                            return 'Array data';
-                        }
-                        else if (row.type == 'VarTree') {
-                            return 'Variable Collection';
-                        }
-                        else {
-                            return row.state;
-                        }
-                    }
-                    function getHeight() {
-                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                        var h_btn = document.getElementById('button-panel').offsetHeight;
-                        return $(window).height() - h_nav - h_btn;
-                    }
-                </script>
-
 
                 {% if inout.plot %}
                     <div class="panel-body", align="center">
