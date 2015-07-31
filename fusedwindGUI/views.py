@@ -347,6 +347,7 @@ def webgui(cpnt, app=None):
                 if v['group'] not in group_list:
                     group_list.append(v['group'])
                 group_dic[k] = v['group']
+            else: group_dic[k] = 'Global'
 
 
         group_list.sort()
