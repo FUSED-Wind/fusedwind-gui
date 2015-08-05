@@ -76,7 +76,6 @@ def WebGUIForm(dic, run=False):
     # sorting the keys alphabetically
     skeys = dic.keys()
     skeys.sort()
-    print skeys
     for k in skeys:
         v = dic[k]
         setattr(MyForm, k, make_field(k,v))
@@ -127,23 +126,24 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     for name in cpnt.list_components():
         comp = getattr(cpnt, name)
         cname = comp.__class__.__name__
-        sub_comp_data[cname] = {}
-
-        asym_structure.append({
-            'text':cname,
-            'href':'#collapse-%s'%(cname)})
-
-        tmp = get_io_dict(comp)
-        sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
-        # no plots for now since bootstrap-table and bokeh seem to be in conflict
-        if hasattr(comp, "plot"):
-            c_script, c_div = prepare_plot(comp.plot)
-            sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
-
-        if isinstance(comp, Assembly):
-
-            sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
-            asym_structure[-1]['nodes'] = sub_structure
+        if cname <> 'Driver':
+            sub_comp_data[cname] = {}
+    
+            asym_structure.append({
+                'text':cname,
+                'href':'#collapse-%s'%(cname)})
+    
+            tmp = get_io_dict(comp)
+            sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
+            # no plots for now since bootstrap-table and bokeh seem to be in conflict
+            if hasattr(comp, "plot"):
+                c_script, c_div = prepare_plot(comp.plot)
+                sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
+    
+            if isinstance(comp, Assembly):
+    
+                sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
+                asym_structure[-1]['nodes'] = sub_structure
 
     return sub_comp_data, asym_structure
 
@@ -164,8 +164,6 @@ def _handleUpload(files):
         with open(os.path.join(tmpdir, upload_file.filename), 'r') as f:
             inputs = yaml.load(f)
 
-        print inputs
-
         outfiles.append({
             'filename': upload_file.filename,
             'content': inputs
@@ -182,7 +180,11 @@ def hello():
     provider = str(os.environ.get('PROVIDER', 'world'))
     return render_template('index.html', form={'hello':'world'})
 
-
+@app.route('/documentation.html')
+def docs():
+    """ Docs page
+    """
+    return render_template('documentation.html')
 
 @app.route('/upload/', methods=['POST'])
 def upload():
@@ -250,7 +252,7 @@ def serialize(thing):
     return '??_' +  str(thing.__class__)
 
 
-def webgui(cpnt, app=None):
+def webgui(cpnt, app=None, desc=None):
     cpname = cpnt.__class__.__name__
 
     # dictionary for recorded cases
@@ -393,6 +395,7 @@ def webgui(cpnt, app=None):
                 script, div = prepare_plot(cpnt.plot)
             except:
                 # TODO: gracefully inform the user of why he doesnt see his plots
+                print "Failed to prepare any plots for " + cpnt.__class__.__name__
                 script, div, plot_resources = None, None, None
 
             return render_template('webgui.html',
@@ -403,7 +406,8 @@ def webgui(cpnt, app=None):
                         sub_comp_data=sub_comp_data,
                         assembly_structure=assembly_structure,
                         group_list=group_list,
-                        group_dic=group_dic)
+                        group_dic=group_dic,
+                        desc=desc)
 
 
         # Show the standard form
@@ -414,7 +418,8 @@ def webgui(cpnt, app=None):
             sub_comp_data=sub_comp_data,
             assembly_structure=assembly_structure,
             group_list=group_list,
-            group_dic=group_dic)
+            group_dic=group_dic,
+            desc=desc)
 
     myflask.__name__ = cpname
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)

@@ -85,7 +85,10 @@ $('#fileupload').fileupload({
     });
 
 </script>
+
+
 <script>
+// Table expansion for bootstrap ------------------
     function expandTable($detail, row) {
         $detail.html();
         if (row.type == 'Array') {
@@ -105,9 +108,7 @@ $('#fileupload').fileupload({
 
         }
         else {
-            $detail.html('<p><b>Description:</b> ' + row.desc + '</p>' +
-                         '<p><b>Units:</b> ' + row.units + '</p>' +
-                         '<p><b>Value:</b> ' + row.state + '</p>');
+            $detail.html('<p><b>Description:</b> ' + row.desc + ';<b> Value (Units):</b> ' + row.state + ' (' + row.units + ')</p>');
         }
     }
 
@@ -170,7 +171,10 @@ $('#fileupload').fileupload({
         });
     }
 </script>
+
+
 <script>
+// Alert script ---------------------------
     function showalert(message,alerttype) {
 
         $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +  alerttype + '" role="alert"><a class="close" data-dismiss="alert">×</a><span>'+message+'</span></div>')
@@ -183,7 +187,25 @@ $('#fileupload').fileupload({
             }, 2000);
         }
 </script>
+
 <script>
+// Configuration scripts -------------------
+		function configure_single() {
+				document.getElementById('submit').disabled=false;
+				document.getElementById('inputs_single').style.display = 'block';
+     }
+
+		function configure_sensitivity() {
+			   
+			 }
+
+		function configure_optimization() {
+			   
+			 }
+</script>
+
+<script>
+// Case recorder scripts ------------------
      function record_case() {
          console.log('calling record_case')
          $.ajax({
@@ -214,6 +236,7 @@ $('#fileupload').fileupload({
              }
          });
      };
+// Submit forms ------------------
      submitForms = function(){
          document.forms["global-inputs-form"].submit();
          document.forms["project_name"].submit();
@@ -243,13 +266,15 @@ $('#fileupload').fileupload({
         <li role="presentation"><a href="/">Home</a></li>
         <li role="presentation" class="dropdown">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="presentation">
-                Examples <span class="caret"></span>
+                System Models <span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li role="presentation"> <a href="lcoe_csm_assembly">NREL CSM</a></li>
+            		<li role="presentation"> <a href="lcoe_se_seam_assembly">DTU/NREL Integrated LCOE Model</a></li>
+            		<li role="presentation"> <a href="lcoe_se_opt">DTU/NREL Integrated LCOE Model Optimization</a></li>
             </ul>
         </li>
-        <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
+        <li role="presentation"><a href="documentation.html">Documentation</a></li>
     </ul>
 </div>
 
@@ -261,27 +286,39 @@ $('#fileupload').fileupload({
 
 <!-- ####################  Buttons to run scripts ################### -->
 		    <div class="panel-body" id='button-panel'>
-		        <span class="btn btn-success fileinput-button">
+		        <div class="btn-group">
+		          	<button type="button" class="btn nohover btn-success">Configure Analysis</button>
+		          	<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		            		<span class="caret"></span>
+		            		<span class="sr-only">Toggle Dropdown</span>
+		          	</button>
+		          	<ul class="dropdown-menu">
+				            <li><a href="#" onClick="configure_single();">Single Run</a></li>
+				            <li><a href="#" onClick="configure_sensitivity();">Sensitivity Analysis</a></li>
+				            <li><a href="#" onClick="configure_optimization();">Optimization</a></li>
+		            </ul>
+		        </div>
+		        <span class="btn btn-success fileinput-button" >
 		            <i class="glyphicon glyphicon-plus"></i>
 		            <span>Load inputs</span>
-		            <input id="fileupload" type="file" name="files[]" multiple>
+		            <input id="fileupload" type="file" name="files[]" multiple >
 		        </span>
 		        <div class="btn-group">
-		          <button type="button" class="btn nohover btn-success">Save</button>
-		          <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		            <span class="caret"></span>
-		            <span class="sr-only">Toggle Dropdown</span>
-		          </button>
-		          <ul class="dropdown-menu">
-		            <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
-		            <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
-		            <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
-		            <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
-		            <!-- <li role="separator" class="divider"></li>
-		            <li><a href="#">Separated link</a></li> -->
-		          </ul>
+		          	<button type="button" id="save" class="btn nohover btn-success" >Save</button>
+		          	<button type="button" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		            		<span class="caret"></span>
+		            		<span class="sr-only">Toggle Dropdown</span>
+		          	</button>
+		          	<ul class="dropdown-menu">
+				            <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+				            <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
+				            <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
+				            <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+				            <!-- <li role="separator" class="divider"></li>
+				            <li><a href="#">Separated link</a></li> -->
+		            </ul>
 		        </div>
-		        <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
+		        <input  class="btn btn-danger" disabled id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
 		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
 		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
 		    </div>
@@ -290,8 +327,19 @@ $('#fileupload').fileupload({
 		    <div class="panel-body">
 		    <div class="row">
 
-<!-- ########################## The Assembly navigation panel ############## -->
+<!-- ########################## The Description panel ############## -->
             <div class="col-md-2">
+                <div class="panel-body">
+                    <div class="panel panel-default" id='panel-'>
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Model Description</h3>
+                        </div>
+                        <div class="panel-body">
+                        		<p>{{desc}}</p>
+                        </div>
+                    </div>
+                </div>
+<!-- ########################## The Assembly navigation panel ############## -->
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
 
@@ -309,7 +357,7 @@ $('#fileupload').fileupload({
             </div>
 
 <!-- ########################## The Inputs panel ###    ######################## -->
-            <div class="col-md-3">
+            <div class="col-md-3" style="display: none" id='inputs_single'>
                 <div class="panel-body">
 		            <form method="post" class="form" id='global-inputs-form'>
                 	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
@@ -374,13 +422,14 @@ $('#fileupload').fileupload({
 				        </form>
             		</div>
             </div>
+            
 <!-- ###################### The Outputs panel ########################### -->
             <div class="col-md-7">
             {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
             <div class="panel panel-body  comp-panels panel-{{name}}">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Model output results and current input states</h3>
+                        <h3 class="panel-title">Model Output Results and Current Input States</h3>
                     </div>
                     <div class="panel-body", align="center">
                         <table class="table"
@@ -399,7 +448,7 @@ $('#fileupload').fileupload({
                                 <th data-field="desc">Description</th>
                                 <th data-field="state" data-formatter='validateOutputs'>Value</th>
                                 <th data-field="units">Units</th>
-                                <th data-field="iotype">Iotype</th>
+                                <th data-field="iotype">I/O Type</th>
                             </tr>
                             </thead>
                         </table>
@@ -475,6 +524,7 @@ $('#fileupload').fileupload({
                                     <th data-field="desc">Description</th>
                                     <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
                                     <th data-field="units">Units</th>
+                                    <th data-field="iotype">I/O Type</th>
                                 </tr>
                                 </thead>
                             </table>
@@ -502,7 +552,7 @@ $('#fileupload').fileupload({
                     function getHeight() {
                         var h_nav = document.getElementById('navigation-bar').offsetHeight;
                         var h_btn = document.getElementById('button-panel').offsetHeight;
-                        return $(window).height() - h_nav - h_btn - 350;
+                        return $(window).height() - h_nav - h_btn - 50;
                     }
                 </script>
 

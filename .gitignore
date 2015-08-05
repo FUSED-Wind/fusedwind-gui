@@ -3,6 +3,9 @@
 # OpenMDAO
 openmdao_log.txt
 
+# Init
+__init__.py
+
 # Sphinx
 _build
 generated

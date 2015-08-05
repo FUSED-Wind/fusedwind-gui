@@ -11,24 +11,47 @@
             <li role="presentation"><a href="/">Home</a></li>
             <li role="presentation" class="dropdown">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="presentation">
-                    Examples <span class="caret"></span>
+                    System Models <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu" role="menu">
                     <li role="presentation"> <a href="lcoe_csm_assembly">NREL CSM</a></li>
-                </ul>
+		            		<li role="presentation"> <a href="lcoe_se_seam_assembly">DTU/NREL Integrated LCOE Model</a></li>
+            		    <li role="presentation"> <a href="lcoe_se_opt">DTU/NREL Integrated LCOE Model Optimization</a></li>
+		            </ul>
             </li>
-            <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
+            <li role="presentation"><a href="documentation.html">Documentation</a></li>
         </ul>
     </div>
 <div class="container">
 
     <div class="content">
-        Welcome to the DTU Wind Energy / NREL joint project on wind energy systems cost modeling.  
-        This project allows the user to explore the impact of various system design changes on a wind plant's expected levelized cost of energy (LCOE).
+        <p> </p>
+        <p>Welcome to the DTU Wind Energy / NREL joint project on wind energy systems cost modeling!</p>  
+        
+        <p>This project allows the user to explore the impact of various system design changes on a wind plant's expected levelized cost of energy (LCOE).
         LCOE is a key metric for evaluating a the impact of a turbine or plant design change on overall system performance and cost.
         This version includes a basic cost of energy model that builds on NREL's wind plant cost and scaling model 
         and includes updated sizing methods for major turbine components that reflect current wind turbine and plant technology.
         Sensitivities can be applied to various parts of the model in order to simulate design changes and see how they cascade through the rest of the system.
+        </p>
+        <p> </p>
+
+        <h4><b>Project Details</b></h4>
+        <p>
+        The models here have been developed as part of the larger <a href="http://fusedwind.org">FUSED-Wind</a> collaboration.  
+        The FUSED-Wind framework is built on NASA's Open Multidiscilpinary Design Analysis and Optimization (<a href="http://openmdao.org">OpenMDAO</a>) platform.
+        OpenMDAO is a general purpose MDAO tool for integrating system models together to do a variety of analysis from sensitivity studies to uncertainty quantification to optimization and more.
+        The FUSED-Wind framework provides a structured way to integrate wind turbine and plant models together to support MDAO work and collaboration across many stakeholders groups engaged with wind plant system modeling.
+        Both DTU Wind Energy and NREL have developed a suite of wind turbine and plant analysis models that are integrated into FUSED-Wind.  NREL's model suite, the Wind-Plant Integrated System Design and Engineering Model
+        (<a href="http://nwtc.nrel.gov/WISDEM">WISDEM</a>), includes a variety of models for turbine component sizing and design, turbine and plant performance, and overall plant costs.  
+        DTU Wind Energy's model suite, the Systems Engineering and Analysis Model (SEAM) includes complementary models for turbine component sizing and a series of relatively sophisticated models for turbine blade design and plant layout design.
+        Since both model suites are build on the FUSED-Wind framework, they can be used together with models selected from each to build up to an overall integrated analysis.
+        </p>
+        <p></p>
+        
+        <p>This website showcases a few of the integrated assemblies and analyses that are possible with FUSED-Wind, WISDEM and SEAM.  Many more are possible for those who are interested in downloading the overall software suite and exploring the full potential of FUSED-Wind's capabilities.  
+        See the documentation tab for links to detailed overview of the various models in the suite and the integrated FUSED-Wind software.
+        </p>
     </div>
 </div>
 
