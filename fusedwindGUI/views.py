@@ -5,6 +5,7 @@ import os
 
 from flask import Flask, flash, request, render_template, flash, make_response
 from wtforms.widgets import TextArea
+from wtforms import SelectField
 from flask.ext.mail import Message, Mail
 from flask.ext.bower import Bower
 from flask import Blueprint, request, abort, jsonify, redirect, render_template
@@ -85,6 +86,31 @@ def WebGUIForm(dic, run=False):
 
     return MyForm
 
+def build_config(cpnt):
+
+    class ConfigForm(Form):
+        pass
+
+    models = [{'name': 'RotorStructure',
+               'choices': ['WISDEM CSM', 'SEAM']},
+              {'name': 'DriveTrain',
+               'choices': ['WISDEM CSM', 'DriveSE']},
+              {'name': 'Tower',
+               'choices': ['WISDEM CSM', 'SEAM']},
+              {'name': 'Generator',
+               'choices': ['WISDEM CSM']},
+              {'name': 'AEP',
+               'choices': ['WISDEM CSM', 'SEAM']},
+              {'name': 'Foundation',
+               'choices': ['WISDEM CSM']}
+               ]
+    for dic in models:
+        name = dic['name']
+        choices = [(val, val) for val in dic['choices']]
+        setattr(ConfigForm, name, SelectField(name, choices=choices))
+
+    return ConfigForm
+
 try:
     from bokeh.embed import components
     from bokeh.plotting import figure
@@ -128,20 +154,20 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
         cname = comp.__class__.__name__
         if cname <> 'Driver':
             sub_comp_data[cname] = {}
-    
+
             asym_structure.append({
                 'text':cname,
                 'href':'#collapse-%s'%(cname)})
-    
+
             tmp = get_io_dict(comp)
             sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
             # no plots for now since bootstrap-table and bokeh seem to be in conflict
             if hasattr(comp, "plot"):
                 c_script, c_div = prepare_plot(comp.plot)
                 sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
-    
+
             if isinstance(comp, Assembly):
-    
+
                 sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
                 asym_structure[-1]['nodes'] = sub_structure
 
@@ -363,6 +389,8 @@ def webgui(cpnt, app=None, desc=None):
 
         inputs =  request.form.to_dict()
 
+        model_config = ['']
+
         for k in inputs.keys():
             if k in io['inputs']: # Loading only the inputs allowed
                 setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
@@ -407,7 +435,8 @@ def webgui(cpnt, app=None, desc=None):
                         assembly_structure=assembly_structure,
                         group_list=group_list,
                         group_dic=group_dic,
-                        desc=desc)
+                        desc=desc,
+                        config=build_config('')(MultiDict()))
 
 
         # Show the standard form
@@ -419,7 +448,8 @@ def webgui(cpnt, app=None, desc=None):
             assembly_structure=assembly_structure,
             group_list=group_list,
             group_dic=group_dic,
-            desc=desc)
+            desc=desc,
+            config=build_config('')(MultiDict()))
 
     myflask.__name__ = cpname
     app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
