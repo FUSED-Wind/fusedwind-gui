@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{super()}}
+<!-- <link
+    href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
+    rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"> -->
+<script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
+
+<link rel="stylesheet" href="{{ bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.css')}}">
+<script src="{{bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.js')}}"></script>
+<script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
+<script src="{{bower_url_for('notifyjs', filename='dist/notify.js')}}"></script>
+<script src="{{bower_url_for('notifyjs', filename='dist/styles/bootstrap/notify-bootstrap.js')}}"></script>
+
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
+<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
+
+<style>
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+{% endblock %}
+
+
+
+{% block scripts %}
+{{super()}}
+
+<script>
+// Configuration scripts -------------------
+		function configure_single() {
+
+     }
+
+		function configure_sensitivity() {
+
+			 }
+
+		function configure_optimization() {
+
+			 }
+</script>
+
+<script>
+// Submit forms ------------------
+
+     submitConfig = function(){
+         document.forms["config-form"].submit();
+     }
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<!-- Navigation bar -->
+<div class="container-fluid" id="navigation-bar">
+    <div class="page-header">
+        <h1>FUSED-Wind</h1>
+        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+    </div>
+    <ul class="nav nav-tabs">
+        <li role="presentation"><a href="/">Home</a></li>
+        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
+        <li role="presentation" class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="presentation">
+                System Models <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li role="presentation"> <a href="lcoe_csm_assembly">NREL CSM</a></li>
+            		<li role="presentation"> <a href="lcoe_se_seam_assembly">DTU/NREL Integrated LCOE Model</a></li>
+            		<li role="presentation"> <a href="lcoe_se_opt">DTU/NREL Integrated LCOE Model Optimization</a></li>
+            </ul>
+        </li>
+        <li role="presentation"><a href="documentation.html">Documentation</a></li>
+    </ul>
+</div>
+
+<!-- ################### Main Content ################### -->
+<div class="container-fluid id=maincontent">
+    <div class="container-fluid" id="alert_placeholder">
+    </div>
+    <div class="panel panel-default">
+
+<!-- ### Information #### -->
+		    <div class="panel-body">
+		    		<p></p>
+		    		<p>
+		    				There are a number of potential analysis configurations available in the FUSED-Wind framework.  
+		    			  These are roughly divided into model sets that include tier 1, tier 2 and tier 3 models.
+		    		</p>
+		    		<p></p>
+		    		<p>
+		    				Tier 1 models are the most basic models for wind turbine and plant analysis and are empirical in nature.  
+		    				The NREL Cost and Scaling Models from 2006 and 2015 provide empirical scaling relationships for wind turbine components and overall plant cost based on technology trends.
+		    		</p>
+		    		<p></p>
+		    		<p>
+		    				Tier 2 models are simple physical models that size the major wind turbine components and simulate overall plant performance and cost.  
+		    				The DTU Wind Energy SEAM models provide sizing for the rotor and tower while the NREL DriveSE model sizes the drivetrain components.
+		    				The new NREL cost models for balance of station reflect site-specific inputs that can vary based on location and geography.
+		    		</p>
+		    		<p></p>
+		    		<p>
+		    				Tier 3 models are actual wind turbine and plant design tools that require a relatively sophisticated knowledge about the technology in order to use them effectively in analysis.
+		    				An example of such models are the WISDEM RotorSE and TowerSE models include a full Blade Element Momentum theory aerodynamic analysis and finite element analysis of the blade and tower structure.
+		    		</p>
+		    		<p></p>
+		    		<p>
+		    				In the configuration step, you will be able to select the level of analysis for the system (turbine subsystem, full turbine, entire plant) 
+		    				as well as the type of analysis (individual analyses, sensitivity analyses and design / optimization):
+		    		</p>
+		    </div>
+
+<!-- ####################  Buttons to run scripts ################### -->
+		    <div class="panel-body" id='button-panel'>
+		        <div class="btn-group">
+		          	<button type="button"
+                            class="btn nohover btn-success"
+                            data-toggle="modal"
+                            data-target="#configure-modal">Configure Analysis</button>
+
+		        </div>
+            <!-- Model Selection Modal -->
+            <div class="modal fade bs-example-modal-lg" id="configure-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+              	<div class="modal-dialog modal-lg" role="document">
+                		<div class="modal-content">
+                  			<div class="modal-header">
+                    				<h4 class="modal-title" id="myModalLabel">Analysis Configuration</h4>
+                  			</div>
+                  			<div class="modal-body">
+                      			<form method="post" class="form" id='config-form'>
+                  					<div class="tabbable"> <!-- Only required for left/right tabs -->
+					                      <ul class="nav nav-tabs">
+					                      <li class="active"><a href="#modelselect" data-toggle="tab">Model Selection</a></li>
+					                      <li><a href="#driverselect" data-toggle="tab">Driver Selection</a></li>
+					                      </ul>
+                      					<div class="tab-content">
+                      							<div class="tab-pane active" id="modelselect">
+							                      <h4 class="panel-title">Model Selection</h4>
+							                      		<div class="row">
+                          									<div class="col-lg-10">
+							                                  <table class="table table-striped" align="left">
+							
+							                                      <thead>
+							                                      <tr>
+							                                          <th>Subsystem</td>
+							                                          <th>Model</td>
+							                                      </tr>
+							                                      </thead>
+							                                      <tbody>
+							                                          {%- for field in config %}
+							                                          {%- if field.name not in ('csrf_token', 'submit') %}
+							                                          <tr>
+							                                              <td>{{field.name}}</td>
+							                                              <td>
+							                                                  <div id='trigger-{{field.name|safe}}'>
+							                                                      {{field(class="form-control")|safe}}
+							                                                  </div>
+							                                              </td>
+							                                          </tr>
+							                                          {%- endif %}
+							                                          {%- endfor %}
+							                                      </tbody>
+							                              		</table>
+							                          		</div><!-- /btn-group -->
+                      									</div>
+                  									</div>
+                      							<div class="tab-pane" id="driverselect">
+									                      <h4 class="panel-title">Driver Selection</h4>
+									                      Radio button list where click activates content based on user choice
+									                      <ul>
+									                            <li><a href="#" onClick="configure_single();">Single Run</a></li>
+									                            <li><a href="#" onClick="configure_sensitivity();">Sensitivity Analysis</a></li>
+									                            <li><a href="#" onClick="configure_optimization();">Optimization</a></li>
+									                      </ul>
+                  									</div>
+									                  <div class="modal-footer">
+									                    <!-- <button type="button" class="btn btn-default" data-dismiss="modal">Close</button> -->
+									                    <input  class="btn btn-success" id="submit" name="submit" type="submit" onClick="submitConfig()" data-dismiss="modal" value="Configure">
+									                  </div>
+                								</div>
+              							</div>
+              							</form>
+          							</div>
+              			</div>
+                </div>
+            </div>
+		    </div>
+
+</div>
+
+{% endblock %}

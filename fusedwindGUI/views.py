@@ -86,31 +86,6 @@ def WebGUIForm(dic, run=False):
 
     return MyForm
 
-def build_config(cpnt):
-
-    class ConfigForm(Form):
-        pass
-
-    models = [{'name': 'RotorStructure',
-               'choices': ['WISDEM CSM', 'SEAM']},
-              {'name': 'DriveTrain',
-               'choices': ['WISDEM CSM', 'DriveSE']},
-              {'name': 'Tower',
-               'choices': ['WISDEM CSM', 'SEAM']},
-              {'name': 'Generator',
-               'choices': ['WISDEM CSM']},
-              {'name': 'AEP',
-               'choices': ['WISDEM CSM', 'SEAM']},
-              {'name': 'Foundation',
-               'choices': ['WISDEM CSM']}
-               ]
-    for dic in models:
-        name = dic['name']
-        choices = [(val, val) for val in dic['choices']]
-        setattr(ConfigForm, name, SelectField(name, choices=choices))
-
-    return ConfigForm
-
 try:
     from bokeh.embed import components
     from bokeh.plotting import figure
@@ -211,6 +186,37 @@ def docs():
     """ Docs page
     """
     return render_template('documentation.html')
+
+@app.route('/configure.html', methods=['Get'])
+def config_analysis():
+    """ Configuration page
+    """
+
+    def build_config():
+    
+        class ConfigForm(Form):
+            pass
+    
+        models = [{'name': 'Rotor Analysis',
+                   'choices': ['WISDEM CSM Rotor', 'SEAM Rotor']},
+                  {'name': 'Drivetrain Analysis',
+                   'choices': ['WISDEM CSM Drivetrain']},
+                  {'name': 'Tower Analysis',
+                   'choices': ['WISDEM CSM Tower', 'SEAM Tower']},
+                  {'name': 'Full Turbine Analysis',
+                   'choices': ['WISDEM CSM', 'WISDEM/DTU Turbine']},
+                  {'name': 'Full Plant Analysis',
+                   'choices': ['WISDEM CSM', 'WISDEM/DTU Plant']},
+                   ]
+        for dic in models:
+            name = dic['name']
+            choices = [(val, val) for val in dic['choices']]
+            setattr(ConfigForm, name, SelectField(name, choices=choices))
+    
+        return ConfigForm
+
+
+    return render_template('configure.html', config=build_config()(MultiDict()))
 
 @app.route('/upload/', methods=['POST'])
 def upload():
