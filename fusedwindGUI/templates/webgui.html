@@ -189,22 +189,6 @@ $('#fileupload').fileupload({
 </script>
 
 <script>
-// Configuration scripts -------------------
-		function configure_single() {
-				document.getElementById('submit').disabled=false;
-				document.getElementById('inputs_single').style.display = 'block';
-     }
-
-		function configure_sensitivity() {
-
-			 }
-
-		function configure_optimization() {
-
-			 }
-</script>
-
-<script>
 // Case recorder scripts ------------------
      function record_case() {
          console.log('calling record_case')
@@ -267,16 +251,6 @@ $('#fileupload').fileupload({
     <ul class="nav nav-tabs">
         <li role="presentation"><a href="/">Home</a></li>
         <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-        <li role="presentation" class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="presentation">
-                System Models <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" role="menu">
-                <li role="presentation"> <a href="lcoe_csm_assembly">NREL CSM</a></li>
-            		<li role="presentation"> <a href="lcoe_se_seam_assembly">DTU/NREL Integrated LCOE Model</a></li>
-            		<li role="presentation"> <a href="lcoe_se_opt">DTU/NREL Integrated LCOE Model Optimization</a></li>
-            </ul>
-        </li>
         <li role="presentation"><a href="documentation.html">Documentation</a></li>
     </ul>
 </div>
@@ -289,25 +263,18 @@ $('#fileupload').fileupload({
 
 <!-- ####################  Buttons to run scripts ################### -->
 		    <div class="panel-body" id='button-panel'>
-		        <div class="btn-group">
-		          	<button type="button"
-                            class="btn nohover btn-success"
-                            data-toggle="modal"
-                            data-target="#configure-modal">Configure Analysis</button>
-
-		        </div>
 		        <span class="btn btn-success fileinput-button" >
 		            <i class="glyphicon glyphicon-plus"></i>
 		            <span>Load inputs</span>
 		            <input id="fileupload" type="file" name="files[]" multiple >
 		        </span>
 		        <div class="btn-group">
-		          	<button type="button" id="save" class="btn nohover btn-success" >Save</button>
-		          	<button type="button" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		          	<button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
+		          	<button type="button" style="background-color:blue;border-color:blue" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 		            		<span class="caret"></span>
 		            		<span class="sr-only">Toggle Dropdown</span>
 		          	</button>
-		          	<ul class="dropdown-menu">
+		          	<ul class="dropdown-menu" style="background-color:blue;border-color:blue">
 				            <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
 				            <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
 				            <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
@@ -319,72 +286,6 @@ $('#fileupload').fileupload({
 		        <input  class="btn btn-danger" disabled id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
 		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
 		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
-
-                <!-- Model Selection Modal -->
-                <div class="modal fade bs-example-modal-lg" id="configure-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                  <div class="modal-dialog modal-lg" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h4 class="modal-title" id="myModalLabel">Analysis Configuration</h4>
-                      </div>
-                      <div class="modal-body">
-                          <form method="post" class="form" id='config-form'>
-                          <div class="tabbable"> <!-- Only required for left/right tabs -->
-                          <ul class="nav nav-tabs">
-                          <li class="active"><a href="#modelselect" data-toggle="tab">Model Selection</a></li>
-                          <li><a href="#driverselect" data-toggle="tab">Driver Selection</a></li>
-                          </ul>
-                          <div class="tab-content">
-                          <div class="tab-pane active" id="modelselect">
-                          <h4 class="panel-title">Model Selection</h4>
-                          <div class="row">
-                              <div class="col-lg-10">
-                                      {{ wtf.form_errors(inputs, hiddens='only') }}
-                                      <table class="table table-striped" align="left">
-
-                                          <thead>
-                                          <tr>
-                                              <th>Parameter</td>
-                                              <th>Value</td>
-                                          </tr>
-                                          </thead>
-                                          <tbody>
-                                              {%- for field in config %}
-                                              {%- if field.name not in ('csrf_token', 'submit') %}
-                                              <tr>
-                                                  <td>{{field.name}}</td>
-                                                  <td>
-                                                      <div id='trigger-{{field.name|safe}}'>
-                                                          {{field(class="form-control")|safe}}
-                                                      </div>
-                                                  </td>
-                                              </tr>
-                                              {%- endif %}
-                                              {%- endfor %}
-                                          </tbody>
-                                  </table>
-                              </div><!-- /btn-group -->
-                          </div>
-                      </div>
-                          <div class="tab-pane" id="driverselect">
-                          <h4 class="panel-title">Driver Selection</h4>
-                          Radio button list where click activates content based on user choice
-                          <ul>
-                                <li><a href="#" onClick="configure_single();">Single Run</a></li>
-                                <li><a href="#" onClick="configure_sensitivity();">Sensitivity Analysis</a></li>
-                                <li><a href="#" onClick="configure_optimization();">Optimization</a></li>
-                          </ul>
-                      </div>
-                      <div class="modal-footer">
-                        <!-- <button type="button" class="btn btn-default" data-dismiss="modal">Close</button> -->
-                        <input  class="btn btn-success" id="submit" name="submit" type="submit" onClick="submitConfig()" data-dismiss="modal" value="Configure">
-                      </div>
-                    </div>
-                  </div>
-              </div>
-          </form>
-              </div>
-                </div>
 
 		    </div>
 

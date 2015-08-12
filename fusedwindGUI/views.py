@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from openmdao.main.vartree import VariableTree
+from openmdao.main.api import set_as_top
 
 import os
 
@@ -187,7 +188,7 @@ def docs():
     """
     return render_template('documentation.html')
 
-@app.route('/configure.html', methods=['Get'])
+@app.route('/configure.html', methods=['Get', 'Post'])
 def config_analysis():
     """ Configuration page
     """
@@ -197,23 +198,38 @@ def config_analysis():
         class ConfigForm(Form):
             pass
     
-        models = [{'name': 'Rotor Analysis',
-                   'choices': ['WISDEM CSM Rotor', 'SEAM Rotor']},
-                  {'name': 'Drivetrain Analysis',
-                   'choices': ['WISDEM CSM Drivetrain']},
-                  {'name': 'Tower Analysis',
-                   'choices': ['WISDEM CSM Tower', 'SEAM Tower']},
-                  {'name': 'Full Turbine Analysis',
-                   'choices': ['WISDEM CSM', 'WISDEM/DTU Turbine']},
-                  {'name': 'Full Plant Analysis',
-                   'choices': ['WISDEM CSM', 'WISDEM/DTU Plant']},
-                   ]
+        models = [{'name': 'Model Selection',
+                   'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
+                  {'name': 'Analysis Type',
+                   'choices': ['Individual Analyses']}]
         for dic in models:
             name = dic['name']
             choices = [(val, val) for val in dic['choices']]
             setattr(ConfigForm, name, SelectField(name, choices=choices))
-    
+
+
+        if request.method == 'POST': # Receiving a POST request
+
+            inputs =  request.form.to_dict()
+            
+            if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
+                try:
+                    desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
+                    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
+                    webgui(set_as_top(lcoe_csm_assembly()), None, desc)
+                except:
+                    print 'lcoe_csm_assembly could not be loaded!'                
+            else:
+                try:
+                    desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
+                    from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
+                    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+                    webgui(lcoe_se, None, desc)
+                except:
+                    print 'lcoe_se_seam_assembly could not be loaded!'
+
         return ConfigForm
+
 
 
     return render_template('configure.html', config=build_config()(MultiDict()))
