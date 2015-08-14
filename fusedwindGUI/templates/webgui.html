@@ -263,6 +263,7 @@ $('#fileupload').fileupload({
 
 <!-- ####################  Buttons to run scripts ################### -->
 		    <div class="panel-body" id='button-panel'>
+		        <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
 		        <span class="btn btn-success fileinput-button" >
 		            <i class="glyphicon glyphicon-plus"></i>
 		            <span>Load inputs</span>
@@ -283,7 +284,6 @@ $('#fileupload').fileupload({
 				            <li><a href="#">Separated link</a></li> -->
 		            </ul>
 		        </div>
-		        <input  class="btn btn-danger" disabled id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
 		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
 		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
 
@@ -323,7 +323,7 @@ $('#fileupload').fileupload({
             </div>
 
 <!-- ########################## The Inputs panel ###    ######################## -->
-            <div class="col-md-3" style="display: none" id='inputs_single'>
+            <div class="col-md-3" id='inputs_single'>
                 <div class="panel-body">
 		            <form method="post" class="form" id='global-inputs-form'>
                 	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">

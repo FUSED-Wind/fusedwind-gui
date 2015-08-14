@@ -101,8 +101,14 @@
                 <button type="button" style="background-color:blue;border-color:blue"
                             class="btn nohover btn-success"
                             data-toggle="modal"
-                            data-target="#configure-modal">Configure Analysis</button>
-
+                            data-target="#configure-modal">Select Analysis</button>
+            </div>
+            <p></p>
+            <div>
+		            {%- if config_flag %}
+                <button type="button" style="background-color:blue;border-color:blue"
+                            class="btn nohover btn-success" onClick="location.href='/analysis'">Configure Analysis</button>
+            		{%- endif %}
             </div>
             <!-- Model Selection Modal -->
             <div class="modal fade bs-example-modal-lg" id="configure-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">

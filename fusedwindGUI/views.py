@@ -188,49 +188,6 @@ def docs():
     """
     return render_template('documentation.html')
 
-@app.route('/configure.html', methods=['Get', 'Post'])
-def config_analysis():
-    """ Configuration page
-    """
-
-    def build_config():
-    
-        class ConfigForm(Form):
-            pass
-    
-        models = [{'name': 'Model Selection',
-                   'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
-                  {'name': 'Analysis Type',
-                   'choices': ['Individual Analyses']}]
-        for dic in models:
-            name = dic['name']
-            choices = [(val, val) for val in dic['choices']]
-            setattr(ConfigForm, name, SelectField(name, choices=choices))
-
-
-        if request.method == 'POST': # Receiving a POST request
-
-            inputs =  request.form.to_dict()
-            
-            if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
-                try:
-                    desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
-                    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
-                    webgui(set_as_top(lcoe_csm_assembly()), None, desc)
-                except:
-                    print 'lcoe_csm_assembly could not be loaded!'                
-            else:
-                try:
-                    desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
-                    from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
-                    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
-                    webgui(lcoe_se, None, desc)
-                except:
-                    print 'lcoe_se_seam_assembly could not be loaded!'
-
-        return ConfigForm
-
-
 
     return render_template('configure.html', config=build_config()(MultiDict()))
 
@@ -299,16 +256,63 @@ def serialize(thing):
 
     return '??_' +  str(thing.__class__)
 
+config_flag = False
+cpnt = None
+desc = ''
 
-def webgui(cpnt, app=None, desc=None):
-    cpname = cpnt.__class__.__name__
+def webgui(app=None):
+    
+    def configure():
+        """ Configuration page
+        """
+        global config_flag 
+        conflig_flag = False
 
-    # dictionary for recorded cases
-    cpnt.gui_recorder = {}
+        global cpnt
+        global desc
 
-    if app == None:
-        app = start_app(cpname)
+        class ConfigForm(Form):
+            pass
+    
+        models = [{'name': 'Model Selection',
+                   'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
+                  {'name': 'Analysis Type',
+                   'choices': ['Individual Analyses']}]
+        for dic in models:
+            name = dic['name']
+            choices = [(val, val) for val in dic['choices']]
+            setattr(ConfigForm, name, SelectField(name, choices=choices))
 
+
+        if request.method == 'POST': # Receiving a POST request
+
+            inputs =  request.form.to_dict()
+            
+            if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
+                try:
+                    desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
+                    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
+                    cpnt = set_as_top(lcoe_csm_assembly()) 
+                except:
+                    print 'lcoe_csm_assembly could not be loaded!'            
+            else:
+                try:
+                    desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
+                    from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
+                    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+                    cpnt = lcoe_se
+                except:
+                    print 'lcoe_se_seam_assembly could not be loaded!'
+
+            myflask()
+            config_flag = True
+
+        return render_template('configure.html',
+                        config=ConfigForm(MultiDict()),
+                        config_flag = config_flag)
+
+    configure.__name__ = 'configure'
+    app.route('/configure.html', methods=['Get', 'Post'])(configure)
 
     def download():
         out = get_io_dict(cpnt)
@@ -322,8 +326,8 @@ def webgui(cpnt, app=None, desc=None):
         return response
         # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
 
-    download.__name__ = cpname+'_download'
-    app.route('/'+cpname+'/download', methods=['GET'])(download)
+    download.__name__ = 'analysis_download'
+    app.route('/analysis/download', methods=['GET'])(download)
 
     def download_full():
 
@@ -337,8 +341,8 @@ def webgui(cpnt, app=None, desc=None):
         return response
         # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
 
-    download_full.__name__ = cpname+'_download_full'
-    app.route('/'+cpname+'/download_full', methods=['GET'])(download_full)
+    download_full.__name__ = 'analysis_download_full'
+    app.route('/analysis/download_full', methods=['GET'])(download_full)
 
     def record_case():
 
@@ -370,8 +374,8 @@ def webgui(cpnt, app=None, desc=None):
         flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
-    record_case.__name__ = cpname+'_record_case'
-    app.route('/'+cpname+'/record_case', methods=['POST'])(record_case)
+    record_case.__name__ = 'analysis_record_case'
+    app.route('/analysis/record_case', methods=['POST'])(record_case)
 
     def clear_recorder():
 
@@ -379,13 +383,16 @@ def webgui(cpnt, app=None, desc=None):
         flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
-    clear_recorder.__name__ = cpname+'_clear_recorder'
-    app.route('/'+cpname+'/clear_recorder', methods=['POST'])(clear_recorder)
+    clear_recorder.__name__ = 'analysis_clear_recorder'
+    app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
     def myflask():
+        
+        cpname = cpnt.__class__.__name__
 
         io = traits2jsondict(cpnt)
         form_inputs = WebGUIForm(io['inputs'], run=True)()
+
 
         group_list = []
         group_dic = {}
@@ -423,59 +430,56 @@ def webgui(cpnt, app=None, desc=None):
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
-        if request.method == 'POST': # Receiving a POST request
+        if config_flag == True:
+            if request.method == 'POST': # Receiving a POST request
+    
+                inputs =  request.form.to_dict()
+                for k in inputs.keys():
+                    if k in io['inputs']: # Loading only the inputs allowed
+                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+    
+                cpnt.run()
+                io = traits2jsondict(cpnt)
+                sub_comp_data = {}
+                if isinstance(cpnt, Assembly):
+    
+                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                    assembly_structure[0]['nodes'] = structure
+                    # show both inputs and outputs in right side table
+                    outputs = get_io_dict(cpnt)
+                    combIO = outputs['inputs'] + outputs['outputs']
+                # no plots for now since bootstrap-table and bokeh seem to be in conflict
+                try:
+                    script, div = prepare_plot(cpnt.plot)
+                except:
+                    # TODO: gracefully inform the user of why he doesnt see his plots
+                    print "Failed to prepare any plots for " + cpnt.__class__.__name__
+                    script, div, plot_resources = None, None, None
 
-            inputs =  request.form.to_dict()
-            for k in inputs.keys():
-                if k in io['inputs']: # Loading only the inputs allowed
-                    setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                return render_template('webgui.html',
+                            inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
+                            outputs=combIO,
+                            name=cpname,
+                            plot_script=script, plot_div=div,
+                            sub_comp_data=sub_comp_data,
+                            assembly_structure=assembly_structure,
+                            group_list=group_list,
+                            group_dic=group_dic,
+                            desc=desc)
 
-            cpnt.run()
-            io = traits2jsondict(cpnt)
-            sub_comp_data = {}
-            if isinstance(cpnt, Assembly):
-
-                sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
-                assembly_structure[0]['nodes'] = structure
-                # show both inputs and outputs in right side table
-                outputs = get_io_dict(cpnt)
-                combIO = outputs['inputs'] + outputs['outputs']
-            # no plots for now since bootstrap-table and bokeh seem to be in conflict
-            try:
-                script, div = prepare_plot(cpnt.plot)
-            except:
-                # TODO: gracefully inform the user of why he doesnt see his plots
-                print "Failed to prepare any plots for " + cpnt.__class__.__name__
-                script, div, plot_resources = None, None, None
-
+            # Show the standard form
             return render_template('webgui.html',
-                        inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                        outputs=combIO,
-                        name=cpname,
-                        plot_script=script, plot_div=div,
-                        sub_comp_data=sub_comp_data,
-                        assembly_structure=assembly_structure,
-                        group_list=group_list,
-                        group_dic=group_dic,
-                        desc=desc,
-                        config=build_config('')(MultiDict()))
+                inputs=form_inputs, outputs=None,
+                name=cpname,
+                plot_script=None, plot_div=None, plot_resources=None,
+                sub_comp_data=sub_comp_data,
+                assembly_structure=assembly_structure,
+                group_list=group_list,
+                group_dic=group_dic,
+                desc=desc)
 
-
-        # Show the standard form
-        return render_template('webgui.html',
-            inputs=form_inputs, outputs=None,
-            name=cpname,
-            plot_script=None, plot_div=None, plot_resources=None,
-            sub_comp_data=sub_comp_data,
-            assembly_structure=assembly_structure,
-            group_list=group_list,
-            group_dic=group_dic,
-            desc=desc,
-            config=build_config('')(MultiDict()))
-
-    myflask.__name__ = cpname
-    app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
-    return app
+    myflask.__name__ = 'analysis'
+    app.route('/'+ 'analysis', methods=['GET', 'POST'])(myflask)
 
 #
 #
