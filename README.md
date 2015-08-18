@@ -46,13 +46,13 @@ which can be issued from any location. In a web browser open the page http://loc
 
 To build the docker image
 
-    $ make build
+    $ docker build -t fwgui .
 
-To run the local image on a server. It will be served on http://<your server>:49501
+To run the local image on a server. It will be served on http://<your server>:80
 
-    $ make run
+    $ docker run -d -p 80:5000 fwgui
 
 To run the docker image locally (modifying the files will change the files in
-    the docker container too)
+    the docker container too). This will only work in a *nix environment.
 
-    $ make run_local
+    $ docker run -d -p 80:5000 -v $(pwd):/mystuff fwgui bash
