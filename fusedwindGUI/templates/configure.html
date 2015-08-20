@@ -39,6 +39,7 @@
 // Submit forms ------------------
      submitConfig = function(){
          document.forms["config-form"].submit();
+         window.location.href = "/analysis"
      }
 </script>
 
@@ -64,7 +65,7 @@
     <div class="container-fluid" id="alert_placeholder">
     </div>
     <div class="panel panel-default">
-
+		    {%- if not config_flag %}
 <!-- ### Information #### -->
         <div class="panel-body">
             <p></p>
@@ -98,17 +99,10 @@
 <!-- ####################  Buttons to run scripts ################### -->
         <div class="panel-body" id='button-panel'>
             <div class="btn-group">
-                <button type="button" style="background-color:blue;border-color:blue"
+                <button id="selection" type="button" style="background-color:blue;border-color:blue"
                             class="btn nohover btn-success"
                             data-toggle="modal"
                             data-target="#configure-modal">Select Analysis</button>
-            </div>
-            <p></p>
-            <div>
-		            {%- if config_flag %}
-                <button type="button" style="background-color:blue;border-color:blue"
-                            class="btn nohover btn-success" onClick="location.href='/analysis'">Configure Analysis</button>
-            		{%- endif %}
             </div>
             <!-- Model Selection Modal -->
             <div class="modal fade bs-example-modal-lg" id="configure-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -163,7 +157,13 @@
                 </div>
             </div>
         </div>
-
+        {%- endif %}
+		    {%- if config_flag %}
+		    <script>
+		    		window.location.href = "/analysis"
+				</script>
+		    {%- endif %} 
+    </div>
 </div>
 
 {% endblock %}

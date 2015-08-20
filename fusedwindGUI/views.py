@@ -256,7 +256,6 @@ def serialize(thing):
 
     return '??_' +  str(thing.__class__)
 
-config_flag = False
 cpnt = None
 desc = ''
 
@@ -265,8 +264,6 @@ def webgui(app=None):
     def configure():
         """ Configuration page
         """
-        global config_flag 
-        conflig_flag = False
 
         global cpnt
         global desc
@@ -304,13 +301,17 @@ def webgui(app=None):
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
 
-            myflask()
-            config_flag = True
+            myflask(True)
 
-        return render_template('configure.html',
-                        config=ConfigForm(MultiDict()),
-                        config_flag = config_flag)
-
+            return render_template('configure.html',
+                            config=ConfigForm(MultiDict()),
+                            config_flag = True)
+        
+        else:
+            return render_template('configure.html',
+                config=ConfigForm(MultiDict()),
+                config_flag = False)
+        
     configure.__name__ = 'configure'
     app.route('/configure.html', methods=['Get', 'Post'])(configure)
 
@@ -386,7 +387,7 @@ def webgui(app=None):
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
-    def myflask():
+    def myflask(config_flag=False):
         
         cpname = cpnt.__class__.__name__
 
@@ -430,43 +431,45 @@ def webgui(app=None):
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
-        if config_flag == True:
-            if request.method == 'POST': # Receiving a POST request
-    
-                inputs =  request.form.to_dict()
-                for k in inputs.keys():
-                    if k in io['inputs']: # Loading only the inputs allowed
-                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
-    
+        if (not config_flag) and request.method == 'POST': # Receiving a POST request
+
+            inputs =  request.form.to_dict()
+            for k in inputs.keys():
+                if k in io['inputs']: # Loading only the inputs allowed
+                    setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+            try:
                 cpnt.run()
-                io = traits2jsondict(cpnt)
-                sub_comp_data = {}
-                if isinstance(cpnt, Assembly):
-    
-                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
-                    assembly_structure[0]['nodes'] = structure
-                    # show both inputs and outputs in right side table
-                    outputs = get_io_dict(cpnt)
-                    combIO = outputs['inputs'] + outputs['outputs']
-                # no plots for now since bootstrap-table and bokeh seem to be in conflict
-                try:
-                    script, div = prepare_plot(cpnt.plot)
-                except:
-                    # TODO: gracefully inform the user of why he doesnt see his plots
-                    print "Failed to prepare any plots for " + cpnt.__class__.__name__
-                    script, div, plot_resources = None, None, None
+            except:
+                print "Analysis did not execute properly"
+            io = traits2jsondict(cpnt)
+            sub_comp_data = {}
+            if isinstance(cpnt, Assembly):
 
-                return render_template('webgui.html',
-                            inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                            outputs=combIO,
-                            name=cpname,
-                            plot_script=script, plot_div=div,
-                            sub_comp_data=sub_comp_data,
-                            assembly_structure=assembly_structure,
-                            group_list=group_list,
-                            group_dic=group_dic,
-                            desc=desc)
+                sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                assembly_structure[0]['nodes'] = structure
+                # show both inputs and outputs in right side table
+                outputs = get_io_dict(cpnt)
+                combIO = outputs['inputs'] + outputs['outputs']
+            # no plots for now since bootstrap-table and bokeh seem to be in conflict
+            try:
+                script, div = prepare_plot(cpnt.plot)
+            except:
+                # TODO: gracefully inform the user of why he doesnt see his plots
+                print "Failed to prepare any plots for " + cpnt.__class__.__name__
+                script, div, plot_resources = None, None, None
 
+            return render_template('webgui.html',
+                        inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
+                        outputs=combIO,
+                        name=cpname,
+                        plot_script=script, plot_div=div,
+                        sub_comp_data=sub_comp_data,
+                        assembly_structure=assembly_structure,
+                        group_list=group_list,
+                        group_dic=group_dic,
+                        desc=desc)
+		        
+        else:
             # Show the standard form
             return render_template('webgui.html',
                 inputs=form_inputs, outputs=None,

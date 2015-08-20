@@ -224,8 +224,8 @@ $('#fileupload').fileupload({
      submitForms = function(){
          document.forms["global-inputs-form"].submit();
      }
-     submitConfig = function(){
-         document.forms["config-form"].submit();
+     
+     reconfig = function(){
      }
 </script>
 
@@ -284,6 +284,7 @@ $('#fileupload').fileupload({
 				            <li><a href="#">Separated link</a></li> -->
 		            </ul>
 		        </div>
+		        <div class="btn" id="reconfig" onClick="reconfig();" value="Reconfigure analysis"></div>
 		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
 		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
 
