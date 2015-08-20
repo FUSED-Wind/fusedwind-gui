@@ -189,22 +189,6 @@ $('#fileupload').fileupload({
 </script>
 
 <script>
-// Configuration scripts -------------------
-		function configure_single() {
-				document.getElementById('submit').disabled=false;
-				document.getElementById('inputs_single').style.display = 'block';
-     }
-
-		function configure_sensitivity() {
-			   
-			 }
-
-		function configure_optimization() {
-			   
-			 }
-</script>
-
-<script>
 // Case recorder scripts ------------------
      function record_case() {
          console.log('calling record_case')
@@ -239,7 +223,9 @@ $('#fileupload').fileupload({
 // Submit forms ------------------
      submitForms = function(){
          document.forms["global-inputs-form"].submit();
-         document.forms["project_name"].submit();
+     }
+     
+     reconfig = function(){
      }
 </script>
 
@@ -264,16 +250,7 @@ $('#fileupload').fileupload({
     </div>
     <ul class="nav nav-tabs">
         <li role="presentation"><a href="/">Home</a></li>
-        <li role="presentation" class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="presentation">
-                System Models <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" role="menu">
-                <li role="presentation"> <a href="lcoe_csm_assembly">NREL CSM</a></li>
-            		<li role="presentation"> <a href="lcoe_se_seam_assembly">DTU/NREL Integrated LCOE Model</a></li>
-            		<li role="presentation"> <a href="lcoe_se_opt">DTU/NREL Integrated LCOE Model Optimization</a></li>
-            </ul>
-        </li>
+        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
         <li role="presentation"><a href="documentation.html">Documentation</a></li>
     </ul>
 </div>
@@ -286,30 +263,19 @@ $('#fileupload').fileupload({
 
 <!-- ####################  Buttons to run scripts ################### -->
 		    <div class="panel-body" id='button-panel'>
-		        <div class="btn-group">
-		          	<button type="button" class="btn nohover btn-success">Configure Analysis</button>
-		          	<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		            		<span class="caret"></span>
-		            		<span class="sr-only">Toggle Dropdown</span>
-		          	</button>
-		          	<ul class="dropdown-menu">
-				            <li><a href="#" onClick="configure_single();">Single Run</a></li>
-				            <li><a href="#" onClick="configure_sensitivity();">Sensitivity Analysis</a></li>
-				            <li><a href="#" onClick="configure_optimization();">Optimization</a></li>
-		            </ul>
-		        </div>
+		        <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
 		        <span class="btn btn-success fileinput-button" >
 		            <i class="glyphicon glyphicon-plus"></i>
 		            <span>Load inputs</span>
 		            <input id="fileupload" type="file" name="files[]" multiple >
 		        </span>
 		        <div class="btn-group">
-		          	<button type="button" id="save" class="btn nohover btn-success" >Save</button>
-		          	<button type="button" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		          	<button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
+		          	<button type="button" style="background-color:blue;border-color:blue" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 		            		<span class="caret"></span>
 		            		<span class="sr-only">Toggle Dropdown</span>
 		          	</button>
-		          	<ul class="dropdown-menu">
+		          	<ul class="dropdown-menu" style="background-color:blue;border-color:blue">
 				            <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
 				            <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
 				            <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
@@ -318,12 +284,13 @@ $('#fileupload').fileupload({
 				            <li><a href="#">Separated link</a></li> -->
 		            </ul>
 		        </div>
-		        <input  class="btn btn-danger" disabled id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
+		        <div class="btn" id="reconfig" onClick="reconfig();" value="Reconfigure analysis"></div>
 		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
 		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
+
 		    </div>
 
-<!-- ################### divider to rest of content ################### --> 
+<!-- ################### divider to rest of content ################### -->
 		    <div class="panel-body">
 		    <div class="row">
 
@@ -357,13 +324,13 @@ $('#fileupload').fileupload({
             </div>
 
 <!-- ########################## The Inputs panel ###    ######################## -->
-            <div class="col-md-3" style="display: none" id='inputs_single'>
+            <div class="col-md-3" id='inputs_single'>
                 <div class="panel-body">
 		            <form method="post" class="form" id='global-inputs-form'>
                 	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
                 	  	  {%- for group in group_list %}
                         <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingOne"> 
+                            <div class="panel-heading" role="tab" id="headingOne">
                             		<h3 class="panel-title">
                             		<a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
                             		{{group}} Inputs
@@ -417,12 +384,12 @@ $('#fileupload').fileupload({
                             console.log(getHeight())
                             document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
                             document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                        </script>  
+                        </script>
                     </div>
 				        </form>
             		</div>
             </div>
-            
+
 <!-- ###################### The Outputs panel ########################### -->
             <div class="col-md-7">
             {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{super()}}
+<!-- <link
+    href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
+    rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"> -->
+<script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
+
+<link rel="stylesheet" href="{{ bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.css')}}">
+<script src="{{bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.js')}}"></script>
+<script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
+<script src="{{bower_url_for('notifyjs', filename='dist/notify.js')}}"></script>
+<script src="{{bower_url_for('notifyjs', filename='dist/styles/bootstrap/notify-bootstrap.js')}}"></script>
+
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
+<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
+
+<style>
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+{% endblock %}
+
+
+
+{% block scripts %}
+{{super()}}
+
+<script>
+// Submit forms ------------------
+     submitConfig = function(){
+         document.forms["config-form"].submit();
+         window.location.href = "/analysis"
+     }
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<!-- Navigation bar -->
+<div class="container-fluid" id="navigation-bar">
+    <div class="page-header">
+        <h1>FUSED-Wind</h1>
+        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+    </div>
+    <ul class="nav nav-tabs">
+        <li role="presentation"><a href="/">Home</a></li>
+        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
+        <li role="presentation"><a href="documentation.html">Documentation</a></li>
+    </ul>
+</div>
+
+<!-- ################### Main Content ################### -->
+<div class="container-fluid id=maincontent">
+    <div class="container-fluid" id="alert_placeholder">
+    </div>
+    <div class="panel panel-default">
+		    {%- if not config_flag %}
+<!-- ### Information #### -->
+        <div class="panel-body">
+            <p></p>
+            <p>
+                There are a number of potential analysis configurations available in the FUSED-Wind framework.  
+                These are roughly divided into model sets that include tier 1, tier 2 and tier 3 models.
+            </p>
+            <p></p>
+            <p>
+                <b>Tier 1</b> models are the most basic models for wind turbine and plant analysis and are empirical in nature.  
+                The NREL Cost and Scaling Models from 2006 and 2015 provide empirical scaling relationships for wind turbine components and overall plant cost based on technology trends.
+            </p>
+            <p></p>
+            <p>
+                <b>Tier 2</b> models are simple physical models that size the major wind turbine components and simulate overall plant performance and cost.  
+                The DTU Wind Energy SEAM models provide sizing for the rotor and tower while the NREL DriveSE model sizes the drivetrain components.
+                The new NREL cost models for balance of station reflect site-specific inputs that can vary based on location and geography.
+            </p>
+            <p></p>
+            <p>
+                <b>Tier 3</b> models are actual wind turbine and plant design tools that require a relatively sophisticated knowledge about the technology in order to use them effectively in analysis.
+                An example of such models are the WISDEM RotorSE and TowerSE models include a full Blade Element Momentum theory aerodynamic analysis and finite element analysis of the blade and tower structure.
+            </p>
+            <p></p>
+            <p>
+                In the configuration step, you will be able to select the level of analysis for the system (turbine subsystem, full turbine, entire plant) 
+                as well as the type of analysis (individual analyses, sensitivity analyses and design / optimization):
+            </p>
+        </div>
+
+<!-- ####################  Buttons to run scripts ################### -->
+        <div class="panel-body" id='button-panel'>
+            <div class="btn-group">
+                <button id="selection" type="button" style="background-color:blue;border-color:blue"
+                            class="btn nohover btn-success"
+                            data-toggle="modal"
+                            data-target="#configure-modal">Select Analysis</button>
+            </div>
+            <!-- Model Selection Modal -->
+            <div class="modal fade bs-example-modal-lg" id="configure-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="myModalLabel">Analysis Configuration</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" class="form" id='config-form'>
+                            <div class="tabbable"> <!-- Only required for left/right tabs -->
+                                <ul class="nav nav-tabs">
+                                <li class="active"><a href="#modelselect" data-toggle="tab">Model Selection</a></li>
+                                </ul>
+                                <div class="tab-content">
+                                    <div class="tab-pane active" id="modelselect">
+                                    <h4 class="panel-title">Model Selection</h4>
+                                        <div class="row">
+                                            <div class="col-lg-10">
+                                                <table class="table table-striped" align="left">
+              
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Subsystem</td>
+                                                        <th>Model</td>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {%- for field in config %}
+                                                        {%- if field.name not in ('csrf_token', 'submit') %}
+                                                        <tr>
+                                                            <td>{{field.name}}</td>
+                                                            <td>
+                                                                <div id='trigger-{{field.name|safe}}'>
+                                                                    {{field(class="form-control")|safe}}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {%- endif %}
+                                                        {%- endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div><!-- /btn-group -->
+                                        </div>
+		        														<input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitConfig()" value="Run">
+                                    </div>
+                                </div>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {%- endif %}
+		    {%- if config_flag %}
+		    <script>
+		    		window.location.href = "/analysis"
+				</script>
+		    {%- endif %} 
+    </div>
+</div>
+
+{% endblock %}
