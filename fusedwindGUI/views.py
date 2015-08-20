@@ -192,7 +192,10 @@ def upload():
     try:
         files = request.files
         uploaded_files = _handleUpload(files)
-        return jsonify({'files': uploaded_files})
+        response =  jsonify({'files': uploaded_files})
+        # fix for legacy browsers
+        response.headers['Content-Type'] = 'text/plain'
+        return response
     except:
         raise
         return jsonify({'status': 'error'})
