@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from openmdao.main.vartree import VariableTree
+from openmdao.main.api import set_as_top
 
 import os
 
 from flask import Flask, flash, request, render_template, flash, make_response
 from wtforms.widgets import TextArea
+from wtforms import SelectField
 from flask.ext.mail import Message, Mail
 from flask.ext.bower import Bower
 from flask import Blueprint, request, abort, jsonify, redirect, render_template
@@ -126,24 +128,24 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     for name in cpnt.list_components():
         comp = getattr(cpnt, name)
         cname = comp.__class__.__name__
-        sub_comp_data[cname] = {}
+        if cname <> 'Driver':
+            sub_comp_data[cname] = {}
 
-        asym_structure.append({
-            'text':cname,
-            'href':'#collapse-%s'%(cname)})
+            asym_structure.append({
+                'text':cname,
+                'href':'#collapse-%s'%(cname)})
 
-        tmp = get_io_dict(comp)
-        sub_comp_data[cname]['params_in'] = tmp['inputs']
-        sub_comp_data[cname]['params_out'] = tmp['outputs']
-        # no plots for now since bootstrap-table and bokeh seem to be in conflict
-        if hasattr(comp, "plot"):
-            c_script, c_div = prepare_plot(comp.plot)
-            sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
+            tmp = get_io_dict(comp)
+            sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
+            # no plots for now since bootstrap-table and bokeh seem to be in conflict
+            if hasattr(comp, "plot"):
+                c_script, c_div = prepare_plot(comp.plot)
+                sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
 
-        if isinstance(comp, Assembly):
+            if isinstance(comp, Assembly):
 
-            sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
-            asym_structure[-1]['nodes'] = sub_structure
+                sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
+                asym_structure[-1]['nodes'] = sub_structure
 
     return sub_comp_data, asym_structure
 
@@ -164,8 +166,6 @@ def _handleUpload(files):
         with open(os.path.join(tmpdir, upload_file.filename), 'r') as f:
             inputs = yaml.load(f)
 
-        print inputs
-
         outfiles.append({
             'filename': upload_file.filename,
             'content': inputs
@@ -182,7 +182,14 @@ def hello():
     provider = str(os.environ.get('PROVIDER', 'world'))
     return render_template('index.html', form={'hello':'world'})
 
+@app.route('/documentation.html')
+def docs():
+    """ Docs page
+    """
+    return render_template('documentation.html')
 
+
+    return render_template('configure.html', config=build_config()(MultiDict()))
 
 @app.route('/upload/', methods=['POST'])
 def upload():
@@ -252,16 +259,64 @@ def serialize(thing):
 
     return '??_' +  str(thing.__class__)
 
+cpnt = None
+desc = ''
 
-def webgui(cpnt, app=None):
-    cpname = cpnt.__class__.__name__
+def webgui(app=None):
 
-    # dictionary for recorded cases
-    cpnt.gui_recorder = {}
+    def configure():
+        """ Configuration page
+        """
 
-    if app == None:
-        app = start_app(cpname)
+        global cpnt
+        global desc
 
+        class ConfigForm(Form):
+            pass
+
+        models = [{'name': 'Model Selection',
+                   'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
+                  {'name': 'Analysis Type',
+                   'choices': ['Individual Analyses']}]
+        for dic in models:
+            name = dic['name']
+            choices = [(val, val) for val in dic['choices']]
+            setattr(ConfigForm, name, SelectField(name, choices=choices))
+
+
+        if request.method == 'POST': # Receiving a POST request
+
+            inputs =  request.form.to_dict()
+
+            if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
+                try:
+                    desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
+                    from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
+                    cpnt = set_as_top(lcoe_csm_assembly())
+                except:
+                    print 'lcoe_csm_assembly could not be loaded!'
+            else:
+                try:
+                    desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
+                    from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
+                    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+                    cpnt = lcoe_se
+                except:
+                    print 'lcoe_se_seam_assembly could not be loaded!'
+
+            myflask(True)
+
+            return render_template('configure.html',
+                            config=ConfigForm(MultiDict()),
+                            config_flag = True)
+        
+        else:
+            return render_template('configure.html',
+                config=ConfigForm(MultiDict()),
+                config_flag = False)
+        
+    configure.__name__ = 'configure'
+    app.route('/configure.html', methods=['Get', 'Post'])(configure)
 
     def download():
         out = get_io_dict(cpnt)
@@ -275,8 +330,8 @@ def webgui(cpnt, app=None):
         return response
         # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
 
-    download.__name__ = cpname+'_download'
-    app.route('/'+cpname+'/download', methods=['GET'])(download)
+    download.__name__ = 'analysis_download'
+    app.route('/analysis/download', methods=['GET'])(download)
 
     def download_full():
 
@@ -290,8 +345,8 @@ def webgui(cpnt, app=None):
         return response
         # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
 
-    download_full.__name__ = cpname+'_download_full'
-    app.route('/'+cpname+'/download_full', methods=['GET'])(download_full)
+    download_full.__name__ = 'analysis_download_full'
+    app.route('/analysis/download_full', methods=['GET'])(download_full)
 
     def record_case():
 
@@ -323,8 +378,8 @@ def webgui(cpnt, app=None):
         flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
-    record_case.__name__ = cpname+'_record_case'
-    app.route('/'+cpname+'/record_case', methods=['POST'])(record_case)
+    record_case.__name__ = 'analysis_record_case'
+    app.route('/analysis/record_case', methods=['POST'])(record_case)
 
     def clear_recorder():
 
@@ -332,18 +387,43 @@ def webgui(cpnt, app=None):
         flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
-    clear_recorder.__name__ = cpname+'_clear_recorder'
-    app.route('/'+cpname+'/clear_recorder', methods=['POST'])(clear_recorder)
+    clear_recorder.__name__ = 'analysis_clear_recorder'
+    app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
-    def myflask():
+
+    def myflask(config_flag=False):
+
+        cpname = cpnt.__class__.__name__
 
         io = traits2jsondict(cpnt)
         form_inputs = WebGUIForm(io['inputs'], run=True)()
+
+
+        group_list = []
+        group_dic = {}
+        skeys = io['inputs'].keys()
+        skeys.sort()
+        for k in skeys:
+            v = io['inputs'][k]
+            if 'group' in v.keys():
+                if v['group'] not in group_list:
+                    group_list.append(v['group'])
+                group_dic[k] = v['group']
+            else: group_dic[k] = 'Global'
+        if 'Global' not in group_list:
+            group_list.append('Global')
+
+
+        group_list.sort()
+        if 'Global' in group_list:
+            group_list.insert(0, group_list.pop(group_list.index('Global')))
 
         assembly_structure = [{'text':cpname,
                                'nodes':[]}]
 
         inputs =  request.form.to_dict()
+
+        model_config = ['']
 
         for k in inputs.keys():
             if k in io['inputs']: # Loading only the inputs allowed
@@ -355,15 +435,16 @@ def webgui(cpnt, app=None):
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
-        if request.method == 'POST': # Receiving a POST request
+        if (not config_flag) and request.method == 'POST': # Receiving a POST request
 
             inputs =  request.form.to_dict()
-
             for k in inputs.keys():
                 if k in io['inputs']: # Loading only the inputs allowed
                     setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
-
-            cpnt.run()
+            try:
+                cpnt.run()
+            except:
+                print "Analysis did not execute properly"
             io = traits2jsondict(cpnt)
             sub_comp_data = {}
             if isinstance(cpnt, Assembly):
@@ -378,6 +459,7 @@ def webgui(cpnt, app=None):
                 script, div = prepare_plot(cpnt.plot)
             except:
                 # TODO: gracefully inform the user of why he doesnt see his plots
+                print "Failed to prepare any plots for " + cpnt.__class__.__name__
                 script, div, plot_resources = None, None, None
 
             return render_template('webgui.html',
@@ -386,20 +468,25 @@ def webgui(cpnt, app=None):
                         name=cpname,
                         plot_script=script, plot_div=div,
                         sub_comp_data=sub_comp_data,
-                        assembly_structure=assembly_structure)
+                        assembly_structure=assembly_structure,
+                        group_list=group_list,
+                        group_dic=group_dic,
+                        desc=desc)
+		        
+        else:
+            # Show the standard form
+            return render_template('webgui.html',
+                inputs=form_inputs, outputs=None,
+                name=cpname,
+                plot_script=None, plot_div=None, plot_resources=None,
+                sub_comp_data=sub_comp_data,
+                assembly_structure=assembly_structure,
+                group_list=group_list,
+                group_dic=group_dic,
+                desc=desc)
 
-
-        # Show the standard form
-        return render_template('webgui.html',
-            inputs=form_inputs, outputs=None,
-            name=cpname,
-            plot_script=None, plot_div=None, plot_resources=None,
-            sub_comp_data=sub_comp_data,
-            assembly_structure=assembly_structure)
-
-    myflask.__name__ = cpname
-    app.route('/'+cpname, methods=['GET', 'POST'])(myflask)
-    return app
+    myflask.__name__ = 'analysis'
+    app.route('/'+ 'analysis', methods=['GET', 'POST'])(myflask)
 
 #
 #
