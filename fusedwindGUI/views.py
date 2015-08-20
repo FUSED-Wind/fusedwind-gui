@@ -260,7 +260,7 @@ cpnt = None
 desc = ''
 
 def webgui(app=None):
-    
+
     def configure():
         """ Configuration page
         """
@@ -270,7 +270,7 @@ def webgui(app=None):
 
         class ConfigForm(Form):
             pass
-    
+
         models = [{'name': 'Model Selection',
                    'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
                   {'name': 'Analysis Type',
@@ -284,14 +284,14 @@ def webgui(app=None):
         if request.method == 'POST': # Receiving a POST request
 
             inputs =  request.form.to_dict()
-            
+
             if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
                 try:
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
-                    cpnt = set_as_top(lcoe_csm_assembly()) 
+                    cpnt = set_as_top(lcoe_csm_assembly())
                 except:
-                    print 'lcoe_csm_assembly could not be loaded!'            
+                    print 'lcoe_csm_assembly could not be loaded!'
             else:
                 try:
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
@@ -387,8 +387,9 @@ def webgui(app=None):
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
+
     def myflask(config_flag=False):
-        
+
         cpname = cpnt.__class__.__name__
 
         io = traits2jsondict(cpnt)
