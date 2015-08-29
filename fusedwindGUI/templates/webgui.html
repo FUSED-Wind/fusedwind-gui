@@ -193,7 +193,7 @@ $('#fileupload').fileupload({
      function record_case() {
          console.log('calling record_case')
          $.ajax({
-             url: '{{ name }}/record_case',
+             url: 'analysis/record_case',
              type: 'POST',
              success: function(response) {
                  console.log(response);
@@ -208,7 +208,7 @@ $('#fileupload').fileupload({
      function clear_recorder() {
          console.log('calling clear_recorder')
          $.ajax({
-             url: '{{ name }}/clear_recorder',
+             url: 'analysis/clear_recorder',
              type: 'POST',
              success: function(response) {
                  console.log(response);
@@ -251,7 +251,7 @@ $('#fileupload').fileupload({
     <ul class="nav nav-tabs">
         <li role="presentation"><a href="/">Home</a></li>
         <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-        <li role="presentation"><a href="documentation.html">Documentation</a></li>
+        <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
     </ul>
 </div>
 
@@ -285,8 +285,8 @@ $('#fileupload').fileupload({
 		            </ul>
 		        </div>
 		        <div class="btn" id="reconfig" onClick="reconfig();" value="Reconfigure analysis"></div>
-		        <form id="download-inputs-form" method="get" action="/{{ name }}/download"></form>
-		        <form id="download-full-model"  method="get" action="/{{ name }}/download_full"></form>
+		        <form id="download-inputs-form" method="get" action="/analysis/download"></form>
+		        <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
 
 		    </div>
 
@@ -325,6 +325,7 @@ $('#fileupload').fileupload({
 
 <!-- ########################## The Inputs panel ###    ######################## -->
             <div class="col-md-3" id='inputs_single'>
+                {% if not sens_flag %}
                 <div class="panel-body">
 		            <form method="post" class="form" id='global-inputs-form'>
                 	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
@@ -388,6 +389,72 @@ $('#fileupload').fileupload({
                     </div>
 				        </form>
             		</div>
+				        {%- else %}
+                <div class="panel-body">
+		            <form method="post" class="form" id='global-inputs-form'>
+                	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                	  	  {%- for group in group_list %}
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingOne">
+                            		<h3 class="panel-title">
+                            		<a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                            		{{group}} Inputs
+                            	  </a>
+                            		</h3>
+                            </div>
+                            {%- if group == 'Global' %}
+                            <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
+                            {%- else %}
+                            <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                            {%- endif %}
+		                            <div class="panel-body"
+		                                 align="center" id='global-inputs-panel'>
+
+		                                    {{ inputs.hidden_tag() }}
+		                                    {{ wtf.form_errors(inputs, hiddens='only') }}
+		                                    <table class="table table-hover" align="left">
+		                                        <col width="55%">
+		                                        <col width="45%">
+		                                        <tr>
+		                                            <th>Parameter</td>
+		                                            <th>Value</td>
+		                                        </tr>
+				                                    {%- for field in inputs %}
+				                                    {%- if field.name not in ('csrf_token', 'submit') %}
+				                                    {%- if group_dic[field.name] == group %}
+				                                    <tr>
+				                                        <td>{{field.description}} ({{field.name}})</td>
+				                                        <td>
+				                                            <div id='trigger-{{field.name|safe}}'>
+				                                                {{field(class="form-control")|safe}}
+				                                            </div>
+				                                        </td>
+				                                    </tr>
+				                                    {%- endif %}
+				                                    {%- endif %}
+				                                    {%- endfor %}
+		                                </table>
+		                            </div>
+		                        </div>
+                    		</div>
+                    		{%- endfor %}
+
+												<script>
+                        function getHeight() {
+                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                            var h_btn = document.getElementById('button-panel').offsetHeight;
+                            var h_win = $(window).height() - h_nav - h_btn - 50;
+                            return String(h_win)+'px'
+                        }
+                            console.log(getHeight())
+                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                        </script>
+                    </div>
+				        </form>
+            		</div>
+				        {%- endif %}
+
             </div>
 
 <!-- ###################### The Outputs panel ########################### -->
