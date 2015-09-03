@@ -224,9 +224,6 @@ $('#fileupload').fileupload({
      submitForms = function(){
          document.forms["global-inputs-form"].submit();
      }
-     
-     reconfig = function(){
-     }
 </script>
 
 {% endblock %}
@@ -262,37 +259,40 @@ $('#fileupload').fileupload({
     <div class="panel panel-default">
 
 <!-- ####################  Buttons to run scripts ################### -->
-		    <div class="panel-body" id='button-panel'>
-		        <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
-		        <span class="btn btn-success fileinput-button" >
-		            <i class="glyphicon glyphicon-plus"></i>
-		            <span>Load inputs</span>
-		            <input id="fileupload" type="file" name="files[]" multiple >
-		        </span>
-		        <div class="btn-group">
-		          	<button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
-		          	<button type="button" style="background-color:blue;border-color:blue" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		            		<span class="caret"></span>
-		            		<span class="sr-only">Toggle Dropdown</span>
-		          	</button>
-		          	<ul class="dropdown-menu" style="background-color:blue;border-color:blue">
-				            <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
-				            <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
-				            <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
-				            <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
-				            <!-- <li role="separator" class="divider"></li>
-				            <li><a href="#">Separated link</a></li> -->
-		            </ul>
-		        </div>
-		        <div class="btn" id="reconfig" onClick="reconfig();" value="Reconfigure analysis"></div>
-		        <form id="download-inputs-form" method="get" action="/analysis/download"></form>
-		        <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
+        <div class="panel-body" id='button-panel'>
+            <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
+            {%- if not sens_flag %}
+            <span class="btn btn-success fileinput-button" >
+                <i class="glyphicon glyphicon-plus"></i>
+                <span>Load inputs</span>
+                <input id="fileupload" type="file" name="files[]" multiple >
+            </span>
+            {%- endif %}
+            <div class="btn-group">
+                <button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
+                <button type="button" style="background-color:blue;border-color:blue" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu" style="background-color:blue;border-color:blue">
+                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+                    {%- if not sens_flag %}
+                    <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
+                    <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
+                    {%- endif %}
+                    <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+                    <!-- <li role="separator" class="divider"></li>
+                    <li><a href="#">Separated link</a></li> -->
+                </ul>
+            </div>
+            <form id="download-inputs-form" method="get" action="/analysis/download"></form>
+            <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
 
-		    </div>
+        </div>
 
 <!-- ################### divider to rest of content ################### -->
-		    <div class="panel-body">
-		    <div class="row">
+        <div class="panel-body">
+        <div class="row">
 
 <!-- ########################## The Description panel ############## -->
             <div class="col-md-2">
@@ -302,7 +302,13 @@ $('#fileupload').fileupload({
                             <h3 class="panel-title">Model Description</h3>
                         </div>
                         <div class="panel-body">
-                        		<p>{{desc}}</p>
+                            <p>{{desc}}</p>
+                            <p></p>
+                            {%- if sens_flag %}
+                            <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
+                            {%- else %}
+                            <p>For the individual analysis, please specify all input values.</p>
+                            {%- endif %}
                         </div>
                     </div>
                 </div>
@@ -324,58 +330,58 @@ $('#fileupload').fileupload({
             </div>
 
 <!-- ########################## The Inputs panel ###    ######################## -->
+            {% if not sens_flag %}
             <div class="col-md-3" id='inputs_single'>
-                {% if not sens_flag %}
                 <div class="panel-body">
-		            <form method="post" class="form" id='global-inputs-form'>
-                	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
-                	  	  {%- for group in group_list %}
+                <form method="post" class="form" id='global-inputs-form'>
+                    <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                        {%- for group in group_list %}
                         <div class="panel panel-default">
                             <div class="panel-heading" role="tab" id="headingOne">
-                            		<h3 class="panel-title">
-                            		<a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
-                            		{{group}} Inputs
-                            	  </a>
-                            		</h3>
+                                <h3 class="panel-title">
+                                <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                                {{group}} Inputs
+                                </a>
+                                </h3>
                             </div>
                             {%- if group == 'Global' %}
                             <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
                             {%- else %}
                             <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
                             {%- endif %}
-		                            <div class="panel-body"
-		                                 align="center" id='global-inputs-panel'>
+                                <div class="panel-body"
+                                     align="center" id='global-inputs-panel'>
 
-		                                    {{ inputs.hidden_tag() }}
-		                                    {{ wtf.form_errors(inputs, hiddens='only') }}
-		                                    <table class="table table-hover" align="left">
-		                                        <col width="55%">
-		                                        <col width="45%">
-		                                        <tr>
-		                                            <th>Parameter</td>
-		                                            <th>Value</td>
-		                                        </tr>
-				                                    {%- for field in inputs %}
-				                                    {%- if field.name not in ('csrf_token', 'submit') %}
-				                                    {%- if group_dic[field.name] == group %}
-				                                    <tr>
-				                                        <td>{{field.description}} ({{field.name}})</td>
-				                                        <td>
-				                                            <div id='trigger-{{field.name|safe}}'>
-				                                                {{field(class="form-control")|safe}}
-				                                            </div>
-				                                        </td>
-				                                    </tr>
-				                                    {%- endif %}
-				                                    {%- endif %}
-				                                    {%- endfor %}
-		                                </table>
-		                            </div>
-		                        </div>
-                    		</div>
-                    		{%- endfor %}
+                                        {{ inputs.hidden_tag() }}
+                                        {{ wtf.form_errors(inputs, hiddens='only') }}
+                                        <table class="table table-hover" align="left">
+                                            <col width="55%">
+                                            <col width="45%">
+                                            <tr>
+                                                <th>Parameter</td>
+                                                <th>Value</td>
+                                            </tr>
+                                            {%- for field in inputs %}
+                                            {%- if field.name not in ('csrf_token', 'submit') %}
+                                            {%- if group_dic[field.name] == group %}
+                                            <tr>
+                                                <td>{{field.description}} ({{field.name}})</td>
+                                                <td>
+                                                    <div id='trigger-{{field.name|safe}}'>
+                                                        {{field(class="form-control")|safe}}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {%- endif %}
+                                            {%- endif %}
+                                            {%- endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {%- endfor %}
 
-												<script>
+                        <script>
                         function getHeight() {
                             var h_nav = document.getElementById('navigation-bar').offsetHeight;
                             var h_btn = document.getElementById('button-panel').offsetHeight;
@@ -387,59 +393,88 @@ $('#fileupload').fileupload({
                             document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
                         </script>
                     </div>
-				        </form>
-            		</div>
-				        {%- else %}
+                </form>
+                </div>
+            </div>
+            {%- else %}
+            <div class="col-md-5" id='inputs_single'>
                 <div class="panel-body">
-		            <form method="post" class="form" id='global-inputs-form'>
-                	  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
-                	  	  {%- for group in group_list %}
+                <form method="post" class="form" id='global-inputs-form'>
+                    <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                        {%- for group in group_list %}
                         <div class="panel panel-default">
                             <div class="panel-heading" role="tab" id="headingOne">
-                            		<h3 class="panel-title">
-                            		<a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
-                            		{{group}} Inputs
-                            	  </a>
-                            		</h3>
+                                <h3 class="panel-title">
+                                <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                                {{group}} Inputs
+                                </a>
+                                </h3>
                             </div>
                             {%- if group == 'Global' %}
                             <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
                             {%- else %}
                             <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
                             {%- endif %}
-		                            <div class="panel-body"
-		                                 align="center" id='global-inputs-panel'>
+                                <div class="panel-body"
+                                     align="center" id='global-inputs-panel'>
+                                        {{ inputs.hidden_tag() }}
+                                        {{ wtf.form_errors(inputs, hiddens='only') }}
+                                        <table class="table table-hover" align="left">
+                                            <tr>
+                                                <th>Parameter</td>
+                                                <th>Initial Value</td>
+                                                <th>Sensitivity Input</td>
+                                                <th>Sensitivity Low Value</td>
+                                                <th>Sensitivity High Value</td>
+                                            </tr>
+                                            {%- for field in inputs %}
+                                            {%- if ('select.' not in field.name) and ('low.' not in field.name) and ('high.' not in field_name) %}
+                                                {%- if field.name not in ('csrf_token', 'submit') and group_dic[field.name] == group %}
+                                                <tr>
+                                                    <td>{{field.description}} ({{field.name}})</td>
+                                                    <td>
+                                                        <div id='trigger-{{field.name|safe}}'>
+                                                            {{field(class="form-control")|safe}}
+                                                        </div>
+                                                    </td>
+		                                                <td>
+		                                                    {%- for select_field in inputs %}
+		                                                    {%- if ('select.'+field.name == select_field.name) %}
+		                                                    <div id='trigger-{{select_field.name|safe}}'>
+		                                                        {{select_field(class="form-control")|safe}}
+		                                                    </div>
+		                                                    {%- endif %}
+		                                                    {%- endfor %}
+		                                                </td>
+		                                                <td>
+		                                                    {%- for low_field in inputs %}
+		                                                    {%- if ('low.'+field.name == low_field.name) %}
+		                                                    <div id='trigger-{{low_field.name|safe}}'>
+		                                                        {{low_field(class="form-control")|safe}}
+		                                                    </div>
+		                                                    {%- endif %}
+		                                                    {%- endfor %}
+		                                                </td>
+		                                                <td>
+		                                                    {%- for high_field in inputs %}
+		                                                    {%- if ('high.'+field.name == high_field.name) %}
+		                                                    <div id='trigger-{{high_field.name|safe}}'>
+		                                                        {{high_field(class="form-control")|safe}}
+		                                                    </div>
+		                                                    {%- endif %}
+		                                                    {%- endfor %}
+		                                                </td>
+                                                </tr>
+                                                {%- endif %}
+                                            {%- endif %}
+                                            {%- endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {%- endfor %}
 
-		                                    {{ inputs.hidden_tag() }}
-		                                    {{ wtf.form_errors(inputs, hiddens='only') }}
-		                                    <table class="table table-hover" align="left">
-		                                        <col width="55%">
-		                                        <col width="45%">
-		                                        <tr>
-		                                            <th>Parameter</td>
-		                                            <th>Value</td>
-		                                        </tr>
-				                                    {%- for field in inputs %}
-				                                    {%- if field.name not in ('csrf_token', 'submit') %}
-				                                    {%- if group_dic[field.name] == group %}
-				                                    <tr>
-				                                        <td>{{field.description}} ({{field.name}})</td>
-				                                        <td>
-				                                            <div id='trigger-{{field.name|safe}}'>
-				                                                {{field(class="form-control")|safe}}
-				                                            </div>
-				                                        </td>
-				                                    </tr>
-				                                    {%- endif %}
-				                                    {%- endif %}
-				                                    {%- endfor %}
-		                                </table>
-		                            </div>
-		                        </div>
-                    		</div>
-                    		{%- endfor %}
-
-												<script>
+                        <script>
                         function getHeight() {
                             var h_nav = document.getElementById('navigation-bar').offsetHeight;
                             var h_btn = document.getElementById('button-panel').offsetHeight;
@@ -451,9 +486,9 @@ $('#fileupload').fileupload({
                             document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
                         </script>
                     </div>
-				        </form>
-            		</div>
-				        {%- endif %}
+                </form>
+                </div>
+                {%- endif %}
 
             </div>
 
@@ -604,7 +639,7 @@ $('#fileupload').fileupload({
 <!-- ################### ending dividers ################### -->
         </div>
         </div>
-  	</div>
+    </div>
 </div>
 
 {% endblock %}

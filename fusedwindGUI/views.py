@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from openmdao.main.vartree import VariableTree
-from openmdao.main.api import set_as_top
+from openmdao.main.api import set_as_top, Assembly
+from openmdao.lib.drivers.api import DOEdriver
+from openmdao.lib.doegenerators.api import FullFactorial, Uniform
 
 import os
 
@@ -62,7 +64,7 @@ def make_field(k,v):
         return MyField(k, **prep_field(v))
     return field(k, **prep_field(v))
 
-def WebGUIForm(dic, run=False):
+def WebGUIForm(dic, run=False, sens_flag=False):
     """Automagically generate the form from a FUSED I/O dictionary.
     TODO:
     [ ] Add type validators
@@ -78,9 +80,22 @@ def WebGUIForm(dic, run=False):
     # sorting the keys alphabetically
     skeys = dic.keys()
     skeys.sort()
+
     for k in skeys:
         v = dic[k]
         setattr(MyForm, k, make_field(k,v))
+
+    if sens_flag:
+        for k in skeys:
+            v = dic[k]
+            if v['type'] == 'Float':
+                kselect = "select." + k
+                newdic = {'default':False, 'state':False, 'desc':kselect, 'type':'Bool', 'group':v['group']}
+                setattr(MyForm, kselect, make_field(kselect,newdic))
+                klow = "low." + k
+                setattr(MyForm, klow, make_field(klow, v))
+                khigh = "high." + k
+                setattr(MyForm, khigh, make_field(khigh, v))
 
     if run: # Add the run button
         setattr(MyForm, 'submit', SubmitField("Run"))
@@ -182,14 +197,6 @@ def hello():
     provider = str(os.environ.get('PROVIDER', 'world'))
     return render_template('index.html', form={'hello':'world'})
 
-@app.route('/documentation.html')
-def docs():
-    """ Docs page
-    """
-    return render_template('documentation.html')
-
-
-    return render_template('configure.html', config=build_config()(MultiDict()))
 
 @app.route('/upload/', methods=['POST'])
 def upload():
@@ -261,6 +268,7 @@ def serialize(thing):
 
 cpnt = None
 desc = ''
+analysis = 'Individual Analysis'
 
 def webgui(app=None):
 
@@ -270,6 +278,7 @@ def webgui(app=None):
 
         global cpnt
         global desc
+        global analysis
 
         class ConfigForm(Form):
             pass
@@ -277,7 +286,7 @@ def webgui(app=None):
         models = [{'name': 'Model Selection',
                    'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
                   {'name': 'Analysis Type',
-                   'choices': ['Individual Analyses']}]
+                   'choices': ['Individual Analyses', 'Sensitivity Analysis']}]
         for dic in models:
             name = dic['name']
             choices = [(val, val) for val in dic['choices']]
@@ -304,6 +313,7 @@ def webgui(app=None):
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
 
+            analysis = inputs['Analysis Type']
             myflask(True)
 
             return render_template('configure.html',
@@ -393,13 +403,17 @@ def webgui(app=None):
 
     def myflask(config_flag=False):
 
+        if analysis == 'Individual Analyses':
+            sens_flag=False
+        else:
+            sens_flag=True
+
         cpname = cpnt.__class__.__name__
 
         io = traits2jsondict(cpnt)
-        form_inputs = WebGUIForm(io['inputs'], run=True)()
 
-
-        group_list = []
+        # Create input groups
+        group_list = ['Global']
         group_dic = {}
         skeys = io['inputs'].keys()
         skeys.sort()
@@ -410,70 +424,127 @@ def webgui(app=None):
                     group_list.append(v['group'])
                 group_dic[k] = v['group']
             else: group_dic[k] = 'Global'
-        if 'Global' not in group_list:
-            group_list.append('Global')
-
-
         group_list.sort()
-        if 'Global' in group_list:
-            group_list.insert(0, group_list.pop(group_list.index('Global')))
+        group_list.insert(0, group_list.pop(group_list.index('Global')))
 
+        # Build assembly hierarchy
         assembly_structure = [{'text':cpname,
                                'nodes':[]}]
-
-        inputs =  request.form.to_dict()
-
-        model_config = ['']
-
-        for k in inputs.keys():
-            if k in io['inputs']: # Loading only the inputs allowed
-                setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
-
         sub_comp_data = {}
         if isinstance(cpnt, Assembly):
-
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
+        # Get inputs for form
+        form_inputs = WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)()
+       
+        failed_run_flag = False
         if (not config_flag) and request.method == 'POST': # Receiving a POST request
 
             inputs =  request.form.to_dict()
-            for k in inputs.keys():
-                if k in io['inputs']: # Loading only the inputs allowed
-                    setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
-            try:
-                cpnt.run()
-            except:
-                print "Analysis did not execute properly"
             io = traits2jsondict(cpnt)
-            sub_comp_data = {}
-            if isinstance(cpnt, Assembly):
 
-                sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
-                assembly_structure[0]['nodes'] = structure
-                # show both inputs and outputs in right side table
-                outputs = get_io_dict(cpnt)
-                combIO = outputs['inputs'] + outputs['outputs']
-            # no plots for now since bootstrap-table and bokeh seem to be in conflict
-            try:
-                script, div = prepare_plot(cpnt.plot)
-            except:
-                # TODO: gracefully inform the user of why he doesnt see his plots
-                print "Failed to prepare any plots for " + cpnt.__class__.__name__
+            if not sens_flag:
+                for k in inputs.keys():
+                    if k in io['inputs']: # Loading only the inputs allowed
+                            setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                try:
+                    cpnt.run()
+                except:
+                    print "Analysis did not execute properly"
+                    failed_run_flag = True
+
+                sub_comp_data = {}
+                if isinstance(cpnt, Assembly):
+    
+                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                    assembly_structure[0]['nodes'] = structure
+                    # show both inputs and outputs in right side table
+                    outputs = get_io_dict(cpnt)
+                    if not failed_run_flag:
+                        combIO = outputs['inputs'] + outputs['outputs']
+                    else:
+                        combIO = None
+                # no plots for now since bootstrap-table and bokeh seem to be in conflict
+                try:
+                    script, div = prepare_plot(cpnt.plot)
+                except:
+                    # TODO: gracefully inform the user of why he doesnt see his plots
+                    print "Failed to prepare any plots for " + cpnt.__class__.__name__
+                    script, div, plot_resources = None, None, None
+    
+                return render_template('webgui.html',
+                            inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
+                            outputs=combIO,
+                            name=cpname,
+                            plot_script=script, plot_div=div,
+                            sub_comp_data=sub_comp_data,
+                            assembly_structure=assembly_structure,
+                            group_list=group_list,
+                            group_dic=group_dic,
+                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+            
+            else:
+
+                my_sa = Assembly()
+                my_sa.add('asym',cpnt)
+                my_sa.add('driver', DOEdriver())
+                my_sa.driver.workflow.add('asym')
+                my_sa.driver.DOEgenerator = Uniform(1000)
+
+                for k in inputs.keys():
+                    print k
+                    if k in io['inputs']:
+                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                    else:
+                        if 'select.' in k:
+                            for kselect in inputs.keys():
+                                if 'select.'+kselect == k:
+                                    for klow in inputs.keys():
+                                        if 'low.'+kselect == klow:
+                                            for khigh in inputs.keys():
+                                                if 'high.'+kselect == khigh:
+                                                    my_sa.driver.add_parameter('asym.'+kselect, low=float(inputs[klow]), high=float(inputs[khigh]))
+
+
+                for s in io['outputs']:
+                    t = cpnt.get_trait(s)
+                    if t.trait_type.__class__.__name__ != 'VarTree':
+                        my_sa.driver.add_response('asym.'+s)
+
+                try:
+                    my_sa.run()
+                except:
+                    print "Analysis did not execute properly"
+                    failed_run_flag = True
+    
+                io = traits2jsondict(cpnt)
+                sub_comp_data = {}
+                if isinstance(cpnt, Assembly):
+    
+                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                    assembly_structure[0]['nodes'] = structure
+                    # show both inputs and outputs in right side table
+                    outputs = get_io_dict(cpnt)
+                    if not failed_run_flag:
+                        combIO = outputs['inputs'] + outputs['outputs']
+                    else:
+                        combIO = None
+
                 script, div, plot_resources = None, None, None
 
-            return render_template('webgui.html',
-                        inputs=WebGUIForm(io['inputs'], run=True)(MultiDict(inputs)),
-                        outputs=combIO,
-                        name=cpname,
-                        plot_script=script, plot_div=div,
-                        sub_comp_data=sub_comp_data,
-                        assembly_structure=assembly_structure,
-                        group_list=group_list,
-                        group_dic=group_dic,
-                        desc=desc)
-		        
+                return render_template('webgui.html',
+                            inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
+                            outputs=combIO,
+                            name=cpname,
+                            plot_script=script, plot_div=div,
+                            sub_comp_data=sub_comp_data,
+                            assembly_structure=assembly_structure,
+                            group_list=group_list,
+                            group_dic=group_dic,
+                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)            
         else:
+
             # Show the standard form
             return render_template('webgui.html',
                 inputs=form_inputs, outputs=None,
@@ -483,7 +554,7 @@ def webgui(app=None):
                 assembly_structure=assembly_structure,
                 group_list=group_list,
                 group_dic=group_dic,
-                desc=desc)
+                desc=desc, failed_run_flag = failed_run_flag, sens_flag=sens_flag)
 
     myflask.__name__ = 'analysis'
     app.route('/'+ 'analysis', methods=['GET', 'POST'])(myflask)
