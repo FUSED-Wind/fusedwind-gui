@@ -488,7 +488,6 @@ def webgui(app=None):
                                'nodes':[]}]
         sub_comp_data = {}
         if isinstance(cpnt, Assembly):
-            print '\nmyflask(): calling build_hierarchy()'
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
@@ -511,7 +510,8 @@ def webgui(app=None):
                     print "Analysis did not execute properly (sens_flag = False)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
-                
+                    flash(failed_run_flag)
+                    
                 sub_comp_data = {}
                 if isinstance(cpnt, Assembly):
     
@@ -586,6 +586,7 @@ def webgui(app=None):
                     print "Analysis did not execute properly (sens_flag = True)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
+                    flash(failed_run_flag)
 
                 io = traits2jsondict(cpnt)
                 sub_comp_data = {}
