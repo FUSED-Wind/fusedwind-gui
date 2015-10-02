@@ -1,0 +1,87 @@
+<!-- error.html  2015 09 28 GNS 
+  A generic template for displaying error messages
+-->
+
+{% extends "base.html" %}
+
+{% block styles %}
+{{super()}}
+<script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
+<link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
+
+<link rel="stylesheet" href="{{ bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.css')}}">
+<script src="{{bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.js')}}"></script>
+<script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
+<script src="{{bower_url_for('notifyjs', filename='dist/notify.js')}}"></script>
+<script src="{{bower_url_for('notifyjs', filename='dist/styles/bootstrap/notify-bootstrap.js')}}"></script>
+
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
+<script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
+<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
+
+<style>
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+{% endblock %}
+
+{# ------------------------------------- #}
+
+{% block head %}
+{{super()}}
+
+    {% block scripts %}
+      {# scripts needs to be inside head #}
+    {{super()}}
+    <script>
+    // Alert script ---------------------------
+        function showalert(message, alerttype, delayms) {
+           delayms = typeof delayms !== 'undefined' ?  delayms : 5000; // default parameters do not work in function() stmt
+           $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' + alerttype + '" role="alert">' + 
+                                           '<span>' + message + '</span></div>')
+                                           
+           setTimeout(function() { $("#alertdiv").remove(); }, delayms);
+           // this will automatically close the alert and remove this if the users doesn't close it in 'delayms' ms
+                
+              
+           }
+    </script>
+    {% endblock %}
+
+{% endblock %}
+
+{# ------------------------------------- #}
+
+{% block content %}
+<!-- Navigation bar -->
+<div class="container-fluid" id="navigation-bar">
+    <div class="page-header">
+        <h1>FUSED-Wind</h1>
+        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+    </div>
+    <ul class="nav nav-tabs">
+        <li role="presentation"><a href="/">Home</a></li>
+        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
+        <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
+    </ul>
+</div>
+
+<!-- ################### Main Content ################### -->
+<div class="container-fluid id=maincontent">
+    <div class="container-fluid" id="alert_placeholder">
+    </div>
+
+  <p>
+  <script>
+    console.log('{{ errmssg }}');
+    showalert('{{ errmssg }}', 'warning');
+  </script>
+</div>
+  
+  
+{% endblock %}
