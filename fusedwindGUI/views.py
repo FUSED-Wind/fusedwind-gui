@@ -501,9 +501,15 @@ def webgui(app=None):
             io = traits2jsondict(cpnt)
 
             if not sens_flag:
-                for k in inputs.keys():
-                    if k in io['inputs']: # Loading only the inputs allowed
-                            setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                try:
+                    for k in inputs.keys():
+                        if k in io['inputs']: # Loading only the inputs allowed
+                                setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                except:
+                    print "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                    failed_run_flag = True
+                    failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                    flash(failed_run_flag)
                 try:
                     cpnt.run()
                 except:
@@ -562,8 +568,14 @@ def webgui(app=None):
 
                 for k in inputs.keys():
                     print k
-                    if k in io['inputs']:
-                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                    try:
+                        if k in io['inputs']:
+                            setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                    except:
+                        print "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        failed_run_flag = True
+                        failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        flash(failed_run_flag)
                     else:
                         if 'select.' in k:
                             for kselect in inputs.keys():
