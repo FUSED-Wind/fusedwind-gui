@@ -177,11 +177,11 @@ $('#fileupload').fileupload({
 // Alert script ---------------------------
     function showalert(message,alerttype, delayms) {
         delayms = typeof delayms !== 'undefined' ?  delayms : 2000; // default parameters do not work in function() stmt
-        
-        $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +  
-                                       alerttype + 
-                                       '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' + 
-                                       message + 
+
+        $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +
+                                       alerttype +
+                                       '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
+                                       message +
                                        '</span></div>')
 
             setTimeout(function() { // this will automatically close the alert and remove this if the users doesn't close it in 'delayms' ms
@@ -224,7 +224,7 @@ $('#fileupload').fileupload({
              }
          });
      };
-     
+
 // Submit forms ------------------
      submitForms = function(){
          document.forms["global-inputs-form"].submit();
@@ -523,9 +523,9 @@ $('#fileupload').fileupload({
                     </div>
                 </form>
                 </div>
+            </div>
                 {%- endif %}
 
-            </div>
 
 <!-- ###################### The Outputs panel ########################### -->
             <div class="col-md-7">

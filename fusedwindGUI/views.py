@@ -144,12 +144,12 @@ if use_bokeh:
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     #print 'In build_hierarchy...'
-    
+
     for name in cpnt.list_components():
         comp = getattr(cpnt, name)
         #if debug:
         #    print '  bld_hierarchy: {:} : {:}'.format(name, comp) #gns
-            
+
         cname = comp.__class__.__name__
         if cname <> 'Driver':
             sub_comp_data[cname] = {}
@@ -324,17 +324,17 @@ def webgui(app=None):
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                 except:
                     print 'lcoe_csm_assembly could not be loaded!'
-                    return render_template('error.html', 
-                                   errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection'])) 
+                    return render_template('error.html',
+                                   errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
 
                 try:
                     sys.path.append('d:/systemsengr/fusedwind-gui/src/plant-costsse/src')
                     sys.stderr.write("\n*** NOTE: views.py importing plant-costsse (because setup.py didn't install it properly)\n\n")
                 except:
                     print 'plant-costsse could not be loaded!'
-                    return render_template('error.html', 
-                                   errmssg='{:} : plant-costsse could not be loaded!'.format(inputs['Model Selection'])) 
-                    
+                    return render_template('error.html',
+                                   errmssg='{:} : plant-costsse could not be loaded!'.format(inputs['Model Selection']))
+
             else:
                 try:
                     from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
@@ -343,8 +343,8 @@ def webgui(app=None):
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
-                    return render_template('error.html', 
-                                   errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(inputs['Model Selection'])) 
+                    return render_template('error.html',
+                                   errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(inputs['Model Selection']))
 
             analysis = inputs['Analysis Type']
             myflask(True)
@@ -352,17 +352,17 @@ def webgui(app=None):
             return render_template('configure.html',
                             config=ConfigForm(MultiDict()),
                             config_flag = True)
-        
+
         else:
             return render_template('configure.html',
                 config=ConfigForm(MultiDict()),
                 config_flag = False)
-        
+
     configure.__name__ = 'configure'
     app.route('/configure.html', methods=['Get', 'Post'])(configure)
 
     #---------------
-    
+
     def download():
         out = get_io_dict(cpnt)
         params = {}
@@ -379,7 +379,7 @@ def webgui(app=None):
     app.route('/analysis/download', methods=['GET'])(download)
 
     #---------------
-    
+
     def download_full():
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
@@ -401,14 +401,14 @@ def webgui(app=None):
     app.route('/analysis/download_full', methods=['GET'])(download_full)
 
     #---------------
-    
+
     def record_case():
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             flash('No case recorded - NO gui_recorder in component!')
             return 'No case recorded - NO gui_recorder in component!'
-            
+
         if 'counter' in cpnt.gui_recorder.keys():
             cpnt.gui_recorder['counter'] += 1
         else:
@@ -441,14 +441,14 @@ def webgui(app=None):
     app.route('/analysis/record_case', methods=['POST'])(record_case)
 
     #---------------
-    
+
     def clear_recorder():
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             flash('No recorder to clear!', category='message')
             return 'No recorder to clear!'
-            
+
         cpnt.gui_recorder = {}
         flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
@@ -457,7 +457,7 @@ def webgui(app=None):
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
     #---------------
-    
+
     def myflask(config_flag=False):
 
         if analysis == 'Individual Analysis':
@@ -470,11 +470,11 @@ def webgui(app=None):
         if cpnt is None:
             print '\n*** WARNING: component is None\n'
             failed_run_flag = 'WARNING: component is None in myflask() - try another model(?)'
-            
-            return render_template('error.html', 
-                                   errmssg=failed_run_flag, 
-                                   sens_flag=sens_flag)            
-            
+
+            return render_template('error.html',
+                                   errmssg=failed_run_flag,
+                                   sens_flag=sens_flag)
+
         io = traits2jsondict(cpnt)
 
         # Create input groups
@@ -497,13 +497,12 @@ def webgui(app=None):
                                'nodes':[]}]
         sub_comp_data = {}
         if isinstance(cpnt, Assembly):
-            #print '\nmyflask(): calling build_hierarchy()'
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
         # Get inputs for form
         form_inputs = WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)()
-       
+
         failed_run_flag = False
         if (not config_flag) and request.method == 'POST': # Receiving a POST request
 
@@ -511,34 +510,41 @@ def webgui(app=None):
             io = traits2jsondict(cpnt)
 
             if not sens_flag:
-                for k in inputs.keys():
-                    if k in io['inputs']: # Loading only the inputs allowed
-                            setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                try:
+                    for k in inputs.keys():
+                        if k in io['inputs']: # Loading only the inputs allowed
+                                setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                except:
+                    print "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                    failed_run_flag = True
+                    failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                    flash(failed_run_flag)
                 try:
                     cpnt.run()
                 except:
                     print "Analysis did not execute properly (sens_flag = False)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
-                
+                    #flash(failed_run_flag) # no need to flash a failed_run_flag
+
                 sub_comp_data = {}
                 if isinstance(cpnt, Assembly):
-    
+
                     sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
                     # show both inputs and outputs in right side table
                     outputs = get_io_dict(cpnt)
                     if debug:
-                        print ' INPUTS ', outputs['inputs'] 
-                        print 'OUTPUTS ', outputs['outputs'] 
+                        print ' INPUTS ', outputs['inputs']
+                        print 'OUTPUTS ', outputs['outputs']
                     if not failed_run_flag:
                         combIO = outputs['inputs'] + outputs['outputs']
                     else:
                         combIO = None
-                
-                if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28 
+
+                if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28
                       # no point in running plots for a failed run
-                            
+
                     # no plots for now since bootstrap-table and bokeh seem to be in conflict
                     try:
                         script, div = prepare_plot(cpnt.plot)
@@ -560,7 +566,7 @@ def webgui(app=None):
                             group_list=group_list,
                             group_dic=group_dic,
                             desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
-            
+
             else: # sens_flag == True
 
                 my_sa = Assembly()
@@ -571,8 +577,14 @@ def webgui(app=None):
 
                 for k in inputs.keys():
                     print k
-                    if k in io['inputs']:
-                        setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                    try:
+                        if k in io['inputs']:
+                            setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                    except:
+                        print "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        failed_run_flag = True
+                        failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        flash(failed_run_flag)
                     else:
                         if 'select.' in k:
                             for kselect in inputs.keys():
@@ -595,11 +607,11 @@ def webgui(app=None):
                     print "Analysis did not execute properly (sens_flag = True)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
+                    #flash(failed_run_flag) # no need to flash a failed_run_flag
 
                 io = traits2jsondict(cpnt)
                 sub_comp_data = {}
                 if isinstance(cpnt, Assembly):
-    
                     sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
                     # show both inputs and outputs in right side table
@@ -620,8 +632,8 @@ def webgui(app=None):
                             assembly_structure=assembly_structure,
                             group_list=group_list,
                             group_dic=group_dic,
-                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)            
-        
+                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+
         else: # a 'GET' request?
 
             # Show the standard form
