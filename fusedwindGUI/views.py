@@ -195,7 +195,7 @@ def _handleUpload(files):
                 print('File {:} not a valid YAML file!'.format(upload_file.filename))
                 flash('File {:} not a valid YAML file!'.format(upload_file.filename))
                 return None
-                
+
         outfiles.append({
             'filename': upload_file.filename,
             'content': inputs
@@ -284,6 +284,13 @@ def serialize(thing):
 
     return '??_' +  str(thing.__class__)
 
+def to_unicode(dic):
+
+    new = {}
+    for k, v in dic.iteritems():
+        new[k] = unicode(v)
+    return new
+
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
@@ -297,6 +304,9 @@ def webgui(app=None):
         global cpnt
         global desc
         global analysis
+        import fusedwindGUI
+
+        abspath = fusedwindGUI.__file__.strip('__init__.pyc')
 
         class ConfigForm(Form):
             pass
@@ -304,7 +314,9 @@ def webgui(app=None):
         models = [{'name': 'Model Selection',
                    'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
                   {'name': 'Analysis Type',
-                   'choices': ['Individual Analysis', 'Sensitivity Analysis']}]
+                   'choices': ['Individual Analysis', 'Sensitivity Analysis']},
+                   {'name': 'Turbine Selection',
+                    'choices': ['NREL 5MW RWT']}]
         for dic in models:
             name = dic['name']
             choices = [(val, val) for val in dic['choices']]
@@ -322,6 +334,9 @@ def webgui(app=None):
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
                     cpnt = set_as_top(lcoe_csm_assembly())
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
+                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+                        with open(os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp'), 'r') as f:
+                            wtinputs = to_unicode(yaml.load(f))
                 except:
                     print 'lcoe_csm_assembly could not be loaded!'
                     return render_template('error.html',
@@ -341,13 +356,16 @@ def webgui(app=None):
                     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
                     cpnt = lcoe_se
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
+                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+                        with open(os.path.join(abspath, 'wt_models/nrel5mw_tier2.inp'), 'r') as f:
+                            wtinputs = yaml.load(f)
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template('error.html',
                                    errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(inputs['Model Selection']))
 
             analysis = inputs['Analysis Type']
-            myflask(True)
+            myflask(True, wt_inputs=wtinputs)
 
             return render_template('configure.html',
                             config=ConfigForm(MultiDict()),
@@ -386,7 +404,7 @@ def webgui(app=None):
             print '\n*** NO gui_recorder in component!\n'
             flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
-            
+
         if len(cpnt.gui_recorder.keys()) == 0:
             record_case()
             r = cpnt.gui_recorder['recorder']
@@ -458,7 +476,7 @@ def webgui(app=None):
 
     #---------------
 
-    def myflask(config_flag=False):
+    def myflask(config_flag=False, wt_inputs=None):
 
         if analysis == 'Individual Analysis':
             sens_flag=False
@@ -499,9 +517,6 @@ def webgui(app=None):
         if isinstance(cpnt, Assembly):
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
-
-        # Get inputs for form
-        form_inputs = WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)()
 
         failed_run_flag = False
         if (not config_flag) and request.method == 'POST': # Receiving a POST request
@@ -555,7 +570,7 @@ def webgui(app=None):
                         script, div, plot_resources = None, None, None
                 else:
                     script, div, plot_resources = None, None, None
-                    
+
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
@@ -622,7 +637,6 @@ def webgui(app=None):
                         combIO = None
 
                 script, div, plot_resources = None, None, None
-
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
@@ -638,8 +652,8 @@ def webgui(app=None):
 
             # Show the standard form
             return render_template('webgui.html',
-                inputs=form_inputs, outputs=None,
-                name=cpname,
+                inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(wt_inputs)),
+                outputs=None, name=cpname,
                 plot_script=None, plot_div=None, plot_resources=None,
                 sub_comp_data=sub_comp_data,
                 assembly_structure=assembly_structure,

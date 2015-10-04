@@ -294,24 +294,24 @@ $('#fileupload').fileupload({
             <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
 
         </div>
-        
-<!-- ################### divider for error messages GNS 2015 09 21 ################### -->  
+
+<!-- ################### divider for error messages GNS 2015 09 21 ################### -->
 
         <!-- display a failed run message if present -->
-        
+
         {% if failed_run_flag %}
           <script>
             console.log(' {{ failed_run_flag }} ');
             // window.alert(' {{ failed_run_flag }} ');
-            $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-danger' +  
-                                               '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' + 
-                                               ' {{ failed_run_flag }} ' + 
+            $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-danger' +
+                                               '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
+                                               ' {{ failed_run_flag }} ' +
                                                '</span></div>')
           </script>
         {% endif %}
 
         <!-- display any flashed messages -->
-        
+
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             <div class='div2' style="background-color:#99FFFF;margin-left:30px;"> <!-- added GNS 2015 09 23 -->
