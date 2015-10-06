@@ -195,7 +195,7 @@ def _handleUpload(files):
                 print('File {:} not a valid YAML file!'.format(upload_file.filename))
                 flash('File {:} not a valid YAML file!'.format(upload_file.filename))
                 return None
-                
+
         outfiles.append({
             'filename': upload_file.filename,
             'content': inputs
@@ -347,7 +347,7 @@ def webgui(app=None):
                                    errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(inputs['Model Selection']))
 
             analysis = inputs['Analysis Type']
-            myflask(True)
+            fused_webapp(True)
 
             return render_template('configure.html',
                             config=ConfigForm(MultiDict()),
@@ -386,7 +386,7 @@ def webgui(app=None):
             print '\n*** NO gui_recorder in component!\n'
             flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
-            
+
         if len(cpnt.gui_recorder.keys()) == 0:
             record_case()
             r = cpnt.gui_recorder['recorder']
@@ -458,7 +458,7 @@ def webgui(app=None):
 
     #---------------
 
-    def myflask(config_flag=False):
+    def fused_webapp(config_flag=False):
 
         if analysis == 'Individual Analysis':
             sens_flag=False
@@ -469,7 +469,7 @@ def webgui(app=None):
 
         if cpnt is None:
             print '\n*** WARNING: component is None\n'
-            failed_run_flag = 'WARNING: component is None in myflask() - try another model(?)'
+            failed_run_flag = 'WARNING: component is None in fused_webapp() - try another model(?)'
 
             return render_template('error.html',
                                    errmssg=failed_run_flag,
@@ -555,7 +555,7 @@ def webgui(app=None):
                         script, div, plot_resources = None, None, None
                 else:
                     script, div, plot_resources = None, None, None
-                    
+
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
@@ -647,8 +647,8 @@ def webgui(app=None):
                 group_dic=group_dic,
                 desc=desc, failed_run_flag = failed_run_flag, sens_flag=sens_flag)
 
-    myflask.__name__ = 'analysis'
-    app.route('/'+ 'analysis', methods=['GET', 'POST'])(myflask)
+    fused_webapp.__name__ = 'analysis'
+    app.route('/'+ 'analysis', methods=['GET', 'POST'])(fused_webapp)
 
 #
 #
