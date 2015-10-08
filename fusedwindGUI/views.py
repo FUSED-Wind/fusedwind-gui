@@ -110,9 +110,9 @@ try:
     from bokeh.plotting import figure
     from bokeh.charts import  Line
     from bokeh.resources import INLINE
-    from bokeh.templates import RESOURCES
+    from bokeh.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
-    from bokeh.charts import Donut, output_file, show
+    from bokeh._legacy_charts import Donut, output_file, show
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
@@ -128,7 +128,7 @@ if use_bokeh:
         # Configure resources to include BokehJS inline in the document.
         # For more details see:
         #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
-        plot_resources = RESOURCES.render(
+        plot_resources = JS_RESOURCES.render(
             js_raw=INLINE.js_raw,
             css_raw=INLINE.css_raw,
             js_files=INLINE.js_files,
@@ -305,6 +305,7 @@ def webgui(app=None):
         global desc
         global analysis
         import fusedwindGUI
+        global wt_inputs
 
         abspath = fusedwindGUI.__file__.strip('__init__.pyc')
 
@@ -336,13 +337,13 @@ def webgui(app=None):
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
                         with open(os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp'), 'r') as f:
-                            wtinputs = to_unicode(yaml.load(f))
+                            wt_inputs = to_unicode(yaml.load(f))
                 except:
-                    print 'lcoe_csm_assembly could not be loaded!'
-                    return render_template('error.html',
-                                   errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
+                   print 'lcoe_csm_assembly could not be loaded!'
+                   return render_template('error.html',
+                                  errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
 
-                try:
+                try: # TODO: windows people, clean that up!
                     sys.path.append('d:/systemsengr/fusedwind-gui/src/plant-costsse/src')
                     sys.stderr.write("\n*** NOTE: views.py importing plant-costsse (because setup.py didn't install it properly)\n\n")
                 except:
@@ -358,14 +359,14 @@ def webgui(app=None):
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
                         with open(os.path.join(abspath, 'wt_models/nrel5mw_tier2.inp'), 'r') as f:
-                            wtinputs = yaml.load(f)
+                            wt_inputs = yaml.load(f)
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template('error.html',
                                    errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(inputs['Model Selection']))
 
             analysis = inputs['Analysis Type']
-            myflask(True, wt_inputs=wtinputs)
+            myflask(True)
 
             return render_template('configure.html',
                             config=ConfigForm(MultiDict()),
@@ -476,7 +477,7 @@ def webgui(app=None):
 
     #---------------
 
-    def myflask(config_flag=False, wt_inputs=None):
+    def myflask(config_flag=False):
 
         if analysis == 'Individual Analysis':
             sens_flag=False
