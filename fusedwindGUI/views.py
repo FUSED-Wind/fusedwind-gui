@@ -110,9 +110,9 @@ try:
     from bokeh.plotting import figure
     from bokeh.charts import  Line
     from bokeh.resources import INLINE
-    from bokeh.templates import RESOURCES
+    from bokeh.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
-    from bokeh.charts import Donut, output_file, show
+    from bokeh._legacy_charts import Donut, output_file, show
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
@@ -128,7 +128,7 @@ if use_bokeh:
         # Configure resources to include BokehJS inline in the document.
         # For more details see:
         #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
-        plot_resources = RESOURCES.render(
+        plot_resources = JS_RESOURCES.render(
             js_raw=INLINE.js_raw,
             css_raw=INLINE.css_raw,
             js_files=INLINE.js_files,
@@ -284,6 +284,13 @@ def serialize(thing):
 
     return '??_' +  str(thing.__class__)
 
+def to_unicode(dic):
+
+    new = {}
+    for k, v in dic.iteritems():
+        new[k] = unicode(v)
+    return new
+
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
@@ -297,6 +304,10 @@ def webgui(app=None):
         global cpnt
         global desc
         global analysis
+        import fusedwindGUI
+        global wt_inputs
+
+        abspath = fusedwindGUI.__file__.strip('__init__.pyc')
 
         class ConfigForm(Form):
             pass
@@ -304,7 +315,9 @@ def webgui(app=None):
         models = [{'name': 'Model Selection',
                    'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
                   {'name': 'Analysis Type',
-                   'choices': ['Individual Analysis', 'Sensitivity Analysis']}]
+                   'choices': ['Individual Analysis', 'Sensitivity Analysis']},
+                   {'name': 'Turbine Selection',
+                    'choices': ['NREL 5MW RWT']}]
         for dic in models:
             name = dic['name']
             choices = [(val, val) for val in dic['choices']]
@@ -322,12 +335,15 @@ def webgui(app=None):
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
                     cpnt = set_as_top(lcoe_csm_assembly())
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
+                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+                        with open(os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp'), 'r') as f:
+                            wt_inputs = to_unicode(yaml.load(f))
                 except:
-                    print 'lcoe_csm_assembly could not be loaded!'
-                    return render_template('error.html',
-                                   errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
+                   print 'lcoe_csm_assembly could not be loaded!'
+                   return render_template('error.html',
+                                  errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
 
-                try:
+                try: # TODO: windows people, clean that up!
                     sys.path.append('d:/systemsengr/fusedwind-gui/src/plant-costsse/src')
                     sys.stderr.write("\n*** NOTE: views.py importing plant-costsse (because setup.py didn't install it properly)\n\n")
                 except:
@@ -341,6 +357,9 @@ def webgui(app=None):
                     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
                     cpnt = lcoe_se
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
+                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+                        with open(os.path.join(abspath, 'wt_models/nrel5mw_tier2.inp'), 'r') as f:
+                            wt_inputs = yaml.load(f)
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template('error.html',
@@ -500,9 +519,6 @@ def webgui(app=None):
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
-        # Get inputs for form
-        form_inputs = WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)()
-
         failed_run_flag = False
         if (not config_flag) and request.method == 'POST': # Receiving a POST request
 
@@ -622,7 +638,6 @@ def webgui(app=None):
                         combIO = None
 
                 script, div, plot_resources = None, None, None
-
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
@@ -638,8 +653,8 @@ def webgui(app=None):
 
             # Show the standard form
             return render_template('webgui.html',
-                inputs=form_inputs, outputs=None,
-                name=cpname,
+                inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(wt_inputs)),
+                outputs=None, name=cpname,
                 plot_script=None, plot_div=None, plot_resources=None,
                 sub_comp_data=sub_comp_data,
                 assembly_structure=assembly_structure,
