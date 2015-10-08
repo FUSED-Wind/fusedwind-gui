@@ -3,7 +3,7 @@ rotor_diameter: 126.0
 hub_height: 90.0
 max_tip_speed: 80.0
 turbine_number: 100
-offshore: true
+offshore: True
 sea_depth: 20.0
 drivetrain_design: 'geared'
 altitude: 0.0
@@ -20,10 +20,10 @@ weibull_k: 2.15
 thrust_coefficient: 0.50
 max_efficiency: 0.902
 blade_number: 3
-advanced_blade: true
-crane: true
+advanced_blade: True
+crane: True
 advanced_bedplate: 0
-advanced_tower: true
+advanced_tower: True
 soiling_losses: 0.0
 array_losses: 0.10
 availability: 0.941

@@ -3,7 +3,7 @@ rotor_diameter: 126.0
 hub_height: 90.0
 max_tipspeed: 80.0
 turbine_number: 100
-offshore: true
+offshore: True
 sea_depth: 20.0
 AddWeightFactorBlade: 1.2
 blade_material_density: 2100.0
@@ -31,7 +31,7 @@ wohler_exponent_blade_flap: 10.0
 wohler_exponent_tower: 4.0
 dLoad_dU_factor_flap: 0.9
 dLoad_dU_factor_tower: 0.8
-weibull_C: 9.6 
+weibull_C: 9.6
 weibull_k: 2.15
 n_wsp: 26
 min_wsp: 0.0
@@ -49,10 +49,10 @@ gearloss_const: 0.01
 gearloss_var: 0.014
 genloss: 0.03
 convloss: 0.03
-advanced_blade: true
-crane: true
+advanced_blade: True
+crane: True
 advanced_bedplate: 0
-advanced_tower: true
+advanced_tower: True
 soiling_losses: 0.0
 array_losses: 0.10
 availability: 0.941
