@@ -317,7 +317,8 @@ def webgui(app=None):
                   {'name': 'Analysis Type',
                    'choices': ['Individual Analysis', 'Sensitivity Analysis']},
                    {'name': 'Turbine Selection',
-                    'choices': ['NREL 5MW RWT']}]
+                    'choices': ['NREL 5MW RWT',
+                                'DTU 10MW RWT']}]
         for dic in models:
             name = dic['name']
             choices = [(val, val) for val in dic['choices']]
@@ -337,6 +338,9 @@ def webgui(app=None):
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
                         with open(os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp'), 'r') as f:
+                            wt_inputs = to_unicode(yaml.load(f))
+                    elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
+                        with open(os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp'), 'r') as f:
                             wt_inputs = to_unicode(yaml.load(f))
                 except:
                    print 'lcoe_csm_assembly could not be loaded!'
@@ -359,6 +363,9 @@ def webgui(app=None):
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
                         with open(os.path.join(abspath, 'wt_models/nrel5mw_tier2.inp'), 'r') as f:
+                            wt_inputs = yaml.load(f)
+                    elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
+                        with open(os.path.join(abspath, 'wt_models/dtu10mw_tier2.inp'), 'r') as f:
                             wt_inputs = yaml.load(f)
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
