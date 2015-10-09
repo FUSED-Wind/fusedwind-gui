@@ -573,8 +573,11 @@ $('#fileupload').fileupload({
                         else if (row.type == 'VarTree') {
                             return 'Vartree data';
                         }
-                        else {
+                        else if (row.type == 'Float'){
                             return row.state.toPrecision(5);
+                        }
+                        else {
+                            return row.state;
                         }
                     }
                     function getHeight() {
