@@ -5,6 +5,8 @@ from openmdao.lib.drivers.api import DOEdriver
 from openmdao.lib.doegenerators.api import FullFactorial, Uniform
 
 import os
+import sys
+import platform
 
 from flask import Flask, flash, request, render_template, make_response
 from wtforms.widgets import TextArea
@@ -328,45 +330,42 @@ def webgui(app=None):
         if request.method == 'POST': # Receiving a POST request
 
             inputs =  request.form.to_dict()
+            
+            try:
+		            if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+		                if platform.system() == 'Windows':
+		                    winenv = os.getenv("SystemDrive").replace(":","")
+		                    filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp') #TODO: fix abspath
+		                else:
+		                    filename = os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp')
+		            elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
+		                if platform.system() == 'Windows':
+		                    winenv = os.getenv("SystemDrive").replace(":","")
+		                    filename = winenv + os.path.join(abspath, 'wt_models', 'dtu10mw_tier1.inp')
+		                else:
+		                    filename = os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp')
+		            f = open(filename, 'r')
+		            wt_inputs = to_unicode(yaml.load(f))
+            except:
+                print 'reference turbine could not be loaded!'
+                return render_template('error.html', errmssg='{:} : reference turbine could not be loaded!'.format(inputs['Turbine Selection']))
 
             if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
                 # 2015 09 28: move desc assignment AFTER import etc. so it doesn't get changed if import fails - GNS
-                import sys
                 try:
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
                     cpnt = set_as_top(lcoe_csm_assembly())
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
-                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
-                        with open(os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp'), 'r') as f:
-                            wt_inputs = to_unicode(yaml.load(f))
-                    elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-                        with open(os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp'), 'r') as f:
-                            wt_inputs = to_unicode(yaml.load(f))
                 except:
-                   print 'lcoe_csm_assembly could not be loaded!'
-                   return render_template('error.html',
-                                  errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
-
-                try: # TODO: windows people, clean that up!
-                    sys.path.append('d:/systemsengr/fusedwind-gui/src/plant-costsse/src')
-                    sys.stderr.write("\n*** NOTE: views.py importing plant-costsse (because setup.py didn't install it properly)\n\n")
-                except:
-                    print 'plant-costsse could not be loaded!'
+                    print 'lcoe_csm_assembly could not be loaded!'
                     return render_template('error.html',
-                                   errmssg='{:} : plant-costsse could not be loaded!'.format(inputs['Model Selection']))
-
+                                  errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
             else:
                 try:
                     from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
                     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
                     cpnt = lcoe_se
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
-                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
-                        with open(os.path.join(abspath, 'wt_models/nrel5mw_tier2.inp'), 'r') as f:
-                            wt_inputs = yaml.load(f)
-                    elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-                        with open(os.path.join(abspath, 'wt_models/dtu10mw_tier2.inp'), 'r') as f:
-                            wt_inputs = yaml.load(f)
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template('error.html',
