@@ -73,6 +73,10 @@ nosetests.xml
 *.sql
 *.sqlite
 
+# src files #
+#############
+/src/
+
 # OS generated files #
 ######################
 .DS_Store
