@@ -148,9 +148,20 @@ if use_bokeh:
         return script, div
 
 
-    # Create 1D sensitivitey Bokeh plots 
-    # TODO: Add fail case (script, div, plot_resources = None, None, None)
 
+    # Function used to print pretty numbers
+    def prettyNum( num ):
+        anum = abs(num)
+        if( anum > 1e4 or anum < 1e-2):
+            return "%.2e" % num
+        elif( anum > 10.0 ):
+            return "%.2f" % num
+        elif( anum < 1.0):
+            return "%.4f" % num
+        else:
+            return "%.3f" % num
+
+    # Create 1D sensitivitey Bokeh plots 
     def SensPlot1D( fig, *args, **kwargs ):
 
         fig = figure( title="Sensitivity Results",
@@ -160,13 +171,43 @@ if use_bokeh:
         #Set colors according to input
         colors = []
         try:
-            for i in range(len(kwargs['colorAxis'])):
-                d = 200* (max(kwargs['colorAxis']) - kwargs['colorAxis'][i]) / (max(kwargs['colorAxis']) - min(kwargs['colorAxis']))
+            colorData = kwargs['colorAxis']['values']
+
+            for val in colorData:
+                d = 200* (max(colorData) - val) / (max(colorData) - min(colorData))
                 colors.append("#%02x%02x%02x" % (200-d, 150, d))
         except:
             colors = ["#22AEAA" for i in args[0][1]]
 
+        # plot data
         fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
+
+        if( len(args[0][1])>0 and len(args[1][1])>0 and (kwargs['colorAxis']['name'] != "Mono" )): 
+            # draw color name
+        
+            xDiff = max(args[0][1]) - min(args[0][1])
+            yDiff = max(args[1][1]) - min(args[1][1])
+
+            xPos = min(args[0][1]) + 0.05 * xDiff
+            yPos = max(args[1][1])
+
+            fig.text( 
+                x = xPos + 0.125 * xDiff, 
+                y = yPos - 0.05 * yDiff, 
+                text = ["%s" %kwargs['colorAxis']['name']],
+                text_align="center" )
+
+            #draw color scale
+            fig.line(
+                x= [xPos, xPos + 0.25 * xDiff],
+                y= [yPos, yPos],
+                line_color="black")
+
+            fig.circle(x= xPos, y= yPos, size=10, fill_color="#0096C8" )
+            fig.circle(x= xPos+0.25*xDiff, y= yPos, size=10, fill_color="#C89600" )
+
+            fig.text(x=xPos, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(min(colorData))], text_align="center")
+            fig.text(x=xPos+0.25*xDiff, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(max(colorData))], text_align="center")
         return fig;
 
 
@@ -751,18 +792,6 @@ def webgui(app=None):
     fused_webapp.__name__ = 'analysis'
     app.route('/'+ 'analysis', methods=['GET', 'POST'])(fused_webapp)
 
-## Function used to print pretty numbers
-def prettyNum( num ):
-    anum = abs(num)
-    if( anum > 1e4 or anum < 1e-2):
-        return "%.2e" % num
-    elif( anum > 10.0 ):
-        return "%.2f" % num
-    elif( anum < 1.0):
-        return "%.4f" % num
-    else:
-        return "%.3f" % num
-
 ## Added by Severin
 @app.route('/RetrieveSensPlot', methods=['POST'])
 def GetSensPlot():
@@ -780,7 +809,7 @@ def GetSensPlot():
         yUnit = sensitivityResults['outputs'][outputName]['units']
 
 
-        if(colorName != "Base"):
+        if(colorName != "Mono"):
             #deterine if input or output
             if( colorName in sensitivityResults['outputs']):
                 colors = np.array(sensitivityResults['outputs'][colorName]['value'])
@@ -802,7 +831,7 @@ def GetSensPlot():
         script, div = prepare_plot( SensPlot1D, 
             (inputName + (" (%s)"%xUnit if xUnit!="" else ""), xArray), 
             (outputName+ (" (%s)"%yUnit if yUnit!="" else ""), yArray),
-            colorAxis=colors,
+            colorAxis={"name": colorName, "values":colors},
             units=(xUnit, yUnit) )
 
         ## Produce summary report
