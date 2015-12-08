@@ -665,7 +665,7 @@ def webgui(app=None):
                 my_sa.add('asym',cpnt)
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
-                my_sa.driver.DOEgenerator = Uniform(50)
+                my_sa.driver.DOEgenerator = Uniform(1000)
 
                 for k in inputs.keys():
                     #print k
