@@ -189,7 +189,7 @@ if use_bokeh:
             yDiff = max(args[1][1]) - min(args[1][1])
 
             xPos = min(args[0][1]) + 0.05 * xDiff
-            yPos = max(args[1][1])
+            yPos = max(args[1][1]) + 0.10 * yDiff
 
             fig.text( 
                 x = xPos + 0.125 * xDiff, 
@@ -665,7 +665,7 @@ def webgui(app=None):
                 my_sa.add('asym',cpnt)
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
-                my_sa.driver.DOEgenerator = Uniform(1000)
+                my_sa.driver.DOEgenerator = Uniform(50)
 
                 for k in inputs.keys():
                     #print k
@@ -768,7 +768,7 @@ def webgui(app=None):
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
                             name=cpname,
-                            plot_script=script, plot_div=div, draw_plot=draw_plot, plot_controls=plot_controls, 
+                            plot_script=script, plot_div=div, draw_sens_plot=draw_plot, plot_controls=plot_controls, 
                             plot_inputVars=inputVars, plot_outputVars=outputVars,
                             sub_comp_data=sub_comp_data,
                             assembly_structure=assembly_structure,
@@ -792,7 +792,8 @@ def webgui(app=None):
     fused_webapp.__name__ = 'analysis'
     app.route('/'+ 'analysis', methods=['GET', 'POST'])(fused_webapp)
 
-## Added by Severin
+
+# Retrieve data from sesnsitiviey analysis for plotting
 @app.route('/RetrieveSensPlot', methods=['POST'])
 def GetSensPlot():
 
