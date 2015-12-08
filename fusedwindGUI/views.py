@@ -39,6 +39,10 @@ from fusedwindGUI import app, session
 debug = True # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
 debug = False
 
+
+
+
+
 ## Handling Forms -------------------------------------------------------------
 
 def unitfield(units, name):
@@ -142,6 +146,28 @@ if use_bokeh:
         #   http://bokeh.pydata.org/en/latest/docs/user_guide/embed.html#components  (as of 2015 09 28)
         script, div = components(fig, INLINE)
         return script, div
+
+
+    # Create 1D sensitivitey Bokeh plots 
+    # TODO: Add fail case (script, div, plot_resources = None, None, None)
+
+    def SensPlot1D( fig, *args, **kwargs ):
+
+        fig = figure( title="Sensitivity Results",
+                    x_axis_label = args[0][0],
+                    y_axis_label = args[1][0])
+        
+        #Set colors according to input
+        colors = []
+        try:
+            for i in range(len(kwargs['colorAxis'])):
+                d = 200* (max(kwargs['colorAxis']) - kwargs['colorAxis'][i]) / (max(kwargs['colorAxis']) - min(kwargs['colorAxis']))
+                colors.append("#%02x%02x%02x" % (200-d, 150, d))
+        except:
+            colors = ["#22AEAA" for i in args[0][1]]
+
+        fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
+        return fig;
 
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
@@ -296,6 +322,7 @@ def to_unicode(dic):
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
+sensitivityResults = {"empty":True}
 
 def webgui(app=None):
 
@@ -308,6 +335,7 @@ def webgui(app=None):
         global analysis
         import fusedwindGUI
         global wt_inputs
+        global sensitivityResults
 
         abspath = fusedwindGUI.__file__.strip('__init__.pyc')
 
@@ -570,19 +598,20 @@ def webgui(app=None):
                     # no plots for now since bootstrap-table and bokeh seem to be in conflict
                     try:
                         script, div = prepare_plot(cpnt.plot)
+                        draw_plot = True
                     except:
                         # TODO: gracefully inform the user of why he doesnt see his plots
                         print "Failed to prepare any plots for " + cpnt.__class__.__name__
                         flash("Analysis ran; failed to prepare any plots for " + cpnt.__class__.__name__)
-                        script, div, plot_resources = None, None, None
+                        script, div, plot_resources, draw_plot = None, None, None, None
                 else:
-                    script, div, plot_resources = None, None, None
+                    script, div, plot_resources, draw_plot = None, None, None, None
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
                             name=cpname,
-                            plot_script=script, plot_div=div,
+                            plot_script=script, plot_div=div, draw_plot=draw_plot,
                             sub_comp_data=sub_comp_data,
                             assembly_structure=assembly_structure,
                             group_list=group_list,
@@ -598,7 +627,7 @@ def webgui(app=None):
                 my_sa.driver.DOEgenerator = Uniform(1000)
 
                 for k in inputs.keys():
-                    print k
+                    #print k
                     try:
                         if k in io['inputs']:
                             setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
@@ -621,7 +650,7 @@ def webgui(app=None):
                 for s in io['outputs']:
                     t = cpnt.get_trait(s)
                     if t.trait_type.__class__.__name__ != 'VarTree':
-                        my_sa.driver.add_response('asym.'+s)
+                        my_sa.driver.add_response('asym.' + s)
 
                 try:
                     my_sa.run()
@@ -630,6 +659,55 @@ def webgui(app=None):
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
                     #flash(failed_run_flag) # no need to flash a failed_run_flag
+                else:
+                    try:
+                        my_sa.driver.case_inputs.asym.list_vars()
+                    except AttributeError:
+                        draw_plot = False
+                        script, div = None, None
+                        inputVars = None
+                        outputVars = None
+                        plot_controls = None
+
+                    else:
+                        draw_plot = True
+                        ## Make plotting of results available (Severin)
+                        global sensitivityResults
+
+                        sensitivityResults = {
+                            "inputs":{},
+                            "outputs":{}
+                        }
+
+                        inputVars = []
+                        outputVars = []
+
+                        for val in my_sa.driver.case_inputs.asym.list_vars():
+                            try:
+                                sensitivityResults['inputs'][val] = {
+                                    'value':my_sa.driver.case_inputs.asym.get(val),
+                                    'units':getattr(cpnt.get_trait(val), 'units' )}
+                            except Exception:
+                                pass
+                            else:
+                                inputVars.append(val)
+
+                        for val in my_sa.driver.case_outputs.asym.list_vars():
+                            try:
+                                tmp = my_sa.driver.case_outputs.asym.get(val)
+                            except Exception:
+                                pass
+                            else:
+                                if( isinstance(tmp.pop(), np.float64)):
+                                    sensitivityResults['outputs'][val] = {
+                                    'value':tmp,
+                                    'units':getattr(cpnt.get_trait(val), 'units' )}
+                                    outputVars.append(val)
+
+
+                        script, div = prepare_plot( SensPlot1D, ("", []), ("", []), ("",[])) 
+                        plot_controls = True
+                    
 
                 io = traits2jsondict(cpnt)
                 sub_comp_data = {}
@@ -643,12 +721,14 @@ def webgui(app=None):
                     else:
                         combIO = None
 
-                script, div, plot_resources = None, None, None
+                ##script, div, plot_resources = None, None, None
+                
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
                             name=cpname,
-                            plot_script=script, plot_div=div,
+                            plot_script=script, plot_div=div, draw_plot=draw_plot, plot_controls=plot_controls, 
+                            plot_inputVars=inputVars, plot_outputVars=outputVars,
                             sub_comp_data=sub_comp_data,
                             assembly_structure=assembly_structure,
                             group_list=group_list,
@@ -670,6 +750,76 @@ def webgui(app=None):
 
     fused_webapp.__name__ = 'analysis'
     app.route('/'+ 'analysis', methods=['GET', 'POST'])(fused_webapp)
+
+## Function used to print pretty numbers
+def prettyNum( num ):
+    anum = abs(num)
+    if( anum > 1e4 or anum < 1e-2):
+        return "%.2e" % num
+    elif( anum > 10.0 ):
+        return "%.2f" % num
+    elif( anum < 1.0):
+        return "%.4f" % num
+    else:
+        return "%.3f" % num
+
+## Added by Severin
+@app.route('/RetrieveSensPlot', methods=['POST'])
+def GetSensPlot():
+
+    global sensitivityResults
+
+    inputName = request.form['inVar']
+    outputName = request.form['outVar']
+    colorName = request.form['colVar']
+
+    try:
+        xArray = np.array(sensitivityResults['inputs'][inputName]['value'])
+        xUnit = sensitivityResults['inputs'][inputName]['units']
+        yArray = np.array(sensitivityResults['outputs'][outputName]['value'])
+        yUnit = sensitivityResults['outputs'][outputName]['units']
+
+
+        if(colorName != "Base"):
+            #deterine if input or output
+            if( colorName in sensitivityResults['outputs']):
+                colors = np.array(sensitivityResults['outputs'][colorName]['value'])
+            else:
+                colors = np.array(sensitivityResults['inputs'][colorName]['value'])
+        else:
+            colors = None
+    except KeyError:
+        script, div = prepare_plot( SensPlot1D, ("",[]), ("",[]))
+
+        summary = "<p>Error Retrieving Data</p>"
+
+    else:
+        if (xUnit == "None" or xUnit==None):
+            xUnit = ""
+        if (yUnit == "None" or yUnit==None):
+            yUnit = ""
+
+        script, div = prepare_plot( SensPlot1D, 
+            (inputName + (" (%s)"%xUnit if xUnit!="" else ""), xArray), 
+            (outputName+ (" (%s)"%yUnit if yUnit!="" else ""), yArray),
+            colorAxis=colors,
+            units=(xUnit, yUnit) )
+
+        ## Produce summary report
+        summary = "<p>\n"
+        summary += "\t<b>Input Variable: %s </b><br>\n" %inputName
+        summary += "\t  Range: %s %s - %s %s<br>\n" %( prettyNum(min(xArray)), xUnit, prettyNum(max(xArray)), xUnit )
+        summary += "<br>\n"
+        summary += "\t<b>Output Variable: %s </b><br>\n" %outputName
+        summary += "\t  Range: %s %s - %s %s<br>\n" %( prettyNum(min(yArray)), yUnit, prettyNum(max(yArray)), yUnit )
+        summary += "\t  Average: %s %s<br>\n" %( prettyNum(yArray.mean()), yUnit )
+        summary += "\t  Std Dev: %s %s<br>\n" %( prettyNum(yArray.std()), yUnit )
+        summary += "</p>"
+
+    f = {"script":script, "div":div, "summary":summary} 
+
+    return jsonify(**f)
+
 
 #
 #
