@@ -97,7 +97,6 @@ def WebGUIForm(dic, run=False, sens_flag=False):
     if sens_flag:
         for k in skeys:
             v = dic[k]
-            print k, v['group']
             if v['group'] is None:
             	  v['group'] = 'Other'
             if v['type'] == 'Float':
