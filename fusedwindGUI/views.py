@@ -97,8 +97,10 @@ def WebGUIForm(dic, run=False, sens_flag=False):
     if sens_flag:
         for k in skeys:
             v = dic[k]
-            if v['group'] is None:
-            	  v['group'] = 'Other'
+            if not 'group' in v.keys():
+                v['group'] = 'Other'
+            elif v['group'] is None:
+                v['group'] = 'Other'
             if v['type'] == 'Float':
                 kselect = "select." + k
                 newdic = {'default':False, 'state':False, 'desc':kselect, 'type':'Bool', 'group':v['group']}
@@ -163,13 +165,13 @@ if use_bokeh:
         else:
             return "%.3f" % num
 
-    # Create 1D sensitivitey Bokeh plots 
+    # Create 1D sensitivitey Bokeh plots
     def SensPlot1D( fig, *args, **kwargs ):
 
         fig = figure( title="Sensitivity Results",
                     x_axis_label = args[0][0],
                     y_axis_label = args[1][0])
-        
+
         #Set colors according to input
         colors = []
         try:
@@ -184,18 +186,18 @@ if use_bokeh:
         # plot data
         fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
 
-        if( len(args[0][1])>0 and len(args[1][1])>0 and (kwargs['colorAxis']['name'] != "Mono" )): 
+        if( len(args[0][1])>0 and len(args[1][1])>0 and (kwargs['colorAxis']['name'] != "Mono" )):
             # draw color name
-        
+
             xDiff = max(args[0][1]) - min(args[0][1])
             yDiff = max(args[1][1]) - min(args[1][1])
 
             xPos = min(args[0][1]) + 0.05 * xDiff
             yPos = max(args[1][1]) + 0.10 * yDiff
 
-            fig.text( 
-                x = xPos + 0.125 * xDiff, 
-                y = yPos - 0.05 * yDiff, 
+            fig.text(
+                x = xPos + 0.125 * xDiff,
+                y = yPos - 0.05 * yDiff,
                 text = ["%s" %kwargs['colorAxis']['name']],
                 text_align="center" )
 
@@ -745,9 +747,9 @@ def webgui(app=None):
                                     outputVars.append(val)
 
 
-                        script, div = prepare_plot( SensPlot1D, ("", []), ("", []), ("",[])) 
+                        script, div = prepare_plot( SensPlot1D, ("", []), ("", []), ("",[]))
                         plot_controls = True
-                    
+
 
                 io = traits2jsondict(cpnt)
                 sub_comp_data = {}
@@ -762,12 +764,12 @@ def webgui(app=None):
                         combIO = None
 
                 ##script, div, plot_resources = None, None, None
-                
+
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                             outputs=combIO,
                             name=cpname,
-                            plot_script=script, plot_div=div, draw_sens_plot=draw_plot, plot_controls=plot_controls, 
+                            plot_script=script, plot_div=div, draw_sens_plot=draw_plot, plot_controls=plot_controls,
                             plot_inputVars=inputVars, plot_outputVars=outputVars,
                             sub_comp_data=sub_comp_data,
                             assembly_structure=assembly_structure,
@@ -828,8 +830,8 @@ def GetSensPlot():
         if (yUnit == "None" or yUnit==None):
             yUnit = ""
 
-        script, div = prepare_plot( SensPlot1D, 
-            (inputName + (" (%s)"%xUnit if xUnit!="" else ""), xArray), 
+        script, div = prepare_plot( SensPlot1D,
+            (inputName + (" (%s)"%xUnit if xUnit!="" else ""), xArray),
             (outputName+ (" (%s)"%yUnit if yUnit!="" else ""), yArray),
             colorAxis={"name": colorName, "values":colors},
             units=(xUnit, yUnit) )
@@ -845,7 +847,7 @@ def GetSensPlot():
         summary += "\t  Std Dev: %s %s<br>\n" %( prettyNum(yArray.std()), yUnit )
         summary += "</p>"
 
-    f = {"script":script, "div":div, "summary":summary} 
+    f = {"script":script, "div":div, "summary":summary}
 
     return jsonify(**f)
 
