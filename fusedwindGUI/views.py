@@ -97,6 +97,9 @@ def WebGUIForm(dic, run=False, sens_flag=False):
     if sens_flag:
         for k in skeys:
             v = dic[k]
+            print k, v['group']
+            if v['group'] is None:
+            	  v['group'] = 'Other'
             if v['type'] == 'Float':
                 kselect = "select." + k
                 newdic = {'default':False, 'state':False, 'desc':kselect, 'type':'Bool', 'group':v['group']}
@@ -399,25 +402,10 @@ def webgui(app=None):
         if request.method == 'POST': # Receiving a POST request
 
             inputs =  request.form.to_dict()
-            
-            try:
-		            if inputs['Turbine Selection'] == 'NREL 5MW RWT':
-		                if platform.system() == 'Windows':
-		                    winenv = os.getenv("SystemDrive").replace(":","")
-		                    filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp') #TODO: fix abspath
-		                else:
-		                    filename = os.path.join(abspath, 'wt_models/nrel5mw_tier1.inp')
-		            elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-		                if platform.system() == 'Windows':
-		                    winenv = os.getenv("SystemDrive").replace(":","")
-		                    filename = winenv + os.path.join(abspath, 'wt_models', 'dtu10mw_tier1.inp')
-		                else:
-		                    filename = os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp')
-		            f = open(filename, 'r')
-		            wt_inputs = to_unicode(yaml.load(f))
-            except:
-                print 'reference turbine could not be loaded!'
-                return render_template('error.html', errmssg='{:} : reference turbine could not be loaded!'.format(inputs['Turbine Selection']))
+
+            winenv = ''
+            if platform.system() == 'Windows':
+                winenv = os.getenv("SystemDrive").replace(":","")
 
             if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
                 # 2015 09 28: move desc assignment AFTER import etc. so it doesn't get changed if import fails - GNS
@@ -425,6 +413,12 @@ def webgui(app=None):
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
                     cpnt = set_as_top(lcoe_csm_assembly())
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
+                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+                        filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp') #TODO: fix abspath
+                    elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
+                        filename = os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp')
+                    f = open(filename, 'r')
+                    wt_inputs = to_unicode(yaml.load(f))
                 except:
                     print 'lcoe_csm_assembly could not be loaded!'
                     return render_template('error.html',
@@ -435,6 +429,12 @@ def webgui(app=None):
                     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
                     cpnt = lcoe_se
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
+                    if inputs['Turbine Selection'] == 'NREL 5MW RWT':
+                        filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier2.inp') #TODO: fix abspath
+                    elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
+                        filename = os.path.join(abspath, 'wt_models/dtu10mw_tier2.inp')
+                    f = open(filename, 'r')
+                    wt_inputs = to_unicode(yaml.load(f))
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template('error.html',
@@ -665,7 +665,7 @@ def webgui(app=None):
                 my_sa.add('asym',cpnt)
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
-                my_sa.driver.DOEgenerator = Uniform(1000)
+                my_sa.driver.DOEgenerator = Uniform(200)
 
                 for k in inputs.keys():
                     #print k
