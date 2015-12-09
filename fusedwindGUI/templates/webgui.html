@@ -394,7 +394,23 @@ $('#fileupload').fileupload({
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title" style="display:inline;">Results</h3>
-                        <button type="button" id="addPlotWindow-btn" class="btn-small btn-success pull-right">Add Plot Window</button>
+
+                        <div class="btn-group pull-right" role="group" aria="...">
+                            <button type="button" id="downloadResults-btn" class="btn-small btn-danger">CSV</button>
+                            <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
+                        </div>
+
+                        <script type="">
+                            $("button#downloadResults-btn").click( function(event){
+                                event.preventDefault();
+                                var userWantsResults = confirm("Downloading sensitivity results?");
+
+                                if( userWantsResults ){
+                                    window.open("/DownloadSensResults", '_blank');
+                                }
+
+                            });
+                        </script>
                     </div>
                     <div id="plot_area" class="panel-body", align="center">
                         <div id="plot_base">

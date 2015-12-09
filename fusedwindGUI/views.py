@@ -17,7 +17,7 @@ from flask import Blueprint, request, abort, jsonify, redirect, render_template
 from flask_wtf.file import FileField
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
-from flask import Response
+from flask import Response, send_from_directory
 from flask_wtf import Form, RecaptchaField
 
 from functools import wraps
@@ -26,6 +26,7 @@ from wtforms.widgets.core  import  html_params
 from wtforms import widgets
 
 import numpy as np
+import datetime as dt
 
 from jinja2 import evalcontextfilter, Markup, escape
 
@@ -809,7 +810,6 @@ def GetSensPlot():
         yArray = np.array(sensitivityResults['outputs'][outputName]['value'])
         yUnit = sensitivityResults['outputs'][outputName]['units']
 
-
         if(colorName != "Mono"):
             #deterine if input or output
             if( colorName in sensitivityResults['outputs']):
@@ -850,6 +850,60 @@ def GetSensPlot():
 
     return jsonify(**f)
 
+@app.route("/DownloadSensResults", methods=['GET'])
+def DownloadSensResults():
+    global sensitivityResults
+   
+    csvFile = "Results of sensitivity analysis, Created: %s\n" % str(dt.datetime.now())
+
+    # Identify as input or output
+    csvFile += "-"
+    for k,v in sensitivityResults['inputs'].iteritems():
+        csvFile += ",input"
+    for k,v in sensitivityResults['outputs'].iteritems():
+        csvFile += ",output"
+    csvFile += "\n"
+
+    # Print Units
+    csvFile += "#"
+    for k,v in sensitivityResults['inputs'].iteritems():
+        csvFile += ",%s" % v['units']
+    for k,v in sensitivityResults['outputs'].iteritems():
+        csvFile += ",%s" % v['units']
+    csvFile += "\n"
+
+    # Print variable name
+    csvFile += "Iteration Number"
+    for k,v in sensitivityResults['inputs'].iteritems():
+        csvFile += ",%s" % k
+    for k,v in sensitivityResults['outputs'].iteritems():
+        csvFile += ",%s" % k
+    csvFile += "\n"
+    
+    # Print Results
+    N = len( sensitivityResults['inputs'][ sensitivityResults['inputs'].keys()[0] ]['value'] )
+    N2 = len( sensitivityResults['outputs'][ sensitivityResults['outputs'].keys()[0] ]['value'] )
+
+    for i in range(N):
+        csvFile += "%d" % (i+1)
+        for k,v in sensitivityResults['inputs'].iteritems():
+            try:
+                csvFile += ",%f" % v['value'][i]
+            except IndexError:
+                csvFile += ",NaN"
+        for k,v in sensitivityResults['outputs'].iteritems():
+            try:
+                csvFile += ",%f" % v['value'][i]
+            except IndexError:
+                csvFile += ",NaN"
+        csvFile += "\n"
+    
+
+    # Create/send response
+    response = make_response(csvFile)
+    response.headers["Content-Disposition"] = "attachment; filename=Sensitivity_Results.csv"
+
+    return response
 
 #
 #
