@@ -602,6 +602,7 @@ def webgui(app=None):
             inputs =  request.form.to_dict()
             io = traits2jsondict(cpnt)
 
+
             if not sens_flag:
                 try:
                     for k in inputs.keys():
@@ -667,9 +668,15 @@ def webgui(app=None):
                 my_sa.add('asym',cpnt)
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
-                my_sa.driver.DOEgenerator = Uniform(200)
+                my_sa.driver.DOEgenerator = Uniform( int(inputs['iteration_count']) )
+
+                extra_inputs = {"sensitivity_iterations":int(inputs['iteration_count'])}
+                skipInputs = ['iteration_count']
 
                 for k in inputs.keys():
+                    if( k in skipInputs ):
+                        #print( " skipping - %s" %k)
+                        continue
                     #print k
                     try:
                         if k in io['inputs']:
@@ -768,6 +775,7 @@ def webgui(app=None):
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
+                            extra_inputs=extra_inputs,
                             outputs=combIO,
                             name=cpname,
                             plot_script=script, plot_div=div, draw_sens_plot=draw_plot, plot_controls=plot_controls,
@@ -780,9 +788,11 @@ def webgui(app=None):
 
         else: # a 'GET' request?
 
+            extra_inputs={"sensitivity_iterations":1000}
             # Show the standard form
             return render_template('webgui.html',
                 inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(wt_inputs)),
+                extra_inputs=extra_inputs,
                 outputs=None, name=cpname,
                 plot_script=None, plot_div=None, plot_resources=None,
                 sub_comp_data=sub_comp_data,

@@ -226,9 +226,9 @@ $('#fileupload').fileupload({
      };
 
 // Submit forms ------------------
-     submitForms = function(){
-         document.forms["global-inputs-form"].submit();
-     }
+    submitForms = function(){
+        document.forms["global-inputs-form"].submit();
+    }
 </script>
 
 {% endblock %}
@@ -272,6 +272,7 @@ $('#fileupload').fileupload({
                 <span>Load inputs</span>
                 <input id="fileupload" type="file" name="files[]" multiple >
             </span>
+
             {%- endif %}
             <div class="btn-group">
                 <button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
@@ -517,7 +518,7 @@ $('#fileupload').fileupload({
 
                             plotText += '<div class="col-md-8" id="plot_space"></div>';
 
-                            plotText += rawText.substring(rawText.indexOf("<!-- end plot -->"));
+                            plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
 
                             $("#plot_area").append(plotText);
                             console.log(plotText);
@@ -607,6 +608,43 @@ $('#fileupload').fileupload({
                 <div class="panel-body">
                 <form method="post" class="form" id='global-inputs-form'>
                     <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                        
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingOne">
+                                <h3 class="panel-title">
+                                    <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
+                                        Sensitivity Inputs
+                                    </a>
+                                </h3>
+                            </div>
+
+                            {%- if not draw_sens_plot %}
+                            <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
+                            {%- else %}
+                            <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
+                            {%- endif %}
+
+                            <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
+                                {{ inputs.hidden_tag() }}
+                                {{ wtf.form_errors(inputs, hiddens='only') }}
+                                <table class="table table-hover" align="left">
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Initial Value</th>
+                                    </tr>
+                                    <tr>
+                                        <td>Number of iterations in analysis (iteration_count)</td>
+                                        <td>
+                                            <div id='trigger-iteration_count'>
+                                                <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count"></input>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                        
                         {%- for group in group_list %}
                         <div class="panel panel-default">
                             <div class="panel-heading" role="tab" id="headingOne">
