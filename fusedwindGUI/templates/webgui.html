@@ -281,12 +281,15 @@ $('#fileupload').fileupload({
                     <span class="sr-only">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu" style="background-color:blue;border-color:blue">
-                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+
                     {%- if not sens_flag %}
+                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
                     <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
                     <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
-                    {%- endif %}
                     <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+                    {%- else %}
+                    <li><a href="#" onClick='document.getElementById("download-sensitivity-results").submit()'>Results (CSV)</a></li>
+                    {%- endif %}
                     <!-- <li role="separator" class="divider"></li>
                     <li><a href="#">Separated link</a></li> -->
                 </ul>
@@ -294,6 +297,7 @@ $('#fileupload').fileupload({
             
             <form id="download-inputs-form" method="get" action="/analysis/download"></form>
             <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
+            <form id="download-sensitivity-results"  method="get" action="/analysis/download_sensitivity_results"></form>
 
         </div>
 
@@ -397,21 +401,8 @@ $('#fileupload').fileupload({
                         <h3 class="panel-title" style="display:inline;">Results</h3>
 
                         <div class="btn-group pull-right" role="group" aria="...">
-                            <button type="button" id="downloadResults-btn" class="btn-small btn-danger">CSV</button>
                             <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
                         </div>
-
-                        <script type="">
-                            $("button#downloadResults-btn").click( function(event){
-                                event.preventDefault();
-                                var userWantsResults = confirm("Downloading sensitivity results?");
-
-                                if( userWantsResults ){
-                                    window.open("/DownloadSensResults", '_blank');
-                                }
-
-                            });
-                        </script>
                     </div>
                     <div id="plot_area" class="panel-body", align="center">
                         <div id="plot_base">

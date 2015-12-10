@@ -497,6 +497,69 @@ def webgui(app=None):
     app.route('/analysis/download_full', methods=['GET'])(download_full)
 
     #---------------
+    @app.route('/analysis/download_sensitivity_results', methods=['GET'])
+    def download_sensitivity_results():
+        global sensitivityResults
+
+        if not 'inputs' in sensitivityResults: 
+            msg =  "Could not find sensitivity results!"
+            print '\n***%s\n' % msg
+            return '<h2>%s</h2>' % msg
+
+       
+        csvFile = "Results of sensitivity analysis, Created: %s\n" % str(dt.datetime.now())
+
+        # Identify as input or output
+        csvFile += "-"
+        for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += ",input"
+        for k,v in sensitivityResults['outputs'].iteritems():
+            csvFile += ",output"
+        csvFile += "\n"
+
+        # Print Units
+        csvFile += "#"
+        for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += ",%s" % v['units']
+        for k,v in sensitivityResults['outputs'].iteritems():
+            csvFile += ",%s" % v['units']
+        csvFile += "\n"
+
+        # Print variable name
+        csvFile += "Iteration Number"
+        for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += ",%s" % k
+        for k,v in sensitivityResults['outputs'].iteritems():
+            csvFile += ",%s" % k
+        csvFile += "\n"
+        
+        # Print Results
+        N = len( sensitivityResults['inputs'][ sensitivityResults['inputs'].keys()[0] ]['value'] )
+        N2 = len( sensitivityResults['outputs'][ sensitivityResults['outputs'].keys()[0] ]['value'] )
+
+        for i in range(N):
+            csvFile += "%d" % (i+1)
+            for k,v in sensitivityResults['inputs'].iteritems():
+                try:
+                    csvFile += ",%f" % v['value'][i]
+                except IndexError:
+                    csvFile += ",NaN"
+            for k,v in sensitivityResults['outputs'].iteritems():
+                try:
+                    csvFile += ",%f" % v['value'][i]
+                except IndexError:
+                    csvFile += ",NaN"
+            csvFile += "\n"
+        
+
+        # Create/send response
+        response = make_response(csvFile)
+        response.headers["Content-Disposition"] = "attachment; filename=Sensitivity_Results.csv"
+        response.headers['Content-Type'] = "text/csv"
+
+        return response
+
+    #---------------
 
     def record_case():
 
@@ -861,60 +924,7 @@ def GetSensPlot():
 
     return jsonify(**f)
 
-@app.route("/DownloadSensResults", methods=['GET'])
-def DownloadSensResults():
-    global sensitivityResults
-   
-    csvFile = "Results of sensitivity analysis, Created: %s\n" % str(dt.datetime.now())
 
-    # Identify as input or output
-    csvFile += "-"
-    for k,v in sensitivityResults['inputs'].iteritems():
-        csvFile += ",input"
-    for k,v in sensitivityResults['outputs'].iteritems():
-        csvFile += ",output"
-    csvFile += "\n"
-
-    # Print Units
-    csvFile += "#"
-    for k,v in sensitivityResults['inputs'].iteritems():
-        csvFile += ",%s" % v['units']
-    for k,v in sensitivityResults['outputs'].iteritems():
-        csvFile += ",%s" % v['units']
-    csvFile += "\n"
-
-    # Print variable name
-    csvFile += "Iteration Number"
-    for k,v in sensitivityResults['inputs'].iteritems():
-        csvFile += ",%s" % k
-    for k,v in sensitivityResults['outputs'].iteritems():
-        csvFile += ",%s" % k
-    csvFile += "\n"
-    
-    # Print Results
-    N = len( sensitivityResults['inputs'][ sensitivityResults['inputs'].keys()[0] ]['value'] )
-    N2 = len( sensitivityResults['outputs'][ sensitivityResults['outputs'].keys()[0] ]['value'] )
-
-    for i in range(N):
-        csvFile += "%d" % (i+1)
-        for k,v in sensitivityResults['inputs'].iteritems():
-            try:
-                csvFile += ",%f" % v['value'][i]
-            except IndexError:
-                csvFile += ",NaN"
-        for k,v in sensitivityResults['outputs'].iteritems():
-            try:
-                csvFile += ",%f" % v['value'][i]
-            except IndexError:
-                csvFile += ",NaN"
-        csvFile += "\n"
-    
-
-    # Create/send response
-    response = make_response(csvFile)
-    response.headers["Content-Disposition"] = "attachment; filename=Sensitivity_Results.csv"
-
-    return response
 
 #
 #
