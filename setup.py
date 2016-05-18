@@ -145,7 +145,7 @@ setup(
    "MarkupSafe==0.18",
    "gunicorn==18.0",
    "gevent==1.0",
-   "requests>=1.2.3",
+   "requests>=2.6.0",
    ],
   include_package_data=True,
   entry_points = {
