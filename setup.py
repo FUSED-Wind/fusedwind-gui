@@ -139,7 +139,7 @@ setup(
    "flask-wtf",
    "flask-mail",
    "pyyaml",
-   "bokeh",
+   "bokeh==0.10.0",
    "Flask-SQLAlchemy==1.0",
    "Jinja2==2.7.1",
    "MarkupSafe==0.18",
