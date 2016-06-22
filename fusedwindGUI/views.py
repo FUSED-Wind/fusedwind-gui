@@ -17,7 +17,7 @@ from flask import Blueprint, request, abort, jsonify, redirect, render_template
 from flask_wtf.file import FileField
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
-from flask import Response
+from flask import Response, send_from_directory
 from flask_wtf import Form, RecaptchaField
 
 from functools import wraps
@@ -26,6 +26,7 @@ from wtforms.widgets.core  import  html_params
 from wtforms import widgets
 
 import numpy as np
+import datetime as dt
 
 from jinja2 import evalcontextfilter, Markup, escape
 
@@ -496,6 +497,69 @@ def webgui(app=None):
     app.route('/analysis/download_full', methods=['GET'])(download_full)
 
     #---------------
+    @app.route('/analysis/download_sensitivity_results', methods=['GET'])
+    def download_sensitivity_results():
+        global sensitivityResults
+
+        if not 'inputs' in sensitivityResults: 
+            msg =  "Could not find sensitivity results!"
+            print '\n***%s\n' % msg
+            return '<h2>%s</h2>' % msg
+
+       
+        csvFile = "Results of sensitivity analysis, Created: %s\n" % str(dt.datetime.now())
+
+        # Identify as input or output
+        csvFile += "-"
+        for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += ",input"
+        for k,v in sensitivityResults['outputs'].iteritems():
+            csvFile += ",output"
+        csvFile += "\n"
+
+        # Print Units
+        csvFile += "#"
+        for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += ",%s" % v['units']
+        for k,v in sensitivityResults['outputs'].iteritems():
+            csvFile += ",%s" % v['units']
+        csvFile += "\n"
+
+        # Print variable name
+        csvFile += "Iteration Number"
+        for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += ",%s" % k
+        for k,v in sensitivityResults['outputs'].iteritems():
+            csvFile += ",%s" % k
+        csvFile += "\n"
+        
+        # Print Results
+        N = len( sensitivityResults['inputs'][ sensitivityResults['inputs'].keys()[0] ]['value'] )
+        N2 = len( sensitivityResults['outputs'][ sensitivityResults['outputs'].keys()[0] ]['value'] )
+
+        for i in range(N):
+            csvFile += "%d" % (i+1)
+            for k,v in sensitivityResults['inputs'].iteritems():
+                try:
+                    csvFile += ",%f" % v['value'][i]
+                except IndexError:
+                    csvFile += ",NaN"
+            for k,v in sensitivityResults['outputs'].iteritems():
+                try:
+                    csvFile += ",%f" % v['value'][i]
+                except IndexError:
+                    csvFile += ",NaN"
+            csvFile += "\n"
+        
+
+        # Create/send response
+        response = make_response(csvFile)
+        response.headers["Content-Disposition"] = "attachment; filename=Sensitivity_Results.csv"
+        response.headers['Content-Type'] = "text/csv"
+
+        return response
+
+    #---------------
 
     def record_case():
 
@@ -601,6 +665,7 @@ def webgui(app=None):
             inputs =  request.form.to_dict()
             io = traits2jsondict(cpnt)
 
+
             if not sens_flag:
                 try:
                     for k in inputs.keys():
@@ -666,9 +731,15 @@ def webgui(app=None):
                 my_sa.add('asym',cpnt)
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
-                my_sa.driver.DOEgenerator = Uniform(200)
+                my_sa.driver.DOEgenerator = Uniform( int(inputs['iteration_count']) )
+
+                extra_inputs = {"sensitivity_iterations":int(inputs['iteration_count'])}
+                skipInputs = ['iteration_count']
 
                 for k in inputs.keys():
+                    if( k in skipInputs ):
+                        #print( " skipping - %s" %k)
+                        continue
                     #print k
                     try:
                         if k in io['inputs']:
@@ -767,6 +838,7 @@ def webgui(app=None):
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
+                            extra_inputs=extra_inputs,
                             outputs=combIO,
                             name=cpname,
                             plot_script=script, plot_div=div, draw_sens_plot=draw_plot, plot_controls=plot_controls,
@@ -779,9 +851,11 @@ def webgui(app=None):
 
         else: # a 'GET' request?
 
+            extra_inputs={"sensitivity_iterations":1000}
             # Show the standard form
             return render_template('webgui.html',
                 inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(wt_inputs)),
+                extra_inputs=extra_inputs,
                 outputs=None, name=cpname,
                 plot_script=None, plot_div=None, plot_resources=None,
                 sub_comp_data=sub_comp_data,
@@ -809,7 +883,6 @@ def GetSensPlot():
         xUnit = sensitivityResults['inputs'][inputName]['units']
         yArray = np.array(sensitivityResults['outputs'][outputName]['value'])
         yUnit = sensitivityResults['outputs'][outputName]['units']
-
 
         if(colorName != "Mono"):
             #deterine if input or output
@@ -850,6 +923,7 @@ def GetSensPlot():
     f = {"script":script, "div":div, "summary":summary}
 
     return jsonify(**f)
+
 
 
 #

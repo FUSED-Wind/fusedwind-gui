@@ -226,9 +226,9 @@ $('#fileupload').fileupload({
      };
 
 // Submit forms ------------------
-     submitForms = function(){
-         document.forms["global-inputs-form"].submit();
-     }
+    submitForms = function(){
+        document.forms["global-inputs-form"].submit();
+    }
 </script>
 
 {% endblock %}
@@ -272,6 +272,7 @@ $('#fileupload').fileupload({
                 <span>Load inputs</span>
                 <input id="fileupload" type="file" name="files[]" multiple >
             </span>
+
             {%- endif %}
             <div class="btn-group">
                 <button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
@@ -280,12 +281,15 @@ $('#fileupload').fileupload({
                     <span class="sr-only">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu" style="background-color:blue;border-color:blue">
-                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+
                     {%- if not sens_flag %}
+                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
                     <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
                     <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
-                    {%- endif %}
                     <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+                    {%- else %}
+                    <li><a href="#" onClick='document.getElementById("download-sensitivity-results").submit()'>Results (CSV)</a></li>
+                    {%- endif %}
                     <!-- <li role="separator" class="divider"></li>
                     <li><a href="#">Separated link</a></li> -->
                 </ul>
@@ -293,6 +297,7 @@ $('#fileupload').fileupload({
 
             <form id="download-inputs-form" method="get" action="/analysis/download"></form>
             <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
+            <form id="download-sensitivity-results"  method="get" action="/analysis/download_sensitivity_results"></form>
 
         </div>
 
@@ -394,7 +399,14 @@ $('#fileupload').fileupload({
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title" style="display:inline;">Results</h3>
+<<<<<<< HEAD
                         <button type="button" id="addPlotWindow-btn" class="btn btn-small btn-success pull-right">Add Plot Window</button>
+=======
+
+                        <div class="btn-group pull-right" role="group" aria="...">
+                            <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
+                        </div>
+>>>>>>> 689596d13ee108f31b9047dfc5777b9ab8f3b23c
                     </div>
                     <div id="plot_area" class="panel-body", align="center">
                         <div id="plot_base">
@@ -501,7 +513,7 @@ $('#fileupload').fileupload({
 
                             plotText += '<div class="col-md-8" id="plot_space"></div>';
 
-                            plotText += rawText.substring(rawText.indexOf("<!-- end plot -->"));
+                            plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
 
                             $("#plot_area").append(plotText);
                             console.log(plotText);
@@ -591,6 +603,43 @@ $('#fileupload').fileupload({
                 <div class="panel-body">
                 <form method="post" class="form" id='global-inputs-form'>
                     <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                        
+                        <div class="panel panel-default">
+                            <div class="panel-heading" role="tab" id="headingOne">
+                                <h3 class="panel-title">
+                                    <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
+                                        Sensitivity Inputs
+                                    </a>
+                                </h3>
+                            </div>
+
+                            {%- if not draw_sens_plot %}
+                            <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
+                            {%- else %}
+                            <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
+                            {%- endif %}
+
+                            <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
+                                {{ inputs.hidden_tag() }}
+                                {{ wtf.form_errors(inputs, hiddens='only') }}
+                                <table class="table table-hover" align="left">
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Initial Value</th>
+                                    </tr>
+                                    <tr>
+                                        <td>Number of iterations in analysis (iteration_count)</td>
+                                        <td>
+                                            <div id='trigger-iteration_count'>
+                                                <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count"></input>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                        
                         {%- for group in group_list %}
                         <div class="panel panel-default">
                             <div class="panel-heading" role="tab" id="headingOne">
