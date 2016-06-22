@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 
 {% block styles %}
-{{super()}}
+{{super()}} <!-- Bootstrap's javascript code. The super() gives u the option to amend blocks instead of replacing them. This renders the parents styles block (but nothing is in base.html but empty blocks)--> 
+
+
+
+
+
 <!-- <link
     href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
     rel="stylesheet" type="text/css">
 <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"> -->
 <script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
+<link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}"> <!-- adding a custom CSS file --> 
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
 
@@ -28,7 +33,7 @@
   visibility: hidden !important;
 }
 </style>
-{% endblock %}
+{% endblock styles %}
 
 
 
@@ -46,23 +51,65 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    #NRELlogo{
+        width:100%;
+        height:100%;
+        max-width:240px;
+        max-height:84px;
+
+    }
+    #DTUlogo{
+        width:100%;
+        height:80%;
+    }
+    
+    #HeadTitle{
+        margin-top:55px;
+    }
+     .navbar{
+        margin-top:0px;
+    }
+    .nav-pills{
+        margin-top:5px;
+    }
+    #HeadTitle{
+        margin-bottom:0px;
+    }
+</style>
 
 <!-- Navigation bar -->
-<div class="container-fluid" id="navigation-bar">
-    <div class="page-header">
-        <h1>FUSED-Wind</h1>
-        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+<div class="container">
+    <div ID="HeadTitle" class="page-header">
+        <div class="row">
+            <section class="col-lg-10">
+                <h1>FUSED-Wind</h1>
+                <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+            </section>
+        <section class="col-lg-2">
+            <img ID="NRELlogo" class="img-small" src="/static/NREL_Logo.png" alt="NREL Logo"/>
+        </section>
+        </div>
+
     </div>
-    <ul class="nav nav-tabs">
-        <li role="presentation"><a href="/">Home</a></li>
-        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-        <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
-    </ul>
-</div>
+    </div>
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+
+        <div class="navbar-header">
+            <a href="#" class="navbar-brand"> FUSED-Wind GUI </a> </div>
+            <ul class="nav nav-pills">
+                <li role="presentation"><a href="/">Home</a></li>
+                <li class="active" role="presentation"><a href="configure.html">Perform Analysis</a></li>
+                <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
+            </ul>
+            </div>
+        </nav>
 
 <!-- ################### Main Content ################### -->
-<div class="container-fluid id=maincontent">
-    <div class="container-fluid" id="alert_placeholder">
+<div class="container id=maincontent">
+    <div class="container" id="alert_placeholder">
     </div>
     <div class="panel panel-default">
 		    {%- if not config_flag %}
