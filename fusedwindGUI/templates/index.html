@@ -1,18 +1,93 @@
 {% extends "base.html" %}
+{% block styles %}
+{{super()}} <!-- Bootstrap's javascript code. The super() gives u the option to amend blocks instead of replacing them. This renders the parents styles block (but nothing is in base.html but empty blocks)--> 
+
+<style>
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+{% endblock styles %}
+
+
+
+{% block scripts %}
+{{super()}}
+
+<script>
+// Submit forms ------------------
+     submitConfig = function(){
+         document.forms["config-form"].submit();
+         window.location.href = "/analysis"
+     }
+</script>
+
+{% endblock %}
 
 {% block content %}
+<style>
+    #NRELlogo{
+        width:100%;
+        height:100%;
+        max-width:240px;
+        max-height:84px;
+
+    }
+    #DTUlogo{
+        width:100%;
+        height:80%;
+    }
+    
+    #HeadTitle{
+        margin-top:55px;
+    }
+    .navbar{
+        margin-top:0px;
+    }
+    .nav-pills{
+        margin-top:5px;
+    }
+    #HeadTitle{
+        margin-bottom:0px;
+    }
+    #whitespace{
+        margin-left:0px;
+    }
+
+</style>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="#" class="navbar-brand"> FUSED-Wind GUI </a> </div>
+            <ul class="nav nav-pills">
+                <li class="active" role="presentation"><a href="/">Home</a></li>
+                <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
+                <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
+            </ul>
+   </div>
+        </nav>
+
+<!-- Navigation bar -->
 <div class="container">
-    <div class="page-header">
-        <h1>FUSED-Wind</h1>
-        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+    <div ID="HeadTitle" class="page-header">
+        <div class="row">
+            <section class="col-lg-10">
+                <h1>FUSED-Wind</h1>
+                <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+            </section>
+        <section id="whitespace" class="col-lg-2">
+            <img ID="NRELlogo" class="img-small" src="/static/NREL_Logo.png" alt="NREL Logo"/>
+        </section>
+        </div>
+
     </div>
-    <div class="container-fluid">
-        <ul class="nav nav-tabs">
-            <li role="presentation"><a href="/">Home</a></li>
-            <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-            <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
-        </ul>
     </div>
+
+
+
+
+
 <div class="container">
 
     <div class="content">
@@ -46,4 +121,6 @@
     </div>
 </div>
 
+<nav class="navbar navbar">
+<div class="container">
 {% endblock %}
