@@ -115,7 +115,7 @@
     <div class="panel panel-default">
 		    {%- if not config_flag %}
 <!-- ### Information #### -->
-        <div class="panel-body">
+        <div class="col-lg-6  panel-body">
             <p></p>
             <p>
                 There are a number of potential analysis configurations available in the FUSED-Wind framework.
@@ -144,66 +144,43 @@
             </p>
         </div>
 
-<!-- ####################  Buttons to run scripts ################### -->
-        <div class="panel-body" id='button-panel'>
-            <div class="btn-group">
-                <button id="selection" type="button" 
-                            class="btn nohover btn-success"
-                            data-toggle="modal"
-                            data-target="#configure-modal">Select Analysis</button>
-            </div>
-            <!-- Model Selection Modal -->
-            <div class="modal fade bs-example-modal-lg" id="configure-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                <div class="modal-dialog modal-lg" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title" id="myModalLabel">Analysis Configuration</h4>
-                        </div>
-                        <div class="modal-body">
-                            <form method="post" class="form" id='config-form'>
-                            <div class="tabbable"> <!-- Only required for left/right tabs -->
-                                <ul class="nav nav-tabs">
-                                <li class="active"><a href="#modelselect" data-toggle="tab">Model Selection</a></li>
-                                </ul>
-                                <div class="tab-content">
-                                    <div class="tab-pane active" id="modelselect">
-                                    <h4 class="panel-title">Model Selection</h4>
-                                        <div class="row">
-                                            <div class="col-lg-10">
-                                                <table class="table table-striped" align="left">
 
-                                                    <thead>
-                                                    <tr>
-                                                        <th>Subsystem</td>
-                                                        <th>Model</td>
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {%- for field in config %}
-                                                        {%- if field.name not in ('csrf_token', 'submit') %}
-                                                        <tr>
-                                                            <td>{{field.name}}</td>
-                                                            <td>
-                                                                <div id='trigger-{{field.name|safe}}'>
-                                                                    {{field(class="form-control")|safe}}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        {%- endif %}
-                                                        {%- endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div><!-- /btn-group -->
-                                        </div>
-										<input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitConfig()" value="Run">
-                                    </div>
-                                </div>
+            <!-- Model Selection Modal -->
+            <div class="container col-lg-6 col-md-6">
+            <form method="post" class="form" id='config-form'>
+                
+                <div class="tab-content" style="margin-top:5px;">
+                    <div class="tab-pane active" id="modelselect" style="box-sizing:content-box;">
+                    
+                            <div class="panel panel-primary">
+                              <div class="panel-heading">
+                                <h3 class="panel-title">Analysis Configuration</h3>
+                              </div>
+                              <div class="panel-body">
+                                <tbody>
+                                    {%- for field in config %}
+                                    {%- if field.name not in ('csrf_token', 'submit') %}
+                                    <tr>
+                                        <td>{{field.name}}</td>
+                                        <td>
+                                            <div id='trigger-{{field.name|safe}}'>
+                                                {{field(class="form-control")|safe}}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {%- endif %}
+                                    {%- endfor %}
+                                </tbody>
+                              </div>
                             </div>
-                            </form>
-                        </div>
+                        
+						<input class="btn btn-success col-lg-6 col-sm-2 col-xs-2" style="margin-left:5px;" id="submit" name="submit" type="submit" onClick="submitConfig()" value="Run">
                     </div>
                 </div>
-            </div>
+            </form></div>
+    
+  
+
         </div>
         {%- endif %}
 		    {%- if config_flag %}
@@ -212,6 +189,6 @@
 				</script>
 		    {%- endif %}
     </div>
-</div>
+
 
 {% endblock %}

@@ -41,6 +41,7 @@ def unitfield(units, name):
         html.append(u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' % (field.name, field.name, field.data))
         html.append(u'<span class="input-group-addon">%s</span>'%(units))
         html.append(u'</div>')
+
         return u''.join(html)
     myfield.__name__ = name
     return myfield
@@ -271,9 +272,6 @@ def webgui(app=None):
                     'choices': ['NREL 5MW RWT',
                                 'DTU 10MW RWT']}]
 
-        # loop through different models, model selection, analysis type, turbine selection and input 
-        # [('NREL 5MW RWT', 'NREL 5MW RWT'), ('DTU 10MW RWT', 'DTU 10MW RWT')]
-        # idk why this is a tuple. maybe has to do with the way openmdao processes things. 
         for dic in models:
             name = dic['name']
             choices = [(val, val) for val in dic['choices']] # the tuple: 1st is value that will be submitted, 2nd is text that'll show to end user
@@ -445,7 +443,7 @@ def webgui(app=None):
 
         if 'gui_recorder' not in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
-            flash('No case recorded - NO gui_recorder in component!')
+            #flash('No case recorded - NO gui_recorder in component!')
             return 'No case recorded - NO gui_recorder in component!'
 
         if 'counter' in cpnt.gui_recorder.keys():
@@ -485,11 +483,11 @@ def webgui(app=None):
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
-            flash('No recorder to clear!', category='message')
+            #flash('No recorder to clear!', category='message')
             return 'No recorder to clear!'
 
         cpnt.gui_recorder = {}
-        flash('Recorder cleared!', category='message')
+        # flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
     clear_recorder.__name__ = 'analysis_clear_recorder'
@@ -594,6 +592,7 @@ def webgui(app=None):
                                     myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
                         makePretty(myInputs)
                         makePretty(myOutputs)
+                    
                         # End
 
                         combIO = outputs['inputs'] + outputs['outputs']
@@ -614,7 +613,13 @@ def webgui(app=None):
                             script, div, plot_resources, draw_plot = None, None, None, None
                     else:
                         script, div, plot_resources, draw_plot = None, None, None, None
-
+                    #print MultiDict(inputs)
+                   #  print "assembly structure"
+                    #print assembly_structure
+                    # print "sub com data"
+                    # print sub_comp_data
+                    # print group_list
+                    # print group_dic
                     return render_template('webgui.html', # basically rerenter webgui.html with results or no results dependingon success
                                 inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                                 outputs=combIO,

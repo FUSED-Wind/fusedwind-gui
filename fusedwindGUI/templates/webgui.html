@@ -299,6 +299,11 @@ $('#fileupload').fileupload({
     </div>
 </div>
 
+<!-- Navigation bar -->
+<div class="container" id="navigation-bar">
+
+</div>
+
 <!-- ################### Main Content ################### -->
 <div class="container id=maincontent">
     <div class="container" id="alert_placeholder">
@@ -317,12 +322,12 @@ $('#fileupload').fileupload({
 
             {%- endif %}
             <div class="btn-group">
-                <button type="button" id="save" class="btn nohover btn-info" >Save</button>
-                <button type="button" style="background-color:blue;border-color:blue" id="save_toggle" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button type="button"  id="save" class="btn nohover btn-info" >Save</button>
+                <button type="button" id="save_toggle" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <span class="caret"></span>
                     <span class="sr-only">Toggle Dropdown</span>
                 </button>
-                <ul class="dropdown-menu" >
+                <ul class="dropdown-menu">
 
                     {%- if not sens_flag %}
                     <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
@@ -378,7 +383,7 @@ $('#fileupload').fileupload({
         <div class="row" id="input_panels">
 
 <!-- ########################## The Description panel ############## -->
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
                         <div class="panel-heading">
@@ -410,10 +415,16 @@ $('#fileupload').fileupload({
                         <div id="assembly-tree"></div>
                     </div>
                 </div>
+                <ul class="nav nav-pills nav-stacked col-lg-3 col-md-3 col-sm-3" role="tablist">
+                <li role="presentation" class="active"><a href="#inputs" role="tab" data-toggle="tab">Inputs</a></li>
+                <li role="presentation"><a href="#results" role="tab" data-toggle="tab">Results</a></li>
+                <li role="presentation"><a href="#plots" role="tab" data-toggle="tab">Plots</a></li>
+</ul>
             </div>
 
 
-
+<div class="tab-content"> 
+    <div role="tabpanel" class="tab-pane" id="plots">
 <!-- ########################## The Plotting Panel ############################# -->
             {% if draw_plot %}
             <div class="col-md-8">
@@ -435,20 +446,19 @@ $('#fileupload').fileupload({
 
 
             {% if draw_sens_plot %}
-            <div class="col-md-8">
+            <div class="col-md-10">
 
             <div class="panel-body comp-panels panel-{{name}}">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title" style="display:inline;">Results</h3>
-<<<<<<< HEAD
-                        <button type="button" id="addPlotWindow-btn" class="btn btn-small btn-success pull-right">Add Plot Window</button>
-=======
+
+
+
 
                         <div class="btn-group pull-right" role="group" aria="...">
                             <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
                         </div>
->>>>>>> 689596d13ee108f31b9047dfc5777b9ab8f3b23c
                     </div>
                     <div id="plot_area" class="panel-body", align="center">
                         <div id="plot_base">
@@ -573,9 +583,17 @@ $('#fileupload').fileupload({
             </div>
             {% endif %}
 
+
+        </div>
+        </div>
+        
+
 <!-- ########################## The Inputs panel ###    ######################## -->
-            {% if not sens_flag %}
-            <div class="col-md-3" id='inputs_single'>
+
+            {% if not sens_flag %} <!-- the individual analysis-->
+   <div class="tab-content"> 
+    <div role="tabpanel" class="tab-pane active" id="inputs">
+            <div class="col-md-6" id='inputs_single'>
                 <div class="panel-body">
                 <form method="post" class="form" id='global-inputs-form'>
                     <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
@@ -602,8 +620,8 @@ $('#fileupload').fileupload({
                                             <col width="55%">
                                             <col width="45%">
                                             <tr>
-                                                <th>Parameter</td>
-                                                <th>Value</td>
+                                                <th>Parameter</th>
+                                                <th>Value</th>
                                             </tr>
                                             {%- for field in inputs %}
                                             {%- if field.name not in ('csrf_token', 'submit') %}
@@ -637,11 +655,16 @@ $('#fileupload').fileupload({
                             document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
                         </script>
                     </div>
+                    </div>
                 </form>
                 </div>
-            </div>
+                </div>
+</div></div>
+            
+
+
             {%- else %}
-            <div class="col-md-7" id='inputs_single'>
+            <div class="col-md-10" id='inputs_single'>
                 <div class="panel-body">
                 <form method="post" class="form" id='global-inputs-form'>
                     <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
@@ -722,33 +745,33 @@ $('#fileupload').fileupload({
                                                             {{field(class="form-control")|safe}}
                                                         </div>
                                                     </td>
-		                                                <td>
-		                                                    {%- for select_field in inputs %}
-		                                                    {%- if ('select.'+field.name == select_field.name) %}
-		                                                    <div id='trigger-{{select_field.name|safe}}'>
-		                                                        {{select_field(class="form-control")|safe}}
-		                                                    </div>
-		                                                    {%- endif %}
-		                                                    {%- endfor %}
-		                                                </td>
-		                                                <td>
-		                                                    {%- for low_field in inputs %}
-		                                                    {%- if ('low.'+field.name == low_field.name) %}
-		                                                    <div id='trigger-{{low_field.name|safe}}'>
-		                                                        {{low_field(class="form-control")|safe}}
-		                                                    </div>
-		                                                    {%- endif %}
-		                                                    {%- endfor %}
-		                                                </td>
-		                                                <td>
-		                                                    {%- for high_field in inputs %}
-		                                                    {%- if ('high.'+field.name == high_field.name) %}
-		                                                    <div id='trigger-{{high_field.name|safe}}'>
-		                                                        {{high_field(class="form-control")|safe}}
-		                                                    </div>
-		                                                    {%- endif %}
-		                                                    {%- endfor %}
-		                                                </td>
+                                                        <td>
+                                                            {%- for select_field in inputs %}
+                                                            {%- if ('select.'+field.name == select_field.name) %}
+                                                            <div id='trigger-{{select_field.name|safe}}'>
+                                                                {{select_field(class="form-control")|safe}}
+                                                            </div>
+                                                            {%- endif %}
+                                                            {%- endfor %}
+                                                        </td>
+                                                        <td>
+                                                            {%- for low_field in inputs %}
+                                                            {%- if ('low.'+field.name == low_field.name) %}
+                                                            <div id='trigger-{{low_field.name|safe}}'>
+                                                                {{low_field(class="form-control")|safe}}
+                                                            </div>
+                                                            {%- endif %}
+                                                            {%- endfor %}
+                                                        </td>
+                                                        <td>
+                                                            {%- for high_field in inputs %}
+                                                            {%- if ('high.'+field.name == high_field.name) %}
+                                                            <div id='trigger-{{high_field.name|safe}}'>
+                                                                {{high_field(class="form-control")|safe}}
+                                                            </div>
+                                                            {%- endif %}
+                                                            {%- endfor %}
+                                                        </td>
                                                 </tr>
                                                 {%- endif %}
                                             {%- endif %}
@@ -778,9 +801,12 @@ $('#fileupload').fileupload({
 
 
 <!-- ###################### The Outputs panel ########################### -->
+
             <div class="col-md-7">
             {%if not sens_flag%}
             {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+            <div class="tab-content"> 
+    <div role="tabpanel" class="tab-pane" id="results">
             <div class="panel panel-body  comp-panels panel-{{name}}">
                 <div class="panel panel-default">
                     <div class="panel-heading">
@@ -913,6 +939,7 @@ $('#fileupload').fileupload({
                 {% endfor %}
                 {% endif %}
             </div>
+            </div></div>
 
 <!-- ################### ending dividers ################### -->
         </div>

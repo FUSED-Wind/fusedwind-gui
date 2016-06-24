@@ -58,22 +58,64 @@
 {# ------------------------------------- #}
 
 {% block content %}
-<!-- Navigation bar -->
-<div class="container-fluid" id="navigation-bar">
-    <div class="page-header">
-        <h1>FUSED-Wind</h1>
-        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+<!-- HEADER --> 
+<!-- used the bootswatch cerulean theme.--> 
+<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
+
+
+<nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
     </div>
-    <ul class="nav nav-tabs">
-        <li role="presentation"><a href="/">Home</a></li>
-        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-        <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
-    </ul>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
+        <li class="active"><a href="configure.html">Perform Analysis</a></li>
+        <li><a href="static/docs/index.html">Documentation</a></li>
+      </ul>
+      
+
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="https://github.com/FUSED-Wind/fusedwind-gui">Github</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container">
+
+    <div ID="HeadTitle" class="page-header">
+        <div class="row">
+            <div class="col-lg-8 col-md-7 col-sm-6">
+                <h1>FUSED-Wind</h1>
+                <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+            </div>
+        <div class="col-lg-2 col-md-2 col-sm-3">
+            <a href="http://www.nrel.gov/">
+            <img ID="NRELlogo" class="img-small" src="/static/NREL_Logo.png" alt="NREL Logo"/></a>
+        </div>
+        <div class="col-lg-2 col-md-3 col-sm-3">
+            <img ID="DTUlogo" class="img-small" src="/static/dtuwind.png" alt="DTU Logo"/>
+        </div>
+
+        </div>
+
+    </div>
 </div>
 
 <!-- ################### Main Content ################### -->
-<div class="container-fluid id=maincontent">
-    <div class="container-fluid" id="alert_placeholder">
+<div class="container id=maincontent">
+    <div class="container" id="alert_placeholder">
     </div>
 
   <p>
