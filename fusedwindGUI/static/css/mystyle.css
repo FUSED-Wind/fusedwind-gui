@@ -48,3 +48,7 @@ div#pop-up {
   color:#000000;
 }
 
+/* this makes it so that on pages that require scrolling the web page doesn't dynamically adjust */
+html {
+  overflow-y: scroll;
+}
