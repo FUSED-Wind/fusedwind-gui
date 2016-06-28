@@ -326,6 +326,16 @@ $('#fileupload').fileupload({
                     <li><a href="#">Separated link</a></li> -->
                 </ul>
             </div>
+            {%- if outputs and not sens_flag %}
+            <div class="btn-group pull-right" id="myTabs">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#inputs" role="tab" data-toggle="tab">Inputs</a></li>
+                    <li role="presentation"><a href="#results" role="tab" data-toggle="tab">Results</a></li>
+                    <li role="presentation"><a href="#plots" role="tab" data-toggle="tab">Plots</a></li>
+                    
+                </ul>
+            </div>
+            {%- endif %}
 
             <form id="download-inputs-form" method="get" action="/analysis/download"></form>
             <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
@@ -388,19 +398,10 @@ $('#fileupload').fileupload({
 
 <!-- ########################## The Assembly navigation panel ############## -->
                 {%- if outputs and not sens_flag %}
-                <div class="panel-body">
-                    <div class="panel panel-default">
-                        <ul class="nav nav-pills nav-stacked col-xs-12" role="tablist">
-                            <li role="presentation" class="active"><a href="#inputs" role="tab" data-toggle="tab">Inputs</a></li>
-                            <li role="presentation"><a href="#results" role="tab" data-toggle="tab">Results</a></li>
-                            <li role="presentation"><a href="#plots" role="tab" data-toggle="tab">Plots</a></li>
-                            
-                        </ul>
-                    </div>
-                </div>
+                
+
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
-                    
                         <div class="panel-heading">
                             <h3 class="panel-title">
                                 <a data-target="#collapse-tree"
