@@ -87,19 +87,24 @@
     </div>
   </div>
 </nav>
-<div class="container banner performAnalysis">
+<div class="container banner webGUI">
 
 
 
 <!-- ################### Main Content ################### -->
-<div class="container id=maincontent" style="margin-top:100px">
+<div class="container">
+    <h1 style="color:#FFFFFF"> Perform Analysis </h1>
+</div>
+
+
+<div class="container" style="margin-top:0px;">
     <div class="container" id="alert_placeholder">
-    </div>
-    <div class="panel panel-default">
+    </div> 
+    <div class="panel panel-default ">
 		    {%- if not config_flag %}
 <!-- ### Information #### -->
-        <div class="col-lg-6  panel-body" style="color:#000000">
-            <h1> Perform Analsysis </h1>
+    <div class="panel col-lg-6" style="background-color:#FFFFFF;">
+        <div class="panel-body" >
             <p></p>
             <p>
                 There are a number of potential analysis configurations available in the FUSED-Wind framework.
@@ -127,6 +132,7 @@
                 as well as the type of analysis (individual analyses, sensitivity analyses and design / optimization):
             </p>
         </div>
+    </div>
 
 
             <!-- Model Selection Modal -->

@@ -280,11 +280,15 @@ $('#fileupload').fileupload({
 </nav>
 <div class="container banner webGUI">
 
-
 <div class="container-fluid" id="navigation-bar"></div>
 
 <!-- ################### Main Content ################### -->
 <div class="container id=maincontent">
+{%- if not sens_flag %}
+<h1 style="color:#FFFFFF">  Individual Analysis </h1>
+{%- else %}
+<h1> Sensitivity Analysis </h1>
+{%- endif %}
     <div class="container" id="alert_placeholder"></div>
     <div class="panel panel-default">
 
@@ -374,7 +378,7 @@ $('#fileupload').fileupload({
             <div class="col-xs-3">
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
-                        <div class="panel-heading">
+                        <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">Model Description</h3>
                         </div>
                         <div class="panel-body">
@@ -395,7 +399,7 @@ $('#fileupload').fileupload({
 
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
-                        <div class="panel-heading">
+                        <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">
                                 <a data-target="#collapse-tree"
                                 href="#collapse-tree" >
@@ -420,7 +424,7 @@ $('#fileupload').fileupload({
                     <div class="col-xs-9">
                         <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
                             <div class="panel panel-default">
-                                <div class="panel-heading">
+                                <div class="panel-heading" style="background-color:#D8D8D8">
                                     <h3 class="panel-title">Results</h3>
                                 </div>
                                 <div class="panel-body", align="center">
@@ -440,7 +444,7 @@ $('#fileupload').fileupload({
 
                         <div class="panel-body comp-panels panel-{{name}}">
                             <div class="panel panel-default">
-                                <div class="panel-heading">
+                                <div class="panel-heading" style="background-color:#D8D8D8">
                                     <h3 class="panel-title" style="display:inline;">Results</h3>
                                     <div class="btn-group pull-right" role="group" aria="...">
                                         <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
@@ -585,7 +589,7 @@ $('#fileupload').fileupload({
                                 <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
                                     {%- for group in group_list %}
                                     <div class="panel panel-default">
-                                        <div class="panel-heading" role="tab" id="headingOne">
+                                        <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
                                             <h3 class="panel-title">
                                             <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
                                             {{group}} Inputs
@@ -657,7 +661,7 @@ $('#fileupload').fileupload({
                         <form method="post" class="form" id='global-inputs-form'>
                             <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
                                 <div class="panel panel-default">
-                                    <div class="panel-heading" role="tab" id="headingOne">
+                                    <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
                                         <h3 class="panel-title">
                                             <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
                                                 Sensitivity Inputs
@@ -694,7 +698,7 @@ $('#fileupload').fileupload({
                             
                                 {%- for group in group_list %}
                                 <div class="panel panel-default">
-                                    <div class="panel-heading" role="tab" id="headingOne">
+                                    <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
                                         <h3 class="panel-title">
                                         <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
                                         {{group}} Inputs
@@ -795,7 +799,7 @@ $('#fileupload').fileupload({
                     <div class="col-xs-8">
                         <div class="panel panel-body  comp-panels panel-{{name}}">
                             <div class="panel panel-default">
-                                <div class="panel-heading">
+                                <div class="panel-heading" style="background-color:#D8D8D8">
                                     <h3 class="panel-title">Model Output Results and Current Input States</h3>
                                 </div>
                                 <div class="panel-body", align="center">
@@ -864,10 +868,10 @@ $('#fileupload').fileupload({
                 <div class="panel-body hidden col-xs-9 comp-panels panel-{{field}}">
     <!-- ############## The Component Input panel ############################## -->
                     <div class="panel panel-default">
-                        <div class="panel-heading">
+                        <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">{{field}}</h3>
                         </div>
-                        <div class="panel-heading">Inputs & Outputs</div>
+                        <div class="panel-heading" style="background-color:#D8D8D8">Inputs & Outputs</div>
                         <div class="panel-body", align="center">
                             <table class="table"
                                    id="{{field}}-table"

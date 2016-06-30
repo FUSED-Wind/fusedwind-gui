@@ -42,19 +42,21 @@ div#pop-up {
 
 
 .banner{
-  background-image: url('../img/background.jpg');
+  background-image: url('../img/26777.jpg');
   background-size:cover; /* this stretches image based on sizing of window! */
   min-height:100%;
   min-width:100%;
+
 }
 
-.performAnalysis{
-  background-image: url('../img/9662281133_e1c5466a27_o.jpg');
+.about{
+    background-image: url('../img/16303.jpg');
+
 }
+
 
 .webGUI{
-  background-image: url('../img/9662281133_e1c5466a27_o.jpg');
-
+  background-image: url('../img/16303.jpg');
 }
 
 
@@ -74,7 +76,7 @@ html {
 }
 
 .startButton{
-  margin-top:100px;
+  margin-top:0px;
   min-width:200px;
 }
 
@@ -88,4 +90,9 @@ html, body{
 
 .panel-default{
   border:0px;
+}
+
+
+.panel-heading{
+  background-color:#A8A8A8 ;
 }
