@@ -34,16 +34,30 @@ div#pop-up {
 }
 
 #HeadTitle{
-    margin-top:0px;
-}
-
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  margin-top:15%;
+  }
 
 
 .banner{
-  background-image: url('../wind.jpg');
+  background-image: url('../img/background.jpg');
   background-size:cover; /* this stretches image based on sizing of window! */
+  min-height:100%;
+  min-width:100%;
+}
+
+.performAnalysis{
+  background-image: url('../img/9662281133_e1c5466a27_o.jpg');
+}
+
+.webGUI{
+  background-image: url('../img/9662281133_e1c5466a27_o.jpg');
 
 }
+
+
 .h1{
   color:#000000;
 }
@@ -51,9 +65,27 @@ div#pop-up {
 /* this makes it so that on pages that require scrolling the web page doesn't dynamically adjust */
 html {
   overflow-y: scroll;
+
 }
 
 #myTabs{
   align:right;
   padding-right:100px;
+}
+
+.startButton{
+  margin-top:100px;
+  min-width:200px;
+}
+
+html, body{
+  height:100%;
+}
+
+.myNavBar{
+  padding:0px;
+}
+
+.panel-default{
+  border:0px;
 }

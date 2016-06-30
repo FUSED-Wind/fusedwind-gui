@@ -76,6 +76,8 @@
         <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
         <li class="active"><a href="configure.html">Perform Analysis</a></li>
         <li><a href="static/docs/index.html">Documentation</a></li>
+        <li><a href="about.html"> About </a></li>
+
       </ul>
       
 
@@ -85,29 +87,19 @@
     </div>
   </div>
 </nav>
-
-
-<div class="container banner">
-    <div ID="HeadTitle" class="page-header">
-        <div class="row">
-            <div class="col-lg-8 col-md-7 col-sm-6">
-                <h1 style="color:#FFFFFF">FUSED-Wind</h1>
-                <h2><small style="color:#FFFFFF">Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="container banner performAnalysis">
 
 
 
 <!-- ################### Main Content ################### -->
-<div class="container id=maincontent">
+<div class="container id=maincontent" style="margin-top:100px">
     <div class="container" id="alert_placeholder">
     </div>
     <div class="panel panel-default">
 		    {%- if not config_flag %}
 <!-- ### Information #### -->
-        <div class="col-lg-6  panel-body">
+        <div class="col-lg-6  panel-body" style="color:#000000">
+            <h1> Perform Analsysis </h1>
             <p></p>
             <p>
                 There are a number of potential analysis configurations available in the FUSED-Wind framework.
@@ -143,7 +135,8 @@
                 
                 <div class="tab-content" style="margin-top:5px;">
                     <div class="tab-pane active" id="modelselect" style="box-sizing:content-box;">
-                    
+                            <br>
+                            <br>
                             <div class="panel panel-primary">
                               <div class="panel-heading">
                                 <h3 class="panel-title">Analysis Configuration</h3>
@@ -181,6 +174,6 @@
 				</script>
 		    {%- endif %}
     </div>
-
+</div>
 
 {% endblock %}
