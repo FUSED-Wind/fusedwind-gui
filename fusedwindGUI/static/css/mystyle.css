@@ -28,3 +28,71 @@ div#pop-up {
     margin-right: 0px;
     margin-left: 0px;
 }
+
+.navbar{
+    margin-bottom:0px;
+}
+
+#HeadTitle{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  margin-top:15%;
+  }
+
+
+.banner{
+  background-image: url('../img/26777.jpg');
+  background-size:cover; /* this stretches image based on sizing of window! */
+  min-height:100%;
+  min-width:100%;
+
+}
+
+.about{
+    background-image: url('../img/16303.jpg');
+
+}
+
+
+.webGUI{
+  background-image: url('../img/16303.jpg');
+}
+
+
+.h1{
+  color:#000000;
+}
+
+/* this makes it so that on pages that require scrolling the web page doesn't dynamically adjust */
+html {
+  overflow-y: scroll;
+
+}
+
+#myTabs{
+  align:right;
+  padding-right:100px;
+}
+
+.startButton{
+  margin-top:0px;
+  min-width:200px;
+}
+
+html, body{
+  height:100%;
+}
+
+.myNavBar{
+  padding:0px;
+}
+
+.panel-default{
+  border:0px;
+}
+
+
+.panel-heading{
+  background-color:#A8A8A8 ;
+}

@@ -1,51 +1,33 @@
 # -*- coding: utf-8 -*-
-from openmdao.main.vartree import VariableTree
-from openmdao.main.api import set_as_top, Assembly
-from openmdao.lib.drivers.api import DOEdriver
-from openmdao.lib.doegenerators.api import FullFactorial, Uniform
+from openmdao.main.vartree import VariableTree  
+from openmdao.main.api import set_as_top, Assembly 
+from openmdao.lib.drivers.api import DOEdriver 
+from openmdao.lib.doegenerators.api import Uniform  
 
 import os
 import sys
 import platform
 
-from flask import Flask, flash, request, render_template, make_response
-from wtforms.widgets import TextArea
-from wtforms import SelectField
-from flask.ext.mail import Message, Mail
-from flask.ext.bower import Bower
-from flask import Blueprint, request, abort, jsonify, redirect, render_template
-from flask_wtf.file import FileField
-from flask_bootstrap import Bootstrap
-from flask_appconfig import AppConfig
-from flask import Response, send_from_directory
-from flask_wtf import Form, RecaptchaField
+from flask import flash, make_response  
+from flask import request, jsonify, redirect, render_template 
+from flask_wtf import Form 
 
-from functools import wraps
-from werkzeug import secure_filename
-from wtforms.widgets.core  import  html_params
-from wtforms import widgets
+from wtforms import SelectField 
 
 import numpy as np
 import datetime as dt
-
-from jinja2 import evalcontextfilter, Markup, escape
 
 from webcomponent import *
 
 import json
 import yaml
 
-from fusedwindGUI import app, session
-
+from fusedwindGUI import app 
 debug = True # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
 debug = False
 
 
-
-
-
 ## Handling Forms -------------------------------------------------------------
-
 def unitfield(units, name):
     """A simple widget generating function. The nested function is necessary in order
     to have a different function name for each widget. This whole code should
@@ -59,6 +41,7 @@ def unitfield(units, name):
         html.append(u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' % (field.name, field.name, field.data))
         html.append(u'<span class="input-group-addon">%s</span>'%(units))
         html.append(u'</div>')
+
         return u''.join(html)
     myfield.__name__ = name
     return myfield
@@ -116,109 +99,8 @@ def WebGUIForm(dic, run=False, sens_flag=False):
 
     return MyForm
 
-try:
-    from bokeh.embed import components
-    from bokeh.plotting import figure
-    from bokeh.charts import  Line
-    from bokeh.resources import INLINE
-    from bokeh.templates import JS_RESOURCES
-    from bokeh.util.string import encode_utf8
-    from bokeh._legacy_charts import Donut, output_file, show
-    use_bokeh = True
-except:
-    print 'Bokeh hasnt been installed properly'
-    use_bokeh = False
-
-
-if use_bokeh:
-    def prepare_plot(func, *args, **kwargs):
-        fig = figure()
-        fig = func(fig, *args, **kwargs)
-        # Create a polynomial line graph
-
-        # Configure resources to include BokehJS inline in the document.
-        # For more details see:
-        #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
-        plot_resources = JS_RESOURCES.render(
-            js_raw=INLINE.js_raw,
-            css_raw=INLINE.css_raw,
-            js_files=INLINE.js_files,
-            css_files=INLINE.css_files,
-        )
-
-        # For more details see:
-        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
-        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embed.html#components  (as of 2015 09 28)
-        script, div = components(fig, INLINE)
-        return script, div
-
-
-
-    # Function used to print pretty numbers
-    def prettyNum( num ):
-        anum = abs(num)
-        if( anum > 1e4 or anum < 1e-2):
-            return "%.2e" % num
-        elif( anum > 10.0 ):
-            return "%.2f" % num
-        elif( anum < 1.0):
-            return "%.4f" % num
-        else:
-            return "%.3f" % num
-
-    # Create 1D sensitivitey Bokeh plots
-    def SensPlot1D( fig, *args, **kwargs ):
-
-        fig = figure( title="Sensitivity Results",
-                    x_axis_label = args[0][0],
-                    y_axis_label = args[1][0])
-
-        #Set colors according to input
-        colors = []
-        try:
-            colorData = kwargs['colorAxis']['values']
-
-            for val in colorData:
-                d = 200* (max(colorData) - val) / (max(colorData) - min(colorData))
-                colors.append("#%02x%02x%02x" % (200-d, 150, d))
-        except:
-            colors = ["#22AEAA" for i in args[0][1]]
-
-        # plot data
-        fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
-
-        if( len(args[0][1])>0 and len(args[1][1])>0 and (kwargs['colorAxis']['name'] != "Mono" )):
-            # draw color name
-
-            xDiff = max(args[0][1]) - min(args[0][1])
-            yDiff = max(args[1][1]) - min(args[1][1])
-
-            xPos = min(args[0][1]) + 0.05 * xDiff
-            yPos = max(args[1][1]) + 0.10 * yDiff
-
-            fig.text(
-                x = xPos + 0.125 * xDiff,
-                y = yPos - 0.05 * yDiff,
-                text = ["%s" %kwargs['colorAxis']['name']],
-                text_align="center" )
-
-            #draw color scale
-            fig.line(
-                x= [xPos, xPos + 0.25 * xDiff],
-                y= [yPos, yPos],
-                line_color="black")
-
-            fig.circle(x= xPos, y= yPos, size=10, fill_color="#0096C8" )
-            fig.circle(x= xPos+0.25*xDiff, y= yPos, size=10, fill_color="#C89600" )
-
-            fig.text(x=xPos, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(min(colorData))], text_align="center")
-            fig.text(x=xPos+0.25*xDiff, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(max(colorData))], text_align="center")
-        return fig;
-
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
-    #print 'In build_hierarchy...'
-
     for name in cpnt.list_components():
         comp = getattr(cpnt, name)
         #if debug:
@@ -247,7 +129,6 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     return sub_comp_data, asym_structure
 
 ## Handling file upload -------------------------------------------------------
-
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
     using a yaml library, and return its content as a python object.
@@ -263,11 +144,11 @@ def _handleUpload(files):
 
         with open(os.path.join(tmpdir, upload_file.filename), 'r') as f:
             try:
-                inputs = yaml.load(f)
+                inputs = yaml.load(f) # yaml.load returns a python object 
             except:
                 inputs = None
-                print('File {:} not a valid YAML file!'.format(upload_file.filename))
-                flash('File {:} not a valid YAML file!'.format(upload_file.filename))
+                print('File {:} not a valid YAML file!'.format(upload_file.filename)) # prints to terminal
+                flash('File {:} not a valid YAML file!'.format(upload_file.filename)) # flask-flash flashes to user
                 return None
 
         outfiles.append({
@@ -275,26 +156,35 @@ def _handleUpload(files):
             'content': inputs
         })
 
-    return outfiles
+    return outfiles # list of dictionary 
 
 
 ## Views -----------------------------------------------------------------------
-@app.route('/')
+@app.route('/') # default page 
 def hello():
     """ Welcoming page
     """
     provider = str(os.environ.get('PROVIDER', 'world'))
     return render_template('index.html', form={'hello':'world'})
 
+@app.route('/about.html') 
+def hello2():
+    """ Welcoming page
+    """
+    provider = str(os.environ.get('PROVIDER', 'world'))
+    return render_template('about.html', form={'hello':'world'})
+@app.route('/documentation.html')
+def hello3():
+    return render_template('documentation.html', form={'hello':'world'})
 
-@app.route('/upload/', methods=['POST'])
+@app.route('/upload/', methods=['POST']) # when uplaod
 def upload():
     """Take care of the reception of the file upload. Return a json file
     to be consumed by a jQuery function
     """
     try:
         files = request.files
-        uploaded_files = _handleUpload(files)
+        uploaded_files = _handleUpload(files) # returned as a python object 
         if uploaded_files is None:
             raise ValueError
             return jsonify({'status': 'error'})
@@ -338,19 +228,19 @@ def get_io_dict(cpnt):
 
 
 def serialize(thing):
-    if isinstance(thing, np.ndarray):
-        return thing.tolist()
+    if isinstance(thing, np.ndarray): # numpy ndarray 
+        return thing.tolist() # returns as list
     elif isinstance(thing, np.float64):
-        return float(thing)
+        return float(thing) # returns as float
     elif isinstance(thing, Component):
-        return get_io_dict(thing)
+        return get_io_dict(thing) # returns dictionary of i/o
     elif isinstance(thing, VariableTree):
         out = {}
         for k in thing.list_vars():
-            out[k] = serialize(getattr(thing, k))
-        return out
+            out[k] = serialize(getattr(thing, k)) # returns dictionary after recursion
+        return out # 
     elif isinstance(thing, float):
-        return thing
+        return thing 
     elif isinstance(thing, int):
         return thing
     elif isinstance(thing, str):
@@ -359,16 +249,11 @@ def serialize(thing):
     return '??_' +  str(thing.__class__)
 
 def to_unicode(dic):
-
+# returns dictionary 
     new = {}
     for k, v in dic.iteritems():
         new[k] = unicode(v)
     return new
-
-cpnt = None
-desc = ''
-analysis = 'Individual Analysis'
-sensitivityResults = {"empty":True}
 
 def webgui(app=None):
 
@@ -395,10 +280,12 @@ def webgui(app=None):
                    {'name': 'Turbine Selection',
                     'choices': ['NREL 5MW RWT',
                                 'DTU 10MW RWT']}]
+
         for dic in models:
             name = dic['name']
-            choices = [(val, val) for val in dic['choices']]
-            setattr(ConfigForm, name, SelectField(name, choices=choices))
+            choices = [(val, val) for val in dic['choices']] # the tuple: 1st is value that will be submitted, 2nd is text that'll show to end user
+            setattr(ConfigForm, name, SelectField(name, choices=choices)) # adds fields. field = name, selectfield = choices
+            # for example, Field Model Selection has 2 options of Tier1 and Tier 2. 
 
 
         if request.method == 'POST': # Receiving a POST request
@@ -419,7 +306,7 @@ def webgui(app=None):
                         filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp') #TODO: fix abspath
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
                         filename = os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp')
-                    f = open(filename, 'r')
+                    f = open(filename, 'r') # returns a python object. 'r' means open text file for reading only. 
                     wt_inputs = to_unicode(yaml.load(f))
                 except:
                     print 'lcoe_csm_assembly could not be loaded!'
@@ -466,7 +353,7 @@ def webgui(app=None):
             params[param['name']] = param['state']
         r = yaml.dump(params, default_flow_style=False)
 
-        response = make_response(r)
+        response = make_response(r) 
         response.headers["Content-Disposition"] = "attachment; filename=fused_inputs.yaml"
         return response
         # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
@@ -563,9 +450,9 @@ def webgui(app=None):
 
     def record_case():
 
-        if not 'gui_recorder' in vars(cpnt):       # GNS
+        if 'gui_recorder' not in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
-            flash('No case recorded - NO gui_recorder in component!')
+            #flash('No case recorded - NO gui_recorder in component!')
             return 'No case recorded - NO gui_recorder in component!'
 
         if 'counter' in cpnt.gui_recorder.keys():
@@ -605,11 +492,11 @@ def webgui(app=None):
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
-            flash('No recorder to clear!', category='message')
+            #flash('No recorder to clear!', category='message')
             return 'No recorder to clear!'
 
         cpnt.gui_recorder = {}
-        flash('Recorder cleared!', category='message')
+        # flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
     clear_recorder.__name__ = 'analysis_clear_recorder'
@@ -617,15 +504,12 @@ def webgui(app=None):
 
     #---------------
 
-    def fused_webapp(config_flag=False):
-
+    def fused_webapp(config_flag=False): 
         if analysis == 'Individual Analysis':
             sens_flag=False
         else:
             sens_flag=True
-
         cpname = cpnt.__class__.__name__
-
         if cpnt is None:
             print '\n*** WARNING: component is None\n'
             failed_run_flag = 'WARNING: component is None in fused_webapp() - try another model(?)'
@@ -660,13 +544,13 @@ def webgui(app=None):
             assembly_structure[0]['nodes'] = structure
 
         failed_run_flag = False
-        if (not config_flag) and request.method == 'POST': # Receiving a POST request
+        if (not config_flag) and request.method == 'POST': # if not called from webgui i guess???
 
-            inputs =  request.form.to_dict()
+            inputs =  request.form.to_dict() # gets the input values??? 
             io = traits2jsondict(cpnt)
 
 
-            if not sens_flag:
+            if not sens_flag: # if this is not a sensitivity analysis: 
                 try:
                     for k in inputs.keys():
                         if k in io['inputs']: # Loading only the inputs allowed
@@ -677,15 +561,15 @@ def webgui(app=None):
                     failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     flash(failed_run_flag)
                 try:
-                    cpnt.run()
+                    cpnt.run() #this is where the analysis actually occurs?
+
                 except:
                     print "Analysis did not execute properly (sens_flag = False)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
-                    #flash(failed_run_flag) # no need to flash a failed_run_flag
 
                 sub_comp_data = {}
-                if isinstance(cpnt, Assembly):
+                if isinstance(cpnt, Assembly): 
 
                     sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
@@ -695,35 +579,66 @@ def webgui(app=None):
                         print ' INPUTS ', outputs['inputs']
                         print 'OUTPUTS ', outputs['outputs']
                     if not failed_run_flag:
+
+                        # Start 
+                        myInputs = outputs['inputs']
+                        myOutputs = outputs['outputs']
+                        def makePretty(myList):
+                            """ 
+                            This function takes in a list of dictionaries, where each dictionary represents an input/output
+                            It modifies variable names and descriptions to be more human readable. 
+
+                            * This mutative method may be a problem if trying to save a file then trying to reload the file.
+                            If needed, comment out from #start to #End and it should work.
+
+                            Alternatively, when importing you can just reverse these operations below. Make everything lower 
+                            case and replace white space with underscore. 
+                            """
+                            for myDict in myList:
+                                if 'name' in myDict.keys():
+                                    myDict['name'] = myDict['name'].replace("_"," ").title()
+                                if 'desc' in myDict.keys():
+                                    myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+                        makePretty(myInputs)
+                        makePretty(myOutputs)
+                    
+                        # End
+
                         combIO = outputs['inputs'] + outputs['outputs']
+
                     else:
                         combIO = None
 
-                if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28
-                      # no point in running plots for a failed run
-
+                    if not failed_run_flag:
+                #if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28
                     # no plots for now since bootstrap-table and bokeh seem to be in conflict
-                    try:
-                        script, div = prepare_plot(cpnt.plot)
-                        draw_plot = True
-                    except:
-                        # TODO: gracefully inform the user of why he doesnt see his plots
-                        print "Failed to prepare any plots for " + cpnt.__class__.__name__
-                        flash("Analysis ran; failed to prepare any plots for " + cpnt.__class__.__name__)
+                        try:
+                            script, div = prepare_plot(cpnt.plot) # plotss the capital costs
+                            draw_plot = True
+                        except:
+                            # TODO: gracefully inform the user of why he doesnt see his plots
+                            print "Failed to prepare any plots for " + cpnt.__class__.__name__
+                            flash("Analysis ran; failed to prepare any plots for " + cpnt.__class__.__name__)
+                            script, div, plot_resources, draw_plot = None, None, None, None
+                    else:
                         script, div, plot_resources, draw_plot = None, None, None, None
-                else:
-                    script, div, plot_resources, draw_plot = None, None, None, None
-
-                return render_template('webgui.html',
-                            inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
-                            outputs=combIO,
-                            name=cpname,
-                            plot_script=script, plot_div=div, draw_plot=draw_plot,
-                            sub_comp_data=sub_comp_data,
-                            assembly_structure=assembly_structure,
-                            group_list=group_list,
-                            group_dic=group_dic,
-                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+                    #print MultiDict(inputs)
+                   #  print "assembly structure"
+                    #print assembly_structure
+                    # print "sub com data"
+                    # print sub_comp_data
+                    # print group_list
+                    # print group_dic
+                    return render_template('webgui.html', # basically rerenter webgui.html with results or no results dependingon success
+                                inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
+                                outputs=combIO,
+                                name=cpname,
+                                plot_script=script, plot_div=div, draw_plot=draw_plot,
+                                sub_comp_data=sub_comp_data,
+                                assembly_structure=assembly_structure,
+                                group_list=group_list,
+                                group_dic=group_dic,
+                                desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
 
             else: # sens_flag == True
 
@@ -737,12 +652,10 @@ def webgui(app=None):
                 skipInputs = ['iteration_count']
 
                 for k in inputs.keys():
-                    if( k in skipInputs ):
-                        #print( " skipping - %s" %k)
-                        continue
-                    #print k
+                    if k in skipInputs :
+                        continue # moves onto next k value 
                     try:
-                        if k in io['inputs']:
+                        if k in io['inputs']: #   io = traits2jsondict(cpnt)
                             setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
                     except:
                         print "Something went wrong when setting the model inputs, one of them may have a wrong type"
@@ -750,11 +663,11 @@ def webgui(app=None):
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
-                        if 'select.' in k:
-                            for kselect in inputs.keys():
-                                if 'select.'+kselect == k:
-                                    for klow in inputs.keys():
-                                        if 'low.'+kselect == klow:
+                        if 'select.' in k: # k is a key in the input keys dictionary 
+                            for kselect in inputs.keys(): 
+                                if 'select.'+kselect == k: 
+                                    for klow in inputs.keys(): 
+                                        if 'low.'+kselect == klow: 
                                             for khigh in inputs.keys():
                                                 if 'high.'+kselect == khigh:
                                                     my_sa.driver.add_parameter('asym.'+kselect, low=float(inputs[klow]), high=float(inputs[khigh]))
@@ -925,12 +838,116 @@ def GetSensPlot():
     return jsonify(**f)
 
 
+################################### SCRIPT #######################################################
 
-#
-#
-# if __name__ == '__main__':
-#     # Bind to PORT if defined, otherwise default to 5000.
-#
-#
-#     port = int(os.environ.get('PORT', 5000))
-#     app.run(host='0.0.0.0', port=port, debug=True)
+# Bokeh stuff after run
+try:
+    from bokeh.embed import components
+    from bokeh.plotting import figure
+    from bokeh.charts import  Line
+    from bokeh.resources import INLINE #inline configures to provide entire BokehJS code and CSS inline
+    from bokeh.templates import JS_RESOURCES
+    from bokeh.util.string import encode_utf8
+    from bokeh._legacy_charts import Donut, output_file, show 
+    use_bokeh = True
+except:
+    print 'Bokeh hasnt been installed properly'
+    use_bokeh = False
+
+
+if use_bokeh:
+    def prepare_plot(func, *args, **kwargs): # the func seems to be either sens1dplot or copnt.plot 
+        fig = figure()
+        fig = func(fig, *args, **kwargs)
+        # Create a polynomial line graph
+
+        # Configure resources to include BokehJS inline in the document.
+        # For more details see:
+        #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
+        plot_resources = JS_RESOURCES.render(
+            js_raw=INLINE.js_raw,
+            css_raw=INLINE.css_raw,
+            js_files=INLINE.js_files,
+            css_files=INLINE.css_files,
+        )
+
+        # For more details see:
+        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
+        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embed.html#components  (as of 2015 09 28)
+        script, div = components(fig, INLINE) # components(plot_objs) returns HTML components to embed a Bokeh Plot. THe data for the plot is stored direclty in the returned HTML. 
+        return script, div 
+            # Function used to print pretty numbers
+    def prettyNum( num ):
+        anum = abs(num)
+        if( anum > 1e4 or anum < 1e-2):
+            return "%.2e" % num 
+        elif( anum > 10.0 ):
+            return "%.2f" % num # this just means to print the 2 values after the decimal point for float
+        elif( anum < 1.0):
+            return "%.4f" % num
+        else:
+            return "%.3f" % num
+
+    # Create 1D sensitivitey Bokeh plots
+    def SensPlot1D( fig, *args, **kwargs ):
+
+        fig = figure( title="Sensitivity Results",
+                    x_axis_label = args[0][0],
+                    y_axis_label = args[1][0])
+
+        #Set colors according to input
+        colors = []
+        try:
+            colorData = kwargs['colorAxis']['values']
+
+            for val in colorData:
+                d = 200* (max(colorData) - val) / (max(colorData) - min(colorData))
+                colors.append("#%02x%02x%02x" % (200-d, 150, d))
+        except:
+            colors = ["#22AEAA" for i in args[0][1]]
+
+        # plot data
+        fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
+
+        if( len(args[0][1])>0 and len(args[1][1])>0 and (kwargs['colorAxis']['name'] != "Mono" )):
+            # draw color name
+
+            xDiff = max(args[0][1]) - min(args[0][1])
+            yDiff = max(args[1][1]) - min(args[1][1])
+
+            xPos = min(args[0][1]) + 0.05 * xDiff
+            yPos = max(args[1][1]) + 0.10 * yDiff
+
+            fig.text(
+                x = xPos + 0.125 * xDiff,
+                y = yPos - 0.05 * yDiff,
+                text = ["%s" %kwargs['colorAxis']['name']],
+                text_align="center" )
+
+            #draw color scale
+            fig.line(
+                x= [xPos, xPos + 0.25 * xDiff],
+                y= [yPos, yPos],
+                line_color="black")
+
+            fig.circle(x= xPos, y= yPos, size=10, fill_color="#0096C8" )
+            fig.circle(x= xPos+0.25*xDiff, y= yPos, size=10, fill_color="#C89600" )
+
+            fig.text(x=xPos, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(min(colorData))], text_align="center")
+            fig.text(x=xPos+0.25*xDiff, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(max(colorData))], text_align="center")
+        return fig;
+
+cpnt = None
+desc = ''
+analysis = 'Individual Analysis'
+sensitivityResults = {"empty":True}
+
+
+# photo creds:
+# https://www.flickr.com/photos/sandialabs/9205031702/in/photolist-f2qce9-5aamBz-Pi9Ej-558Lf4-7obLDR-5hNQmQ-kPvGoX-3B3EGX-8XdesP-5epYUS-5aakTz-71Jko6-2rhYDx-6BJKE8-dKrG7J-f2aV42-7ofEGJ-ferntZ-amvxV9-cbF8jW-6Y8Tcb-6BGAJy-5sabbm-8RJ1AN-6rsVAc-phVE7g-nFh2tj-oX52HF-5aamp2-4mMCZW-8oZpKo-a6AYLr-akPomq-4rjvuH-5XBRWJ-5b8nWS-ferjA6-75aiGh-pskKMf-uLnm91-fAMXr6-4mXsuj-8RyzMh-bqch7h-cT689h-83eqAR-dKmFLC-6Y8UAj-8Pvmwv-8Pysus
+# https://www.flickr.com/photos/cosmosfan/3212536952/in/photolist-5TT6j9-osyG56-8hYBNF-8No5uG-4ZFSCE-cDm1xs-qpaccj-61N1fT-5s5Qo4-7ji66U-73w4JD-a6Yh9L-q8jvpE-9wYazX-mnVekv-o6JPzX-6GjhaJ-k7hYSF-5s5QHr-dmvkeX-efdEkv-4RqGYD-rdG8Lm-26uYu1-e3ok2a-58VMkr-6Gfd5e-aSX5it-79B5tq-d9kVGY-5M25xm-7whBaC-63cMeE-cHee77-3WBGc4-fv4vEN-4eyzz1-4Y7bG6-HQpgxM-pardj1-6QxdWq-pHAYTx-dus9p5-6PmNR6-pm2UH5-7Jem9a-26vueS-6LmqsC-5prrst-cX6w3s
+# https://www.flickr.com/photos/tumblingrun/6271299222/in/photolist-ayb3LE-7wM855-71FHBG-gkWaEU-7jjiCa-8YPiDV-dx2iSv-5cX2ib-JTrBq-qLJqGL-5S9c7u-3ceue1-8srMww-6Qddor-yfFWo-2YzAeX-2jVXjF-5uoRZU-aiRccH-8zwDLt-7DZ6FE-7whdWq-apcyW5-oVTFKV-8cgQxD-r8xFnq-5ReUwr-6Mj391-7KKJq5-4PLhDb-8jQUWV-pnMq6M-73GgYV-o9jeZm-7Pk5Zp-rkc1LC-8jmCHR-5NBGD5-neV9eB-bt2vd3-7deXET-5prsxZ-ANQtm-72ruEr-dRx6Uv-ag7mSH-6ShVRA-5Cf85J-7uDs3A-5xKo1U
+# https://www.flickr.com/photos/germanborrillo/9662281133/in/photolist-fHPHy2-9hp3Mb-3NUM8f-9xRRfN-bsPYxN-8cgVun-5xsVsi-fuP5rt-4ZFWfs-8kJyfT-cCK41N-fwrhdj-foKf7H-5UPnxg-eWBFsj-eRyoTp-52VFok-ah9MMH-73LfvL-6MmCXT-2HHuhv-cRk8A5-fnUKsn-cBPnqj-8JkFDC-9KF588-hoxDBX-6ffneM-5YRtnV-7KFCWK-cvoF9h-bphhZ8-4MNKqT-6xAfsd-fB3eT3-32igdy-fuP6mP-5AXn2c-26qgu4-eCMT16-cHedYN-dzjuZ1-65Zosr-6Mr3sA-6G8WEA-CjfRLT-7Knzvh-6wR5DL-Jssf3-ew7hGC
+# https://www.flickr.com/photos/tdr1/8198244266/in/photolist-dus9p5-6PmNR6-pm2UH5-7Jem9a-26vueS-6LmqsC-5prrst-cX6w3s-duVGzY-7JY8Hy-8P9kok-99abGL-aSX5tk-5LWSDn-8PyrZq-e6RrRN-26qZai-73GiEX-hqZEgr-cHedBL-6bng8X-cqhUAC-ok6chp-6s5f3N-bCtJtu-7jSw4x-7fbWAU-u3kQrE-hekHy1-5P7pU6-4cRvba-qnAWnC-8Ji3TM-5jPh8h-69Zo1f-fmpybx-diAYcx-3Bbjqv-f74sny-99abGJ-cHeefo-73LfVm-5AGK5U-7jWpxG-q1aztd-fHPHy2-9hp3Mb-3NUM8f-9xRRfN-bsPYxN
+# https://www.flickr.com/photos/zhchen543/2708862013/in/photolist-58nCit-fnUKpK-HGDspq-6JMxWP-FxwZ1W-dujkn1-6PD6fr-7PzjkV-6AHwGS-fnUDLT-67vqWF-aF2JT6-nbTp8o-4FrE2Z-8JhzP4-3dLAso-73vYYe-6yFGM6-7PziFH-5FXDPW-5prrAp-5AXr5P-5xsUYV-91HbMW-bd5jDk-8JkGrG-6ShWkL-7Pzhvn-9CkhoT-nnzxiy-8UZa6t-bnAWnT-ayb3LE-7wM855-gkWaEU-7jjiCa-5S9c7u-3ceue1-2YzAeX-7DZ6FE-7whdWq-apcyW5-oVTFKV-8cgQxD-r8xFnq-pnMq6M-o9jeZm-rkc1LC-bt2vd3-5prsxZ
+

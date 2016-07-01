@@ -5,7 +5,7 @@
 <!-- <link
     href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
     rel="stylesheet" type="text/css">
-<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"> -->
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script> -->
 <script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
@@ -112,7 +112,7 @@ $('#fileupload').fileupload({
         }
     }
 
-    function buildVTTable($el, vtdata) {
+    function buildVTTable($el, vtdata) { /* variable tree */ 
 
         var data = [], row = []
         for (var key in vtdata) {
@@ -244,23 +244,52 @@ $('#fileupload').fileupload({
 
 {% block content %}
 
-<!-- Navigation bar -->
-<div class="container-fluid" id="navigation-bar">
-    <div class="page-header">
-        <h1>FUSED-Wind</h1>
-        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+<!-- HEADER --> 
+<!-- used the bootswatch cerulean theme.--> 
+
+<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
+
+<nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
     </div>
-    <ul class="nav nav-tabs">
-        <li role="presentation"><a href="/">Home</a></li>
-        <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-        <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
-    </ul>
-</div>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
+        <li class="active"><a href="configure.html">Perform Analysis</a></li>
+        <li><a href="static/docs/index.html">Documentation</a></li>
+        <li><a href="about.html"> About </a></li>
+
+      </ul>
+      
+
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="https://github.com/FUSED-Wind/fusedwind-gui">Github</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container banner webGUI">
+
+<div class="container-fluid" id="navigation-bar"></div>
 
 <!-- ################### Main Content ################### -->
-<div class="container-fluid id=maincontent">
-    <div class="container-fluid" id="alert_placeholder">
-    </div>
+<div class="container id=maincontent">
+{%- if not sens_flag %}
+<h1 style="color:#FFFFFF">  Individual Analysis </h1>
+{%- else %}
+<h1 style="color:#FFFFFF"> Sensitivity Analysis </h1>
+{%- endif %}
+    <div class="container" id="alert_placeholder"></div>
     <div class="panel panel-default">
 
 <!-- ####################  Buttons to run scripts ################### -->
@@ -275,12 +304,12 @@ $('#fileupload').fileupload({
 
             {%- endif %}
             <div class="btn-group">
-                <button type="button" style="background-color:blue;border-color:blue" id="save" class="btn nohover btn-success" >Save</button>
-                <button type="button" style="background-color:blue;border-color:blue" id="save_toggle" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button type="button"  id="save" class="btn nohover btn-info" >Save</button>
+                <button type="button" id="save_toggle" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <span class="caret"></span>
                     <span class="sr-only">Toggle Dropdown</span>
                 </button>
-                <ul class="dropdown-menu" style="background-color:blue;border-color:blue">
+                <ul class="dropdown-menu">
 
                     {%- if not sens_flag %}
                     <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
@@ -294,6 +323,16 @@ $('#fileupload').fileupload({
                     <li><a href="#">Separated link</a></li> -->
                 </ul>
             </div>
+            {%- if outputs and not sens_flag %}
+            <div class="btn-group pull-right" id="myTabs">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#inputs" role="tab" data-toggle="tab">Inputs</a></li>
+                    <li role="presentation"><a href="#results" role="tab" data-toggle="tab">Results</a></li>
+                    <li role="presentation"><a href="#plots" role="tab" data-toggle="tab">Plots</a></li>
+                    
+                </ul>
+            </div>
+            {%- endif %}
 
             <form id="download-inputs-form" method="get" action="/analysis/download"></form>
             <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
@@ -336,10 +375,10 @@ $('#fileupload').fileupload({
         <div class="row" id="input_panels">
 
 <!-- ########################## The Description panel ############## -->
-            <div class="col-md-2">
+            <div class="col-xs-3">
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
-                        <div class="panel-heading">
+                        <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">Model Description</h3>
                         </div>
                         <div class="panel-body">
@@ -353,11 +392,14 @@ $('#fileupload').fileupload({
                         </div>
                     </div>
                 </div>
+
 <!-- ########################## The Assembly navigation panel ############## -->
+                {%- if outputs and not sens_flag %}
+                
+
                 <div class="panel-body">
                     <div class="panel panel-default" id='panel-'>
-
-                        <div class="panel-heading">
+                        <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">
                                 <a data-target="#collapse-tree"
                                 href="#collapse-tree" >
@@ -366,452 +408,470 @@ $('#fileupload').fileupload({
                             </h3>
                         </div>
                         <div id="assembly-tree"></div>
-                    </div>
-                </div>
+                    </div>  
+                </div> 
+                {%- endif %}            
             </div>
+            
 
-
-
+            <div class="tab-content"> 
+                {%- if not sens_flag %}
+                <div role="tabpanel" class="tab-pane" id="plots">
+                {%- endif %}
+                
 <!-- ########################## The Plotting Panel ############################# -->
-            {% if draw_plot %}
-            <div class="col-md-8">
-            <div class="panel-body comp-panels panel-{{name}}">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Results</h3>
-                    </div>
-                    <div class="panel-body", align="center">
-                        <div id="plot_space">
-                            {{ plot_script|indent(4)|safe }}
-                            {{ plot_div|indent(4)|safe }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </div>
-            {% endif %}
-
-
-            {% if draw_sens_plot %}
-            <div class="col-md-8">
-
-            <div class="panel-body comp-panels panel-{{name}}">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title" style="display:inline;">Results</h3>
-<<<<<<< HEAD
-                        <button type="button" id="addPlotWindow-btn" class="btn btn-small btn-success pull-right">Add Plot Window</button>
-=======
-
-                        <div class="btn-group pull-right" role="group" aria="...">
-                            <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
-                        </div>
->>>>>>> 689596d13ee108f31b9047dfc5777b9ab8f3b23c
-                    </div>
-                    <div id="plot_area" class="panel-body", align="center">
-                        <div id="plot_base">
-                            <div class="row" id="plot_row">
-                                <div class="col-md-4">
-                                    <div class="row">
-                                    <div class="col-md-8 col-md-offset-2">
-                                    <form id="plot_controller__0">
-
-                                        <div class="form-group">
-                                          <label for="input_plot_variable">Input</label>
-                                          <select class="form-control" id="input_plot_variable">
-                                            <optgroup label="Choose Input">
-                                                {% for val in plot_inputVars %}
-                                                <option>{{val}}</option>
-                                                {% endfor %}
-                                            </optgroup>
-                                          </select>
-                                        </div>
-
-
-                                        <div class="form-group">
-                                          <label for="output_plot_variable">Output</label>
-                                          <select class="form-control" id="output_plot_variable">
-                                            <optgroup label="Choose Output">
-                                                {% for val in plot_outputVars %}
-                                                <option>{{val}}</option>
-                                                {% endfor %}
-                                            </optgroup>
-                                          </select>
-                                        </div>
-
-                                        <div class="form-group">
-                                          <label for="color_plot_variable">Colors</label>
-                                          <select class="form-control" id="color_plot_variable">
-                                            <option>Mono</option>
-                                            <optgroup label="Inputs">
-                                                {% for val in plot_inputVars %}
-                                                <option>{{val}}</option>
-                                                {% endfor %}
-                                            </optgroup>
-                                            <optgroup label="Outputs">
-                                                {% for val in plot_outputVars %}
-                                                <option>{{val}}</option>
-                                                {% endfor %}
-                                            </optgroup>
-                                          </select>
-                                        </div>
-
-                                      <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
-                                    </form>
-                                    </div>
-                                    </div>
-
-
-                                    <h3 style="margin-top:50px">Summary</h3>
-                                    <!-- Plot summary goes here -->
-                                    <div id="plot_summary">
-                                        <p>No inputs selected</p>
+                    {% if draw_plot %}
+                    <div class="col-xs-9">
+                        <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
+                            <div class="panel panel-default">
+                                <div class="panel-heading" style="background-color:#D8D8D8">
+                                    <h3 class="panel-title">Results</h3>
+                                </div>
+                                <div class="panel-body", align="center">
+                                    <div id="plot_space">
+                                        {{ plot_script|indent(4)|safe }}
+                                        {{ plot_div|indent(4)|safe }}
                                     </div>
                                 </div>
-                                    <!-- start plot -->
-                                <div class="col-md-8" id="plot_space">
-                                    {{ plot_script|indent(4)|safe }}
-                                    {{ plot_div|indent(4)|safe }}
-                                </div>
-                                    <!-- end plot -->
-
-                                <script type="text/javascript">
-                                    $("form#plot_controller__0").submit( function(event) {
-                                        event.preventDefault();
-
-                                        var topDOM = $(this).closest("div#plot_row");
-
-                                        var summaryDOM = topDOM.find("div#plot_summary");
-                                        var plotDOM = topDOM.find("div#plot_space");
-
-
-                                        var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
-                                        var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
-                                        var colVar = $(this).find("#color_plot_variable").find("option:selected").text();
-
-                                        $.post( "/RetrieveSensPlot", { inVar: inVar, outVar: outVar, colVar:colVar } , function(data){
-                                            plotDOM.html( data.script + data.div );
-                                            summaryDOM.html( data.summary );
-                                        });
-                                    });
-                                </script>
-
                             </div>
                         </div>
-                        <!-- Plot Controller Action -->
-                        <script type="text/javascript">
-
-                        var plotCount = 0;
-
-                        var addPlotWindow = function(){
-                            plotCount += 1;
-
-                            var rawText = $("#plot_base").html();
-                            rawText = rawText.replace(/__0/g, "__" + plotCount);
-
-                            var plotText = rawText.substring(0,rawText.indexOf("<!-- start plot -->"));
-
-                            plotText += '<div class="col-md-8" id="plot_space"></div>';
-
-                            plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
-
-                            $("#plot_area").append(plotText);
-                            console.log(plotText);
-                        }
-
-
-                        $("#addPlotWindow-btn").click( function(){
-                            addPlotWindow();
-                        });
-
-                        </script>
                     </div>
-                </div>
-            </div>
-            </div>
-            {% endif %}
+                    {% endif %}
 
-<!-- ########################## The Inputs panel ###    ######################## -->
-            {% if not sens_flag %}
-            <div class="col-md-3" id='inputs_single'>
-                <div class="panel-body">
-                <form method="post" class="form" id='global-inputs-form'>
-                    <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
-                        {%- for group in group_list %}
-                        <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingOne">
-                                <h3 class="panel-title">
-                                <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
-                                {{group}} Inputs
-                                </a>
-                                </h3>
-                            </div>
-                            {%- if group == 'Global' %}
-                            <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
-                            {%- else %}
-                            <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                            {%- endif %}
-                                <div class="panel-body"
-                                     align="center" id='global-inputs-panel'>
 
-                                        {{ inputs.hidden_tag() }}
-                                        {{ wtf.form_errors(inputs, hiddens='only') }}
-                                        <table class="table table-hover" align="left">
-                                            <col width="55%">
-                                            <col width="45%">
-                                            <tr>
-                                                <th>Parameter</td>
-                                                <th>Value</td>
-                                            </tr>
-                                            {%- for field in inputs %}
-                                            {%- if field.name not in ('csrf_token', 'submit') %}
-                                            {%- if group_dic[field.name] == group %}
-                                            <tr>
-                                                <td>{{field.description}} ({{field.name}})</td>
-                                                <td>
-                                                    <div id='trigger-{{field.name|safe}}'>
-                                                        {{field(class="form-control")|safe}}
+                    {% if draw_sens_plot %}
+                    <div class="col-md-9">
+
+                        <div class="panel-body comp-panels panel-{{name}}">
+                            <div class="panel panel-default">
+                                <div class="panel-heading" style="background-color:#D8D8D8">
+                                    <h3 class="panel-title" style="display:inline;">Results</h3>
+                                    <div class="btn-group pull-right" role="group" aria="...">
+                                        <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
+                                    </div>
+                                </div>
+                                <div id="plot_area" class="panel-body", align="center">
+                                    <div id="plot_base">
+                                        <div class="row" id="plot_row">
+                                            <div class="col-md-4">
+                                                <div class="row">
+                                                    <div class="col-md-8 col-md-offset-2">
+                                                        <form id="plot_controller__0">
+
+                                                            <div class="form-group">
+                                                              <label for="input_plot_variable">Input</label>
+                                                              <select class="form-control" id="input_plot_variable">
+                                                                <optgroup label="Choose Input">
+                                                                    {% for val in plot_inputVars %}
+                                                                    <option>{{val}}</option>
+                                                                    {% endfor %}
+                                                                </optgroup>
+                                                              </select>
+                                                            </div>
+
+
+                                                            <div class="form-group">
+                                                              <label for="output_plot_variable">Output</label>
+                                                              <select class="form-control" id="output_plot_variable">
+                                                                <optgroup label="Choose Output">
+                                                                    {% for val in plot_outputVars %}
+                                                                    <option>{{val}}</option>
+                                                                    {% endfor %}
+                                                                </optgroup>
+                                                              </select>
+                                                            </div>
+
+                                                            <div class="form-group">
+                                                              <label for="color_plot_variable">Colors</label>
+                                                              <select class="form-control" id="color_plot_variable">
+                                                                <option>Mono</option>
+                                                                <optgroup label="Inputs">
+                                                                    {% for val in plot_inputVars %}
+                                                                    <option>{{val}}</option>
+                                                                    {% endfor %}
+                                                                </optgroup>
+                                                                <optgroup label="Outputs">
+                                                                    {% for val in plot_outputVars %}
+                                                                    <option>{{val}}</option>
+                                                                    {% endfor %}
+                                                                </optgroup>
+                                                              </select>
+                                                            </div>
+
+                                                            <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                                        </form>
                                                     </div>
-                                                </td>
-                                            </tr>
-                                            {%- endif %}
-                                            {%- endif %}
-                                            {%- endfor %}
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        {%- endfor %}
+                                                </div>
 
-                        <script>
-                        function getHeight() {
-                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                            var h_btn = document.getElementById('button-panel').offsetHeight;
-                            var h_win = $(window).height() - h_nav - h_btn - 50;
-                            return String(h_win)+'px'
-                        }
-                            console.log(getHeight())
-                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                        </script>
-                    </div>
-                </form>
-                </div>
-            </div>
-            {%- else %}
-            <div class="col-md-7" id='inputs_single'>
-                <div class="panel-body">
-                <form method="post" class="form" id='global-inputs-form'>
-                    <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
-                        
-                        <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingOne">
-                                <h3 class="panel-title">
-                                    <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
-                                        Sensitivity Inputs
-                                    </a>
-                                </h3>
-                            </div>
 
-                            {%- if not draw_sens_plot %}
-                            <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
-                            {%- else %}
-                            <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
-                            {%- endif %}
-
-                            <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
-                                {{ inputs.hidden_tag() }}
-                                {{ wtf.form_errors(inputs, hiddens='only') }}
-                                <table class="table table-hover" align="left">
-                                    <tr>
-                                        <th>Parameter</th>
-                                        <th>Initial Value</th>
-                                    </tr>
-                                    <tr>
-                                        <td>Number of iterations in analysis (iteration_count)</td>
-                                        <td>
-                                            <div id='trigger-iteration_count'>
-                                                <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count"></input>
+                                                <h3 style="margin-top:50px">Summary</h3>
+                                                <!-- Plot summary goes here -->
+                                                <div id="plot_summary">
+                                                    <p>No inputs selected</p>
+                                                </div>
                                             </div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                        
-                        {%- for group in group_list %}
-                        <div class="panel panel-default">
-                            <div class="panel-heading" role="tab" id="headingOne">
-                                <h3 class="panel-title">
-                                <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
-                                {{group}} Inputs
-                                </a>
-                                </h3>
-                            </div>
-                            {%- if group == 'Global' %}
-                                {% if not draw_sens_plot %}
-                                <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
-                                {%- else %}
-                                <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                                {%- endif %}
-                            {%- else %}
-                            <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                            {%- endif %}
-                                <div class="panel-body"
-                                     align="center" id='global-inputs-panel'>
-                                        {{ inputs.hidden_tag() }}
-                                        {{ wtf.form_errors(inputs, hiddens='only') }}
-                                        <table class="table table-hover" align="left">
-                                            <tr>
-                                                <th>Parameter</td>
-                                                <th>Initial Value</td>
-                                                <th>Sensitivity Input</td>
-                                                <th>Sensitivity Low Value</td>
-                                                <th>Sensitivity High Value</td>
-                                            </tr>
-                                            {%- for field in inputs %}
-                                            {%- if ('select.' not in field.name) and ('low.' not in field.name) and ('high.' not in field_name) %}
-                                                {%- if field.name not in ('csrf_token', 'submit') and group_dic[field.name] == group %}
-                                                <tr>
-                                                    <td>{{field.description}} ({{field.name}})</td>
-                                                    <td>
-                                                        <div id='trigger-{{field.name|safe}}'>
-                                                            {{field(class="form-control")|safe}}
-                                                        </div>
-                                                    </td>
-		                                                <td>
-		                                                    {%- for select_field in inputs %}
-		                                                    {%- if ('select.'+field.name == select_field.name) %}
-		                                                    <div id='trigger-{{select_field.name|safe}}'>
-		                                                        {{select_field(class="form-control")|safe}}
-		                                                    </div>
-		                                                    {%- endif %}
-		                                                    {%- endfor %}
-		                                                </td>
-		                                                <td>
-		                                                    {%- for low_field in inputs %}
-		                                                    {%- if ('low.'+field.name == low_field.name) %}
-		                                                    <div id='trigger-{{low_field.name|safe}}'>
-		                                                        {{low_field(class="form-control")|safe}}
-		                                                    </div>
-		                                                    {%- endif %}
-		                                                    {%- endfor %}
-		                                                </td>
-		                                                <td>
-		                                                    {%- for high_field in inputs %}
-		                                                    {%- if ('high.'+field.name == high_field.name) %}
-		                                                    <div id='trigger-{{high_field.name|safe}}'>
-		                                                        {{high_field(class="form-control")|safe}}
-		                                                    </div>
-		                                                    {%- endif %}
-		                                                    {%- endfor %}
-		                                                </td>
-                                                </tr>
-                                                {%- endif %}
-                                            {%- endif %}
-                                            {%- endfor %}
-                                    </table>
+                                                <!-- start plot -->
+                                            <div class="col-md-8" id="plot_space">
+                                                {{ plot_script|indent(4)|safe }}
+                                                {{ plot_div|indent(4)|safe }}
+                                            </div>
+                                                <!-- end plot -->
+
+                                            <script type="text/javascript">
+                                                $("form#plot_controller__0").submit( function(event) {
+                                                    event.preventDefault();
+
+                                                    var topDOM = $(this).closest("div#plot_row");
+
+                                                    var summaryDOM = topDOM.find("div#plot_summary");
+                                                    var plotDOM = topDOM.find("div#plot_space");
+
+
+                                                    var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
+                                                    var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
+                                                    var colVar = $(this).find("#color_plot_variable").find("option:selected").text();
+
+                                                    $.post( "/RetrieveSensPlot", { inVar: inVar, outVar: outVar, colVar:colVar } , function(data){
+                                                        plotDOM.html( data.script + data.div );
+                                                        summaryDOM.html( data.summary );
+                                                    });
+                                                });
+                                            </script>
+
+                                        </div>
+                                    </div>
+                                    <!-- Plot Controller Action -->
+                                    <script type="text/javascript">
+
+                                    var plotCount = 0;
+
+                                    var addPlotWindow = function(){
+                                        plotCount += 1;
+
+                                        var rawText = $("#plot_base").html();
+                                        rawText = rawText.replace(/__0/g, "__" + plotCount);
+
+                                        var plotText = rawText.substring(0,rawText.indexOf("<!-- start plot -->"));
+
+                                        plotText += '<div class="col-md-8" id="plot_space"></div>';
+
+                                        plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
+
+                                        $("#plot_area").append(plotText);
+                                        console.log(plotText);
+                                    }
+
+
+                                    $("#addPlotWindow-btn").click( function(){
+                                        addPlotWindow();
+                                    });
+
+                                    </script>
                                 </div>
                             </div>
                         </div>
-                        {%- endfor %}
-
-                        <script>
-                        function getHeight() {
-                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                            var h_btn = document.getElementById('button-panel').offsetHeight;
-                            var h_win = $(window).height() - h_nav - h_btn - 50;
-                            return String(h_win)+'px'
-                        }
-                            console.log(getHeight())
-                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                        </script>
                     </div>
-                </form>
+                    {% endif %}
+
+                {%- if not sens_flag %}
                 </div>
-            </div>
                 {%- endif %}
 
+<!-- ########################## The Inputs panel ###    ######################## -->
+                
+ 
+               {% if not sens_flag %}
+                <div role="tabpanel" class="tab-pane active" id="inputs">
 
-<!-- ###################### The Outputs panel ########################### -->
-            <div class="col-md-7">
-            {%if not sens_flag%}
-            {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-            <div class="panel panel-body  comp-panels panel-{{name}}">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Model Output Results and Current Input States</h3>
-                    </div>
-                    <div class="panel-body", align="center">
-                        <table class="table"
-                               id="global-outputs-table"
-                               data-toggle="global-outputs-table"
-                               data-sort-name="iotype"
-                               data-show-columns="true"
-                               data-search="true"
-                               data-show-refresh="true"
-                               data-show-toggle="true"
-                               data-show-export="true"
-                               data-detail-view="true">
-                            <thead>
-                            <tr>
-                                <th data-field="name">Name</th>
-                                <th data-field="desc">Description</th>
-                                <th data-field="state" data-formatter='validateOutputs'>Value</th>
-                                <th data-field="units">Units</th>
-                                <th data-field="iotype">I/O Type</th>
-                            </tr>
-                            </thead>
-                        </table>
+                    <div class="col-xs-8" id='inputs_single'>
+                        <div class="panel-body">
+                            <form method="post" class="form" id='global-inputs-form'>
+                                <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                                    {%- for group in group_list %}
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                                            <h3 class="panel-title">
+                                            <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                                            {{group}} Inputs
+                                            </a>
+                                            </h3>
+                                        </div>
+                                        {%- if group == 'Global' %}
+                                        <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
+                                        {%- else %}
+                                        <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                                        {%- endif %}
+                                            <div class="panel-body"
+                                                 align="center" id='global-inputs-panel'>
+
+                                                {{ inputs.hidden_tag() }}
+                                                {{ wtf.form_errors(inputs, hiddens='only') }}
+                                                <table class="table table-hover" align="left">
+                                                    <col width="55%">
+                                                    <col width="45%">
+                                                    <tr>
+                                                        <th>Parameter</th>
+                                                        <th>Value</th>
+                                                    </tr>
+                                                    {%- for field in inputs %}
+                                                    {%- if field.name not in ('csrf_token', 'submit') %}
+                                                    {%- if group_dic[field.name] == group %}
+                                                    <tr>
+                                                        <td>{{field.description}} ({{field.name}})</td>
+                                                        <td>
+                                                            <div id='trigger-{{field.name|safe}}'>
+                                                                {{field(class="form-control")|safe}}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {%- endif %}
+                                                    {%- endif %}
+                                                    {%- endfor %}
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {%- endfor %}
+
+                                    <script>
+                                    function getHeight() {
+                                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                                        var h_btn = document.getElementById('button-panel').offsetHeight;
+                                        var h_win = $(window).height() - h_nav - h_btn - 50;
+                                        return String(h_win)+'px'
+                                    }
+                                        console.log(getHeight())
+                                        document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                                        document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                                    </script>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
-                <script>
-                    window['global-outputs-data'] = {{ outputs | tojson | safe }};
-                    $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
-                                                               height: getHeight(),
-                                                               onExpandRow: function (index, row, $detail) {
-                                                               expandTable($detail, row);
-                                                               }
-                                                              });
-                    function validateOutputs(value, row) {
-                        if (row.type == 'Array') {
-                            return 'Array data';
-                        }
-                        else if (row.type == 'VarTree') {
-                            return 'Vartree data';
-                        }
-                        else if (row.type == 'Float'){
-                            return row.state.toPrecision(5);
-                        }
-                        else {
-                            return row.state;
-                        }
-                    }
-                    function getHeight() {
-                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                        var h_btn = document.getElementById('button-panel').offsetHeight;
-                        console.log(h_nav, h_btn)
-                        return $(window).height() - h_nav - h_btn - 50;
-                    }
-                </script>
-            </div>
-            {% endif %}
-            {% endif %}
+                {%- else %}
+                {%- if draw_sens_plot %}
+                <div class="col-xs-offset-3 col-xs-9" id='inputs_single'>
 
 
+                {%- else %}
+                <div class="col-xs-9" id='inputs_single'>
+                {%- endif %}
+                    <div class="panel-body">
+                        <form method="post" class="form" id='global-inputs-form'>
+                            <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                                        <h3 class="panel-title">
+                                            <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
+                                                Sensitivity Inputs
+                                            </a>
+                                        </h3>
+                                    </div>
 
-            {% if sub_comp_data %}
+                                    {%- if not draw_sens_plot %}
+                                    <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
+                                    {%- else %}
+                                    <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
+                                        {%- endif %}
 
-            {% for field, inout in sub_comp_data.iteritems() %}
-            <div class="panel-body hidden comp-panels panel-{{field}}">
-<!-- ############## The Component Input panel ############################## -->
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">{{field}}</h3>
+                                        <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
+                                            {{ inputs.hidden_tag() }}
+                                            {{ wtf.form_errors(inputs, hiddens='only') }}
+                                            <table class="table table-hover" align="left">
+                                                <tr>
+                                                    <th>Parameter</th>
+                                                    <th>Initial Value</th>
+                                                </tr>
+                                                <tr>
+                                                    <td>Number of iterations in analysis (iteration_count)</td>
+                                                    <td>
+                                                        <div id='trigger-iteration_count'>
+                                                            <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count">
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            
+                                {%- for group in group_list %}
+                                <div class="panel panel-default">
+                                    <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                                        <h3 class="panel-title">
+                                        <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                                        {{group}} Inputs
+                                        </a>
+                                        </h3>
+                                    </div>
+                                    {%- if group == 'Global' %}
+                                    {% if not draw_sens_plot %}
+                                    <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
+                                    {%- else %}
+                                    <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                                    {%- endif %}
+                                    {%- else %}
+                                    <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                                    {%- endif %}
+                                        <div class="panel-body"
+                                             align="center" id='global-inputs-panel'>
+                                                {{ inputs.hidden_tag() }}
+                                                {{ wtf.form_errors(inputs, hiddens='only') }}
+                                            <table class="table table-hover" align="left">
+                                                <tr>
+                                                    <th>Parameter</th>
+                                                    <th>Initial Value</th>
+                                                    <th>Sensitivity Input</th>
+                                                    <th>Sensitivity Low Value</th>
+                                                    <th>Sensitivity High Value</th>
+                                                </tr>
+                                                {%- for field in inputs %}
+                                                {%- if ('select.' not in field.name) and ('low.' not in field.name) and ('high.' not in field_name) %}
+                                                    {%- if field.name not in ('csrf_token', 'submit') and group_dic[field.name] == group %}
+                                                    <tr>
+                                                        <td>{{field.description}} ({{field.name}})</td>
+                                                        <td>
+                                                            <div id='trigger-{{field.name|safe}}'>
+                                                                {{field(class="form-control")|safe}}
+                                                            </div>
+                                                        </td>
+                                                            <td>
+                                                                {%- for select_field in inputs %}
+                                                                {%- if ('select.'+field.name == select_field.name) %}
+                                                                <div id='trigger-{{select_field.name|safe}}'>
+                                                                    {{select_field(class="form-control")|safe}}
+                                                                </div>
+                                                                {%- endif %}
+                                                                {%- endfor %}
+                                                            </td>
+                                                            <td>
+                                                                {%- for low_field in inputs %}
+                                                                {%- if ('low.'+field.name == low_field.name) %}
+                                                                <div id='trigger-{{low_field.name|safe}}'>
+                                                                    {{low_field(class="form-control")|safe}}
+                                                                </div>
+                                                                {%- endif %}
+                                                                {%- endfor %}
+                                                            </td>
+                                                            <td>
+                                                                {%- for high_field in inputs %}
+                                                                {%- if ('high.'+field.name == high_field.name) %}
+                                                                <div id='trigger-{{high_field.name|safe}}'>
+                                                                    {{high_field(class="form-control")|safe}}
+                                                                </div>
+                                                                {%- endif %}
+                                                                {%- endfor %}
+                                                            </td>
+                                                    </tr>
+                                                    {%- endif %}
+                                                {%- endif %}
+                                                {%- endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                {%- endfor %}
+
+                                <script>
+                                function getHeight() {
+                                    var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                                    var h_btn = document.getElementById('button-panel').offsetHeight;
+                                    var h_win = $(window).height() - h_nav - h_btn - 50;
+                                    return String(h_win)+'px'
+                                }
+                                    console.log(getHeight())
+                                    document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                                    document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                                </script>
+                            </div>
+                        </form>
                     </div>
-                        <div class="panel-heading">Inputs & Outputs</div>
+                </div>
+                {%- endif %}
+
+<!-- ###################### The Outputs panel ########################### -->
+
+            
+                {%if not sens_flag%}
+                {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+                <div role="tabpanel" class="tab-pane" id="results">
+                    <div class="col-xs-8">
+                        <div class="panel panel-body  comp-panels panel-{{name}}">
+                            <div class="panel panel-default">
+                                <div class="panel-heading" style="background-color:#D8D8D8">
+                                    <h3 class="panel-title">Model Output Results and Current Input States</h3>
+                                </div>
+                                <div class="panel-body", align="center">
+                                    <table class="table col-xs-8"
+                                           id="global-outputs-table"
+                                           data-toggle="global-outputs-table"
+                                           data-sort-name="iotype"
+                                           data-show-columns="true"
+                                           data-search="true"
+                                           data-show-refresh="true"
+                                           data-show-toggle="true"
+                                           data-show-export="true"
+                                           data-detail-view="true">
+                                        <thead>
+                                        <tr>
+                                            <th data-field="name">Name</th>
+                                            <th data-field="desc">Description</th>
+                                            <th data-field="state" data-formatter='validateOutputs'>Value</th>
+                                            <th data-field="units">Units</th>
+                                            <th data-field="iotype">I/O Type</th>
+                                        </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+                            <script>
+                                window['global-outputs-data'] = {{ outputs | tojson | safe }};
+                                $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
+                                                                           height: getHeight(),
+                                                                           onExpandRow: function (index, row, $detail) {
+                                                                           expandTable($detail, row);
+                                                                           }
+                                                                          });
+                                function validateOutputs(value, row) {
+                                    if (row.type == 'Array') {
+                                        return 'Array data';
+                                    }
+                                    else if (row.type == 'VarTree') {
+                                        return 'Vartree data';
+                                    }
+                                    else if (row.type == 'Float'){
+                                        return row.state.toPrecision(5);
+                                    }
+                                    else {
+                                        return row.state;
+                                    }
+                                }
+                                function getHeight() {
+                                    var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                                    var h_btn = document.getElementById('button-panel').offsetHeight;
+                                    console.log(h_nav, h_btn)
+                                    return $(window).height() - h_nav - h_btn - 50;
+                                }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+
+
+                {% if sub_comp_data %}
+
+                {% for field, inout in sub_comp_data.iteritems() %}
+                <div class="panel-body hidden col-xs-9 comp-panels panel-{{field}}">
+    <!-- ############## The Component Input panel ############################## -->
+                    <div class="panel panel-default">
+                        <div class="panel-heading" style="background-color:#D8D8D8">
+                            <h3 class="panel-title">{{field}}</h3>
+                        </div>
+                        <div class="panel-heading" style="background-color:#D8D8D8">Inputs & Outputs</div>
                         <div class="panel-body", align="center">
                             <table class="table"
                                    id="{{field}}-table"
@@ -834,48 +894,49 @@ $('#fileupload').fileupload({
                                 </thead>
                             </table>
                         </div>
-                </div>
-                <script>
-                    window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
-                    $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
-                                                          height: getHeight(),
-                                                          onExpandRow: function (index, row, $detail) {
-                                                              expandTable($detail, row);
-                                                          }
-                                                         });
-                    function validateOutputs(value, row) {
-                        if (row.type == 'Array') {
-                            return 'Array data';
+                    </div>
+                    <script>
+                        window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
+                        $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
+                                                              height: getHeight(),
+                                                              onExpandRow: function (index, row, $detail) {
+                                                                  expandTable($detail, row);
+                                                              }
+                                                             });
+                        function validateOutputs(value, row) {
+                            if (row.type == 'Array') {
+                                return 'Array data';
+                            }
+                            else if (row.type == 'VarTree') {
+                                return 'Variable Collection';
+                            }
+                            else {
+                                return row.state;
+                            }
                         }
-                        else if (row.type == 'VarTree') {
-                            return 'Variable Collection';
+                        function getHeight() {
+                            var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                            var h_btn = document.getElementById('button-panel').offsetHeight;
+                            return $(window).height() - h_nav - h_btn - 50;
                         }
-                        else {
-                            return row.state;
-                        }
-                    }
-                    function getHeight() {
-                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                        var h_btn = document.getElementById('button-panel').offsetHeight;
-                        return $(window).height() - h_nav - h_btn - 50;
-                    }
-                </script>
+                    </script>
 
-                {% if inout.plot %}
+                    {% if inout.plot %}
                     <div class="panel-body", align="center">
                         {{ inout.plot.script|indent(4)|safe }}
                         {{ inout.plot.div|indent(4)|safe }}
                     </div>
-                {% endif %}
+                    {% endif %}
                 </div>
                 {% endfor %}
                 {% endif %}
             </div>
+        </div>
+        </div>
 
-<!-- ################### ending dividers ################### -->
-        </div>
-        </div>
+    <!-- ################### ending dividers ################### -->
     </div>
 </div>
-
+</div>
 {% endblock %}
+

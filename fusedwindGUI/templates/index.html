@@ -1,49 +1,84 @@
 {% extends "base.html" %}
+{% block styles %}
+{{super()}} <!-- Bootstrap's javascript code. The super() gives u the option to amend blocks instead of replacing them. This renders the parents styles block (but nothing is in base.html but empty blocks)--> 
+
+<style>
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+{% endblock styles %}
+
+
+
+{% block scripts %}
+{{super()}}
+
+<script>
+// Submit forms ------------------
+     submitConfig = function(){
+         document.forms["config-form"].submit();
+         window.location.href = "/analysis"
+     }
+</script>
+
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="page-header">
-        <h1>FUSED-Wind</h1>
-        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
-    </div>
-    <div class="container-fluid">
-        <ul class="nav nav-tabs">
-            <li role="presentation"><a href="/">Home</a></li>
-            <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-            <li role="presentation"><a href="static/docs/index.html">Documentation</a></li>
+
+<!-- HEADER --> 
+<!-- used the bootswatch cerulean theme.--> 
+<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
+
+<div class="container-fluid myNavBar">
+  <nav class="navbar navbar-default">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
+      </div>
+
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="/">Home<span class="sr-only">(current)</span></a></li>
+          <li><a href="configure.html">Perform Analysis</a></li>
+          <li><a href="documentation.html">Documentation</a></li>
+          <li><a href="about.html"> About </a></li>
         </ul>
-    </div>
-<div class="container">
-
-    <div class="content">
-        <p> </p>
-        <p>Welcome to the DTU Wind Energy / NREL joint project on wind energy systems cost modeling!</p>  
         
-        <p>This project allows the user to explore the impact of various system design changes on a wind plant's expected levelized cost of energy (LCOE).
-        LCOE is a key metric for evaluating a the impact of a turbine or plant design change on overall system performance and cost.
-        This version includes a basic cost of energy model that builds on NREL's wind plant cost and scaling model 
-        and includes updated sizing methods for major turbine components that reflect current wind turbine and plant technology.
-        Sensitivities can be applied to various parts of the model in order to simulate design changes and see how they cascade through the rest of the system.
-        </p>
-        <p> </p>
-
-        <h4><b>Project Details</b></h4>
-        <p>
-        The models here have been developed as part of the larger <a href="http://fusedwind.org">FUSED-Wind</a> collaboration.  
-        The FUSED-Wind framework is built on NASA's Open Multidiscilpinary Design Analysis and Optimization (<a href="http://openmdao.org">OpenMDAO</a>) platform.
-        OpenMDAO is a general purpose MDAO tool for integrating system models together to do a variety of analysis from sensitivity studies to uncertainty quantification to optimization and more.
-        The FUSED-Wind framework provides a structured way to integrate wind turbine and plant models together to support MDAO work and collaboration across many stakeholders groups engaged with wind plant system modeling.
-        Both DTU Wind Energy and NREL have developed a suite of wind turbine and plant analysis models that are integrated into FUSED-Wind.  NREL's model suite, the Wind-Plant Integrated System Design and Engineering Model
-        (<a href="http://nwtc.nrel.gov/WISDEM">WISDEM</a>), includes a variety of models for turbine component sizing and design, turbine and plant performance, and overall plant costs.  
-        DTU Wind Energy's model suite, the Systems Engineering and Analysis Model (SEAM) includes complementary models for turbine component sizing and a series of relatively sophisticated models for turbine blade design and plant layout design.
-        Since both model suites are build on the FUSED-Wind framework, they can be used together with models selected from each to build up to an overall integrated analysis.
-        </p>
-        <p></p>
-        
-        <p>This website showcases a few of the integrated assemblies and analyses that are possible with FUSED-Wind, WISDEM and SEAM.  Many more are possible for those who are interested in downloading the overall software suite and exploring the full potential of FUSED-Wind's capabilities.  
-        See the documentation tab for links to detailed overview of the various models in the suite and the integrated FUSED-Wind software.
-        </p>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="https://github.com/FUSED-Wind/fusedwind-gui">Github</a></li>
+        </ul>
+      </div>
     </div>
+  </nav>
 </div>
+
+<div class="container banner">
+    <div ID="HeadTitle" class="page-header">
+        <div class="row">
+            <div class="col-lg-8 col-md-7 col-sm-6">
+                <h1 style="color:#FFFFFF">FUSED-Wind</h1>
+                <h2><small style="color:#FFFFFF">Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
+
+                <a href="/configure.html" class="btn col-lg-3 btn-info btn-lg startButton">Start Analysis</a>
+
+            </div>
+        </div>
+    </div>
+</div> 
+
+
+
+
+
+
 
 {% endblock %}

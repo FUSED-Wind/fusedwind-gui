@@ -1,21 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="page-header">
-        <h1>FUSED-Wind</h1>
-        <h2><small>Framework for Unified Systems Engineering and Design of Wind Energy Plants</small></h2>
-    </div>
-    <div class="container-fluid">
-        <ul class="nav nav-tabs">
-            <li role="presentation"><a href="/">Home</a></li>
-            <li role="presentation"><a href="configure.html">Perform Analysis</a></li>
-            <li role="presentation"><a href="documentation.html">Documentation</a></li>
+<!-- HEADER --> 
+<!-- used the bootswatch cerulean theme.--> 
+<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
+
+<div class="container-fluid myNavBar">
+  <nav class="navbar navbar-default">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
+      </div>
+
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
+          <li><a href="configure.html">Perform Analysis</a></li>
+          <li class="active"><a href="documentation.html">Documentation</a></li>
+          <li><a href="about.html"> About </a></li>
         </ul>
+        
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="https://github.com/FUSED-Wind/fusedwind-gui">Github</a></li>
+        </ul>
+      </div>
     </div>
+  </nav>
+</div>
+
+<div class="container banner">
 <div class="container">
 
-    <div class="content">
+    <div class="content" style="color:#FFFFFF">
+    <h1> Documentation</h1>
     	  <p></p>
         <p> This page provides links to the documentation on all the different system models developed and integrated into the FUSED-Wind framework.</p>
         <p></p>
