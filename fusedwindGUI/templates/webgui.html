@@ -338,9 +338,12 @@ $('#fileupload').fileupload({
             {%- if outputs and not sens_flag %}
             <div class="btn-group pull-right" id="myTabs">
                 <ul class="nav nav-tabs" role="tablist">
-                    <li role="presentation" class="active"><a href="#inputs" role="tab" data-toggle="tab">Inputs</a></li>
-                    <li role="presentation"><a href="#results" role="tab" data-toggle="tab">Results</a></li>
-                    <li role="presentation"><a href="#plots" role="tab" data-toggle="tab">Plots</a></li>
+                    <li role="presentation" class="active">
+                      <a href="#inputs" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Inputs</a></li>
+                    <li role="presentation">
+                      <a href="#results" role="tab" onClick="document.getElementById('hideaway').style.display='block';" data-toggle="tab">Results</a></li>
+                    <li role="presentation">
+                    <a href="#plots" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Plots</a></li>
                     
                 </ul>
             </div>
@@ -409,7 +412,7 @@ $('#fileupload').fileupload({
                 {%- if outputs and not sens_flag %}
                 
 
-                <div class="panel-body">
+                <div class="panel-body" id="hideaway" style="display:none;">
                     <div class="panel panel-default" id='panel-'>
                         <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">
