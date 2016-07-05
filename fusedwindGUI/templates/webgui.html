@@ -244,11 +244,23 @@ $('#fileupload').fileupload({
 
 {% block content %}
 
-<!-- HEADER --> 
-<!-- used the bootswatch cerulean theme.--> 
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
 
-<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<!-- Google Font: Open Sans -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,800,800italic">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Oswald:400,300,700">
+
+<!-- Font Awesome CSS -->
+<link rel="stylesheet" href="../bower_components/fontawesome/css/font-awesome.min.css">
+
+<!-- HEADER --> 
+<link href="../bower_components/animate.css/animate.min.css" rel="stylesheet">
+<link rel="stylesheet" href="static/css/mvpready-landing.css">
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
+
 
 <nav class="navbar navbar-default">
   <div class="container">
@@ -259,7 +271,7 @@ $('#fileupload').fileupload({
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
+      <a class="navbar-brand" style="margin-top:10px;" href="#">FUSED-Wind GUI</a>
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -283,11 +295,11 @@ $('#fileupload').fileupload({
 <div class="container-fluid" id="navigation-bar"></div>
 
 <!-- ################### Main Content ################### -->
-<div class="container id=maincontent">
+<div class="container" id="maincontent" style="min-width:1350px;">
 {%- if not sens_flag %}
-<h1 style="color:#FFFFFF">  Individual Analysis </h1>
+<h1 style="color:#FFFFFF; margin-top:20px;">  Individual Analysis </h1>
 {%- else %}
-<h1 style="color:#FFFFFF"> Sensitivity Analysis </h1>
+<h1 style="color:#FFFFFF; margin-top:20px;"> Sensitivity Analysis </h1>
 {%- endif %}
     <div class="container" id="alert_placeholder"></div>
     <div class="panel panel-default">

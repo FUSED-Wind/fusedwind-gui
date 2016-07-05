@@ -96,3 +96,8 @@ html, body{
 .panel-heading{
   background-color:#A8A8A8 ;
 }
+
+#maincontent{
+  padding-right:100px;
+  min-width:1350px;
+}

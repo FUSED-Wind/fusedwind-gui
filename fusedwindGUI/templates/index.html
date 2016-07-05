@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block styles %}
-{{super()}} <!-- Bootstrap's javascript code. The super() gives u the option to amend blocks instead of replacing them. This renders the parents styles block (but nothing is in base.html but empty blocks)--> 
+{{super()}}
 
 <style>
 .hidden {
@@ -9,7 +9,6 @@
 }
 </style>
 {% endblock styles %}
-
 
 
 {% block scripts %}
@@ -22,28 +21,40 @@
          window.location.href = "/analysis"
      }
 </script>
+<script src="static/js/mvpready-core.js"></script>
+<script src="static/js/mvpready-helpers.js"></script>
+<script src="static/js/mvpready-landing.js"></script>
+
 
 {% endblock %}
 
 {% block content %}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
+
+<!-- Google Font: Open Sans -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,800,800italic">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Oswald:400,300,700">
+
+<!-- Font Awesome CSS -->
+<link rel="stylesheet" href="../bower_components/fontawesome/css/font-awesome.min.css">
+
 
 <!-- HEADER --> 
-<!-- used the bootswatch cerulean theme.--> 
-<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<link href="../bower_components/animate.css/animate.min.css" rel="stylesheet">
+<link rel="stylesheet" href="static/css/mvpready-landing.css">
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
 
-<div class="container-fluid myNavBar">
-  <nav class="navbar navbar-default">
+<div class="container-fluid">
+  <header class="navbar navbar-default">
     <div class="container">
       <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
-      </div>
+        <a href="#" class="navbar-brand" style="margin-top:10px;">
+          FUSED-Wind GUI
+        </a>
+      </div> <!-- /.navbar-header -->
 
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
@@ -58,7 +69,7 @@
         </ul>
       </div>
     </div>
-  </nav>
+  </header>
 </div>
 
 <div class="container banner">
@@ -74,11 +85,5 @@
         </div>
     </div>
 </div> 
-
-
-
-
-
-
 
 {% endblock %}
