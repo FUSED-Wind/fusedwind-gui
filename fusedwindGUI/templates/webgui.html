@@ -19,8 +19,8 @@
 
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
-<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
-<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
+<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.css" rel="stylesheet" type="text/css">
+<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.js"></script>
 
 <style>
 .hidden {
@@ -343,7 +343,9 @@ $('#fileupload').fileupload({
                     <li role="presentation">
                       <a href="#results" role="tab" onClick="document.getElementById('hideaway').style.display='block';" data-toggle="tab">Results</a></li>
                     <li role="presentation">
-                    <a href="#plots" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Plots</a></li>
+                      <a href="#plots" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Plots</a></li>
+                    <li role="presentation">
+                      <a href="#compare" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Compare Results</a></li>
                     
                 </ul>
             </div>
@@ -440,7 +442,7 @@ $('#fileupload').fileupload({
                         <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
                             <div class="panel panel-default">
                                 <div class="panel-heading" style="background-color:#D8D8D8">
-                                    <h3 class="panel-title">Results</h3>
+                                    <h3 class="panel-title">CAPEX Plot</h3>
                                 </div>
                                 <div class="panel-body", align="center">
                                     <div id="plot_space">
@@ -592,10 +594,23 @@ $('#fileupload').fileupload({
                 </div>
                 {%- endif %}
 
-<!-- ########################## The Inputs panel ###    ######################## -->
                 
- 
-               {% if not sens_flag %}
+                 
+                {% if not sens_flag %}
+                <div role="tabpanel" class="tab-pane" id="compare">
+                  <div class="col-xs-9">
+
+                  <!-- Insert Waterfall Comparison Plots here -->
+
+
+
+
+
+                  </div>
+                </div>
+
+<!-- ########################## The Inputs panel ###    ######################## -->
+
                 <div role="tabpanel" class="tab-pane active" id="inputs">
 
                     <div class="col-xs-8" id='inputs_single'>

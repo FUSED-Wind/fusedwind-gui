@@ -301,6 +301,8 @@ def webgui(app=None):
                 try:
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
                     cpnt = set_as_top(lcoe_csm_assembly())
+                    cpnt.gui_recorder = {}
+
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
                         filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp') #TODO: fix abspath
@@ -317,6 +319,8 @@ def webgui(app=None):
                     from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
                     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
                     cpnt = lcoe_se
+                    cpnt.gui_recorder = {}
+
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
                         filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier2.inp') #TODO: fix abspath
@@ -367,7 +371,7 @@ def webgui(app=None):
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
-            flash('No case downloaded - NO gui_recorder in component!')
+            # flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
 
         if len(cpnt.gui_recorder.keys()) == 0:
@@ -449,7 +453,6 @@ def webgui(app=None):
     #---------------
 
     def record_case():
-
         if 'gui_recorder' not in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             #flash('No case recorded - NO gui_recorder in component!')
@@ -480,7 +483,7 @@ def webgui(app=None):
         except:
             cpnt.gui_recorder['recorder'] = {}
             cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
-        flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
+        # flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
     record_case.__name__ = 'analysis_record_case'
@@ -501,6 +504,28 @@ def webgui(app=None):
 
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
+
+    #------------------
+    def compare_results():
+        if not 'gui_recorder' in vars(cpnt):     
+            print '\n*** NO gui_recorder in component!\n'
+            return 'No case downloaded - NO gui_recorder in component!'
+        if len(cpnt.gui_recorder.keys()) == 0:
+            print '\n *** NO cases recorded!\n'
+            return 'No Cases Recorded'
+
+
+            
+    compare_results.__name__ = 'analysis_compare_results'
+    app.route('/analysis/compare_results', methods=['GET', 'POST'])(compare_results)
+
+        #     record_case()
+        #     r = cpnt.gui_recorder['recorder']
+
+        # r = yaml.dump(cpnt.gui_recorder['recorder'], default_flow_style=False)
+        # response = make_response(r)
+        # response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
+        # return response
 
     #---------------
 
@@ -622,13 +647,7 @@ def webgui(app=None):
                             script, div, plot_resources, draw_plot = None, None, None, None
                     else:
                         script, div, plot_resources, draw_plot = None, None, None, None
-                    #print MultiDict(inputs)
-                   #  print "assembly structure"
-                    #print assembly_structure
-                    # print "sub com data"
-                    # print sub_comp_data
-                    # print group_list
-                    # print group_dic
+
                     return render_template('webgui.html', # basically rerenter webgui.html with results or no results dependingon success
                                 inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
                                 outputs=combIO,
@@ -653,7 +672,7 @@ def webgui(app=None):
 
                 for k in inputs.keys():
                     if k in skipInputs :
-                        continue # moves onto next k value 
+                        continue  
                     try:
                         if k in io['inputs']: #   io = traits2jsondict(cpnt)
                             setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
@@ -663,7 +682,7 @@ def webgui(app=None):
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
-                        if 'select.' in k: # k is a key in the input keys dictionary 
+                        if 'select.' in k: 
                             for kselect in inputs.keys(): 
                                 if 'select.'+kselect == k: 
                                     for klow in inputs.keys(): 
@@ -937,17 +956,13 @@ if use_bokeh:
             fig.text(x=xPos+0.25*xDiff, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(max(colorData))], text_align="center")
         return fig;
 
+
+
+
+
+
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
 sensitivityResults = {"empty":True}
-
-
-# photo creds:
-# https://www.flickr.com/photos/sandialabs/9205031702/in/photolist-f2qce9-5aamBz-Pi9Ej-558Lf4-7obLDR-5hNQmQ-kPvGoX-3B3EGX-8XdesP-5epYUS-5aakTz-71Jko6-2rhYDx-6BJKE8-dKrG7J-f2aV42-7ofEGJ-ferntZ-amvxV9-cbF8jW-6Y8Tcb-6BGAJy-5sabbm-8RJ1AN-6rsVAc-phVE7g-nFh2tj-oX52HF-5aamp2-4mMCZW-8oZpKo-a6AYLr-akPomq-4rjvuH-5XBRWJ-5b8nWS-ferjA6-75aiGh-pskKMf-uLnm91-fAMXr6-4mXsuj-8RyzMh-bqch7h-cT689h-83eqAR-dKmFLC-6Y8UAj-8Pvmwv-8Pysus
-# https://www.flickr.com/photos/cosmosfan/3212536952/in/photolist-5TT6j9-osyG56-8hYBNF-8No5uG-4ZFSCE-cDm1xs-qpaccj-61N1fT-5s5Qo4-7ji66U-73w4JD-a6Yh9L-q8jvpE-9wYazX-mnVekv-o6JPzX-6GjhaJ-k7hYSF-5s5QHr-dmvkeX-efdEkv-4RqGYD-rdG8Lm-26uYu1-e3ok2a-58VMkr-6Gfd5e-aSX5it-79B5tq-d9kVGY-5M25xm-7whBaC-63cMeE-cHee77-3WBGc4-fv4vEN-4eyzz1-4Y7bG6-HQpgxM-pardj1-6QxdWq-pHAYTx-dus9p5-6PmNR6-pm2UH5-7Jem9a-26vueS-6LmqsC-5prrst-cX6w3s
-# https://www.flickr.com/photos/tumblingrun/6271299222/in/photolist-ayb3LE-7wM855-71FHBG-gkWaEU-7jjiCa-8YPiDV-dx2iSv-5cX2ib-JTrBq-qLJqGL-5S9c7u-3ceue1-8srMww-6Qddor-yfFWo-2YzAeX-2jVXjF-5uoRZU-aiRccH-8zwDLt-7DZ6FE-7whdWq-apcyW5-oVTFKV-8cgQxD-r8xFnq-5ReUwr-6Mj391-7KKJq5-4PLhDb-8jQUWV-pnMq6M-73GgYV-o9jeZm-7Pk5Zp-rkc1LC-8jmCHR-5NBGD5-neV9eB-bt2vd3-7deXET-5prsxZ-ANQtm-72ruEr-dRx6Uv-ag7mSH-6ShVRA-5Cf85J-7uDs3A-5xKo1U
-# https://www.flickr.com/photos/germanborrillo/9662281133/in/photolist-fHPHy2-9hp3Mb-3NUM8f-9xRRfN-bsPYxN-8cgVun-5xsVsi-fuP5rt-4ZFWfs-8kJyfT-cCK41N-fwrhdj-foKf7H-5UPnxg-eWBFsj-eRyoTp-52VFok-ah9MMH-73LfvL-6MmCXT-2HHuhv-cRk8A5-fnUKsn-cBPnqj-8JkFDC-9KF588-hoxDBX-6ffneM-5YRtnV-7KFCWK-cvoF9h-bphhZ8-4MNKqT-6xAfsd-fB3eT3-32igdy-fuP6mP-5AXn2c-26qgu4-eCMT16-cHedYN-dzjuZ1-65Zosr-6Mr3sA-6G8WEA-CjfRLT-7Knzvh-6wR5DL-Jssf3-ew7hGC
-# https://www.flickr.com/photos/tdr1/8198244266/in/photolist-dus9p5-6PmNR6-pm2UH5-7Jem9a-26vueS-6LmqsC-5prrst-cX6w3s-duVGzY-7JY8Hy-8P9kok-99abGL-aSX5tk-5LWSDn-8PyrZq-e6RrRN-26qZai-73GiEX-hqZEgr-cHedBL-6bng8X-cqhUAC-ok6chp-6s5f3N-bCtJtu-7jSw4x-7fbWAU-u3kQrE-hekHy1-5P7pU6-4cRvba-qnAWnC-8Ji3TM-5jPh8h-69Zo1f-fmpybx-diAYcx-3Bbjqv-f74sny-99abGJ-cHeefo-73LfVm-5AGK5U-7jWpxG-q1aztd-fHPHy2-9hp3Mb-3NUM8f-9xRRfN-bsPYxN
-# https://www.flickr.com/photos/zhchen543/2708862013/in/photolist-58nCit-fnUKpK-HGDspq-6JMxWP-FxwZ1W-dujkn1-6PD6fr-7PzjkV-6AHwGS-fnUDLT-67vqWF-aF2JT6-nbTp8o-4FrE2Z-8JhzP4-3dLAso-73vYYe-6yFGM6-7PziFH-5FXDPW-5prrAp-5AXr5P-5xsUYV-91HbMW-bd5jDk-8JkGrG-6ShWkL-7Pzhvn-9CkhoT-nnzxiy-8UZa6t-bnAWnT-ayb3LE-7wM855-gkWaEU-7jjiCa-5S9c7u-3ceue1-2YzAeX-7DZ6FE-7whdWq-apcyW5-oVTFKV-8cgQxD-r8xFnq-pnMq6M-o9jeZm-rkc1LC-bt2vd3-5prsxZ
 
