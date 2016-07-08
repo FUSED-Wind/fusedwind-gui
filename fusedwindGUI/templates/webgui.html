@@ -339,13 +339,16 @@ $('#fileupload').fileupload({
             <div class="btn-group pull-right" id="myTabs">
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active">
-                      <a href="#inputs" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Inputs</a></li>
+                      <a href="#inputs" role="tab" onClick="document.getElementById('hideaway').style.display='none';
+                      $('.not_lcoe').hide(); $('#topLevel').toggle(); " data-toggle="tab">Inputs</a></li>
                     <li role="presentation">
                       <a href="#results" role="tab" onClick="document.getElementById('hideaway').style.display='block';" data-toggle="tab">Results</a></li>
                     <li role="presentation">
-                      <a href="#plots" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Plots</a></li>
+                      <a href="#plots" role="tab" onClick="document.getElementById('hideaway').style.display='block';
+                      $('.not_lcoe').hide(); $('#topLevel').toggle(); $('#topLevel').removeClass('hidden');" data-toggle="tab">Plots</a></li>
                     <li role="presentation">
-                      <a href="#compare" role="tab" onClick="document.getElementById('hideaway').style.display='none';" data-toggle="tab">Compare Results</a></li>
+                      <a href="#compare" role="tab" onClick="document.getElementById('hideaway').style.display='none';
+                      $('.comp-panels').hide();" data-toggle="tab">Compare Results</a></li>
                     
                 </ul>
             </div>
@@ -613,7 +616,7 @@ $('#fileupload').fileupload({
 
                 <div role="tabpanel" class="tab-pane active" id="inputs">
 
-                    <div class="col-xs-8" id='inputs_single'>
+                    <div class="col-xs-9" id='inputs_single'>
                         <div class="panel-body">
                             <form method="post" class="form" id='global-inputs-form'>
                                 <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
@@ -826,14 +829,14 @@ $('#fileupload').fileupload({
                 {%if not sens_flag%}
                 {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
                 <div role="tabpanel" class="tab-pane" id="results">
-                    <div class="col-xs-8">
-                        <div class="panel panel-body  comp-panels panel-{{name}}">
+                    <div class="col-xs-9">
+                        <div id="topLevel" class="panel panel-body  comp-panels panel-{{name}}">
                             <div class="panel panel-default">
                                 <div class="panel-heading" style="background-color:#D8D8D8">
                                     <h3 class="panel-title">Model Output Results and Current Input States</h3>
                                 </div>
                                 <div class="panel-body", align="center">
-                                    <table class="table col-xs-8"
+                                    <table class="table col-xs-9"
                                            id="global-outputs-table"
                                            data-toggle="global-outputs-table"
                                            data-sort-name="iotype"
@@ -895,7 +898,7 @@ $('#fileupload').fileupload({
                 {% if sub_comp_data %}
 
                 {% for field, inout in sub_comp_data.iteritems() %}
-                <div class="panel-body hidden col-xs-9 comp-panels panel-{{field}}">
+                <div class="panel-body hidden col-xs-9 comp-panels not_lcoe panel-{{field}}">
     <!-- ############## The Component Input panel ############################## -->
                     <div class="panel panel-default">
                         <div class="panel-heading" style="background-color:#D8D8D8">
