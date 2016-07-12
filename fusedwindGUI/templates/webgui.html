@@ -22,12 +22,6 @@
 <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.css" rel="stylesheet" type="text/css">
 <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.js"></script>
 
-<style>
-.hidden {
-  display: none !important;
-  visibility: hidden !important;
-}
-</style>
 {% endblock %}
 
 
@@ -258,7 +252,7 @@ $('#fileupload').fileupload({
 
 <!-- HEADER --> 
 <link href="../bower_components/animate.css/animate.min.css" rel="stylesheet">
-<link rel="stylesheet" href="static/css/mvpready-landing.css">
+<link rel="stylesheet" href="static/css/mvpready-landing.css" type="text/css" />
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
 
 
@@ -295,7 +289,7 @@ $('#fileupload').fileupload({
 <div class="container-fluid" id="navigation-bar"></div>
 
 <!-- ################### Main Content ################### -->
-<div class="container" id="maincontent" style="min-width:1350px;">
+<div class="container" id="maincontent">
 {%- if not sens_flag %}
 <h1 style="color:#FFFFFF; margin-top:20px;">  Individual Analysis </h1>
 {%- else %}
@@ -306,9 +300,9 @@ $('#fileupload').fileupload({
 
 <!-- ####################  Buttons to run scripts ################### -->
         <div class="panel-body" id='button-panel'>
-            <input  class="btn btn-danger" id="submit" name="submit" type="submit" onClick="submitForms()" value="Run">
+            <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms()" value="Run">
             {%- if not sens_flag %}
-            <span class="btn btn-success fileinput-button" >
+            <span class="btn btn-mvp fileinput-button" >
                 <i class="glyphicon glyphicon-plus"></i>
                 <span>Load inputs</span>
                 <input id="fileupload" type="file" name="files[]" multiple >
@@ -316,13 +310,12 @@ $('#fileupload').fileupload({
 
             {%- endif %}
             <div class="btn-group">
-                <button type="button"  id="save" class="btn nohover btn-info" >Save</button>
-                <button type="button" id="save_toggle" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button type="button"  id="save" class="btn btn-mvp nohover" >Save</button>
+                <button type="button" id="save_toggle" class="btn btn-mvp dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <span class="caret"></span>
                     <span class="sr-only">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu">
-
                     {%- if not sens_flag %}
                     <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
                     <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
@@ -339,16 +332,21 @@ $('#fileupload').fileupload({
             <div class="btn-group pull-right" id="myTabs">
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active">
-                      <a href="#inputs" role="tab" onClick="document.getElementById('hideaway').style.display='none';
-                      $('.not_lcoe').hide(); $('#topLevel').toggle(); " data-toggle="tab">Inputs</a></li>
+                      <a href="#inputs" 
+                      role="tab" 
+                      onClick="document.getElementById('hideaway').style.display='none'; document.getElementById('hideaway2').style.display='none';" data-toggle="tab">Inputs</a></li>
                     <li role="presentation">
-                      <a href="#results" role="tab" onClick="document.getElementById('hideaway').style.display='block';" data-toggle="tab">Results</a></li>
+                      <a href="#results" role="tab" 
+                      onClick="document.getElementById('hideaway').style.display='block';
+                      document.getElementById('hideaway2').style.display='none';" data-toggle="tab">Results</a></li>
                     <li role="presentation">
-                      <a href="#plots" role="tab" onClick="document.getElementById('hideaway').style.display='block';
-                      $('.not_lcoe').hide(); $('#topLevel').toggle(); $('#topLevel').removeClass('hidden');" data-toggle="tab">Plots</a></li>
+                      <a href="#plots" role="tab" 
+                      onClick="document.getElementById('hideaway').style.display='none';
+                      document.getElementById('hideaway2').style.display='block';" data-toggle="tab">Plots</a></li>
                     <li role="presentation">
-                      <a href="#compare" role="tab" onClick="document.getElementById('hideaway').style.display='none';
-                      $('.comp-panels').hide();" data-toggle="tab">Compare Results</a></li>
+                      <a href="#compare" role="tab" 
+                      onClick="document.getElementById('hideaway').style.display='none';
+                      document.getElementById('hideaway2').style.display='none';" data-toggle="tab">Compare Results</a></li>
                     
                 </ul>
             </div>
@@ -407,7 +405,7 @@ $('#fileupload').fileupload({
                             {%- if sens_flag %}
                             <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
                             {%- else %}
-                            <p>For the individual analysis, please specify all input values.</p>
+                                   <p>For the individual analysis, please specify all input values.</p>
                             {%- endif %}
                         </div>
                     </div>
@@ -415,9 +413,29 @@ $('#fileupload').fileupload({
 
 <!-- ########################## The Assembly navigation panel ############## -->
                 {%- if outputs and not sens_flag %}
-                
+                <div class="panel-body" id="hideaway2">
+                  <div class="panel panel-default">
+                    <div class="panel-heading" style="background-color:#D8D8D8">
+                      <h3 class="panel-title"> Choose Plot </h3> 
+                    </div>
+                    <div class="btn-group">
+                      <ul class="nav nav-pills nav-justified" id="plotTabs" role="tablist">
+                          <li role="presentation" class="active">
+                            <a href="#CAPEX" role="tab" onClick="
+                            document.getElementById('CAPEX').style.display='block';
+                            document.getElementById('LCOE').style.display='none';" data-toggle="tab">CAPEX</a></li>
+                          <li role="presentation">
+                            <a href="#LCOE" role="tab" onClick="
+                            document.getElementById('LCOE').style.display='block';
+                            document.getElementById('CAPEX').style.display='none';" data-toggle="tab">LCOE</a></li>
+                        </ul>
+                    </div>
+                  </div>
+                </div>
+              
 
-                <div class="panel-body" id="hideaway" style="display:none;">
+
+                <div class="panel-body" id="hideaway">
                     <div class="panel panel-default" id='panel-'>
                         <div class="panel-heading" style="background-color:#D8D8D8">
                             <h3 class="panel-title">
@@ -433,35 +451,123 @@ $('#fileupload').fileupload({
                 {%- endif %}            
             </div>
             
-
+<!-- @############################################################
+##########################################
+############################# -->
             <div class="tab-content"> 
+
+                {%- if outputs and not sens_flag %}
+                <div role="tabpanel" class="tab-pane" id="compare">
+                  <div class="col-md-9">
+                        <div class="panel-body comp-panels panel-{{name}}">
+                            <div class="panel panel-default">
+                            <div class="panel-heading" style="background-color:#D8D8D8">
+                                <h3 class="panel-title" style="display:inline;">Compare Results</h3>
+                            </div>
+                            <div id="plot_area" class="panel-body", align="center">
+                              <div id="plot_base">
+                                <div class="row" id="plot_row">
+                                  <div class="col-md-4">
+                                    <div class="row">
+                                      <div class="col-md-8 col-md-offset-2">
+                                        <form id="plot_controller__0">
+
+                                          <div class="form-group">
+                                            <label for="input_plot_variable">Input</label>
+                                            <select class="form-control" id="input_plot_variable">
+                                              <optgroup label="Choose Input">
+                                                  {% for val in plot_inputVars %}
+                                                  <option>{{val}}</option>
+                                                  {% endfor %}
+                                              </optgroup>
+                                            </select>
+                                          </div>
+
+
+                                          <div class="form-group">
+                                            <label for="output_plot_variable">Output</label>
+                                            <select class="form-control" id="output_plot_variable">
+                                              <optgroup label="Choose Output">
+                                                  {% for val in plot_outputVars %}
+                                                  <option>{{val}}</option>
+                                                  {% endfor %}
+                                              </optgroup>
+                                            </select>
+                                          </div>
+
+                                          <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                        </form> 
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                  </div>
+                </div>
+
+                       
+
+
+                
+                {%- endif %}
+                
+
+
+
+
                 {%- if not sens_flag %}
                 <div role="tabpanel" class="tab-pane" id="plots">
                 {%- endif %}
                 
 <!-- ########################## The Plotting Panel ############################# -->
                     {% if draw_plot %}
-                    <div class="col-xs-9">
-                        <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
-                            <div class="panel panel-default">
-                                <div class="panel-heading" style="background-color:#D8D8D8">
-                                    <h3 class="panel-title">CAPEX Plot</h3>
-                                </div>
-                                <div class="panel-body", align="center">
-                                    <div id="plot_space">
-                                        {{ plot_script|indent(4)|safe }}
-                                        {{ plot_div|indent(4)|safe }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" style="display:block" id="CAPEX">
+
+                      <div class="col-xs-9">
+                          <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
+                              <div class="panel panel-default">
+                                  <div class="panel-heading" style="background-color:#D8D8D8">
+                                      <h3 class="panel-title">CAPEX Plot</h3>
+                                  </div>
+                                  <div class="panel-body", align="center">
+                                      <div id="plot_space">
+                                          {{ plot_script|indent(4)|safe }}
+                                          {{ plot_div|indent(4)|safe }}
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                    </div> 
+
+                    <div role="tabpanel" class="tab-pane" style="display:none" id="LCOE">
+                      <div class="col-xs-9">
+                          <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
+                              <div class="panel panel-default">
+                                  <div class="panel-heading" style="background-color:#D8D8D8">
+                                      <h3 class="panel-title">LCOE Plot</h3>
+                                  </div>
+                                  <div class="panel-body", align="center">
+                                      <div id="plot_space">
+                                          {{ plot_script_lcoe|indent(4)|safe }}
+                                          {{ plot_div_lcoe|indent(4)|safe }}
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                    </div>  
                     </div>
+
                     {% endif %}
 
 
                     {% if draw_sens_plot %}
                     <div class="col-md-9">
-
                         <div class="panel-body comp-panels panel-{{name}}">
                             <div class="panel panel-default">
                                 <div class="panel-heading" style="background-color:#D8D8D8">

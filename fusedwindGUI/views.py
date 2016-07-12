@@ -169,12 +169,14 @@ def hello():
 
 @app.route('/about.html') 
 def hello2():
-    """ Welcoming page
+    """ About Page
     """
     provider = str(os.environ.get('PROVIDER', 'world'))
     return render_template('about.html', form={'hello':'world'})
 @app.route('/documentation.html')
 def hello3():
+    """ Documentation
+    """
     return render_template('documentation.html', form={'hello':'world'})
 
 @app.route('/upload/', methods=['POST']) # when uplaod
@@ -477,7 +479,6 @@ def webgui(app=None):
             for param in cmp_data[cmp_name]['params']:
                 pname = param['name']
                 params[cmp_name][pname] = param['state']
-
         try:
             cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
         except:
@@ -488,6 +489,44 @@ def webgui(app=None):
 
     record_case.__name__ = 'analysis_record_case'
     app.route('/analysis/record_case', methods=['POST'])(record_case)
+
+    #------------------
+    # assume comparing results between 2 cases (varying 1 input causing other outputs)
+    @app.route('/compare_reults', methods=['POST'])
+    def compare_results():
+        if not 'gui_recorder' in vars(cpnt):     
+            print '\n*** NO gui_recorder in component!\n'
+            return 'No case downloaded - NO gui_recorder in component!'
+        if len(cpnt.gui_recorder.keys()) == 0:
+            print '\n *** NO cases recorded!\n'
+            return 'No Cases Recorded'
+
+        inputName = request.form['inVar']
+        outputName = request.form['outVar']
+
+        myInputs, myOutputs = [], []
+        for case in cpnt.gui_recorder['recorder']: # cases will be string "case%i"
+            for comp in cpnt.gui_recorder['recorder'][case]:
+                for param in cpnt.gui_recorder['recorder'][case][comp]:
+                    if param == inputName:
+                        myInputs.append(param)
+                    if param == outputName:
+                        myOutputs.append(param)
+
+        # plot inputName vs outputName with the coordinates. This for loop iterates over multiple cases (can be > 2)
+
+
+            
+        # FIGURE Out how the cases work:
+        # 1. Could Make a Dictionary with parameter as key and valueS (multiple) as values.
+        # 2. Can compare by selecting an input (parameter) and plotting 2 points. 
+        # 3. Point 1 will be first input and first concerned output, and point 2 will be 2nd input and 2nd concerned output
+
+
+            
+            
+    compare_results.__name__ = 'analysis_compare_results'
+    app.route('/analysis/compare_results', methods=['GET', 'POST'])(compare_results)
 
     #---------------
 
@@ -505,19 +544,10 @@ def webgui(app=None):
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
-    #------------------
-    def compare_results():
-        if not 'gui_recorder' in vars(cpnt):     
-            print '\n*** NO gui_recorder in component!\n'
-            return 'No case downloaded - NO gui_recorder in component!'
-        if len(cpnt.gui_recorder.keys()) == 0:
-            print '\n *** NO cases recorded!\n'
-            return 'No Cases Recorded'
 
 
-            
-    compare_results.__name__ = 'analysis_compare_results'
-    app.route('/analysis/compare_results', methods=['GET', 'POST'])(compare_results)
+
+
 
         #     record_case()
         #     r = cpnt.gui_recorder['recorder']
@@ -638,7 +668,9 @@ def webgui(app=None):
                 #if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28
                     # no plots for now since bootstrap-table and bokeh seem to be in conflict
                         try:
-                            script, div = prepare_plot(cpnt.plot) # plotss the capital costs
+                            script, div = prepare_plot(cpnt.plot) # plots the capital costs
+                            script_lcoe, div_lcoe = prepare_plot(cpnt.lcoe_plot) # plots Lcoe 
+
                             draw_plot = True
                         except:
                             # TODO: gracefully inform the user of why he doesnt see his plots
@@ -653,6 +685,7 @@ def webgui(app=None):
                                 outputs=combIO,
                                 name=cpname,
                                 plot_script=script, plot_div=div, draw_plot=draw_plot,
+                                plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
                                 sub_comp_data=sub_comp_data,
                                 assembly_structure=assembly_structure,
                                 group_list=group_list,
@@ -766,7 +799,6 @@ def webgui(app=None):
                     else:
                         combIO = None
 
-                ##script, div, plot_resources = None, None, None
 
                 return render_template('webgui.html',
                             inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
@@ -918,12 +950,15 @@ if use_bokeh:
         colors = []
         try:
             colorData = kwargs['colorAxis']['values']
+            # colorData has the y-values for the colored coordinate
 
             for val in colorData:
                 d = 200* (max(colorData) - val) / (max(colorData) - min(colorData))
                 colors.append("#%02x%02x%02x" % (200-d, 150, d))
+
         except:
             colors = ["#22AEAA" for i in args[0][1]]
+
 
         # plot data
         fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
@@ -954,9 +989,10 @@ if use_bokeh:
 
             fig.text(x=xPos, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(min(colorData))], text_align="center")
             fig.text(x=xPos+0.25*xDiff, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(max(colorData))], text_align="center")
-        return fig;
+        return fig
 
-
+    def CompareResultsPlot(fig, *args, **kwargs):
+        pass
 
 
 

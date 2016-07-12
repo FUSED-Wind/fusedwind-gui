@@ -72,7 +72,7 @@ html {
 
 #myTabs{
   align:right;
-  padding-right:100px;
+  padding-right:80px;
 }
 
 .startButton{
@@ -100,4 +100,27 @@ html, body{
 #maincontent{
   padding-right:100px;
   min-width:1350px;
+}
+
+#plotTabs{
+  margin-top:10px;
+}
+
+#hideaway2, #hideaway{
+  display:none;
+}
+
+.btn-mvp{
+  background-color:#d74b4b;
+  color:#FFFFFF;
+}
+
+
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+#maincontent{
+  min-width: 1350px;
 }
