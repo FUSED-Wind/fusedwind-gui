@@ -486,7 +486,6 @@ def webgui(app=None):
             cpnt.gui_recorder['recorder'] = {}
             cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
         # flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
-        # print cpnt.gui_recorder['recorder']
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
     record_case.__name__ = 'analysis_record_case'
@@ -507,31 +506,15 @@ def webgui(app=None):
         outputName = request.form['outVar']
 
         try: # find all the values/units of the variables of interess
-            def _finditem(obj, key): 
-                """ 
-                Parameters: 
-                Obj -- going to be a dictionary; 
-                key -- key of a dictionary entry.
-                Returns: item -- a value associated with a key
-
-                This function will perform a deep search in a dictionary
-                for a value associated with a key        
-                """
-                if key in obj: 
-                    return obj[key]
-                for k, v in obj.items():
-                    if isinstance(v, dict):
-                        item = _finditem(v, key)
-                        if item is not None:
-                            return item
+            
 
             # find values associated with the selected fields
             input_vals, output_vals = [], []
             num_cases = int(cpnt.gui_recorder['counter']) 
             for i in range(num_cases):
                 caseNum = i + 1
-                input_vals.append(_finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], inputName) )
-                output_vals.append(_finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], outputName) )
+                input_vals.append(finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], inputName) )
+                output_vals.append(finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], outputName) )
             global myUnits
         
             xArray = np.array(input_vals)
@@ -1055,8 +1038,6 @@ if use_bokeh:
             p.scatter(x,y,marker=typestr, line_color="#000000", fill_color=palette.next(), fill_alpha=0.8, size=12)
 
         # use for loop to iterate through palette
-        print args[0]
-        print args[0][1]
         numDataPoints = len(args[0][1])
         for i in range(numDataPoints):
             mscatter(fig, args[0][1][i], args[1][1][i])
