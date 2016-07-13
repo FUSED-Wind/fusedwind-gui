@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from openmdao.main.vartree import VariableTree  
 from openmdao.main.api import set_as_top, Assembly 
 from openmdao.lib.drivers.api import DOEdriver 
@@ -24,8 +25,9 @@ import json
 import yaml
 
 from fusedwindGUI import app 
-debug = True # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
-debug = False
+
+######### Function Definitions ###################################################################
+##################################################################################################
 
 
 ## Handling Forms -------------------------------------------------------------
@@ -104,8 +106,6 @@ def WebGUIForm(dic, run=False, sens_flag=False):
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     for name in cpnt.list_components():
         comp = getattr(cpnt, name)
-        #if debug:
-        #    print '  bld_hierarchy: {:} : {:}'.format(name, comp) #gns
 
         cname = comp.__class__.__name__
         if cname <> 'Driver':
@@ -252,7 +252,6 @@ def serialize(thing):
     return '??_' +  str(thing.__class__)
 
 def to_unicode(dic):
-# returns dictionary 
     new = {}
     for k, v in dic.iteritems():
         new[k] = unicode(v)
@@ -354,6 +353,7 @@ def webgui(app=None):
     #---------------
 
     def download():
+        """ This downloads into a file called fused_inputs.yaml the inputs """
         out = get_io_dict(cpnt)
         params = {}
         for param in out['inputs']:
@@ -371,7 +371,7 @@ def webgui(app=None):
     #---------------
 
     def download_full():
-
+        """ This downloads inputs and outputs to a file called fused_model.yaml """ 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             # flash('No case downloaded - NO gui_recorder in component!')
@@ -456,6 +456,11 @@ def webgui(app=None):
     #---------------
 
     def record_case():
+        """ 
+        Saves inputs/outputs into dictionary defined in the component.
+        cpnt.gui_recorder['counter'] contains a counter for the number of cases recorded
+        cpnt.gui_recorder['recorder'] contains all the names, values, units.
+        """
         if 'gui_recorder' not in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             #flash('No case recorded - NO gui_recorder in component!')
@@ -492,9 +497,11 @@ def webgui(app=None):
     app.route('/analysis/record_case', methods=['POST'])(record_case)
 
     #------------------
-    # assume comparing results between 2 cases (varying 1 input causing other outputs)
     @app.route('/compare_results', methods=['POST'])
     def compare_results():
+        """
+        Finds relevant input/output values and units to be plotted
+        """
         if not 'gui_recorder' in vars(cpnt):     
             print '\n*** NO gui_recorder in component!\n'
             return 'No case downloaded - NO gui_recorder in component!'
@@ -505,9 +512,7 @@ def webgui(app=None):
         inputName = request.form['inVar']
         outputName = request.form['outVar']
 
-        try: # find all the values/units of the variables of interess
-            
-
+        try: # find all the values/units of the variables of interest
             # find values associated with the selected fields
             input_vals, output_vals = [], []
             num_cases = int(cpnt.gui_recorder['counter']) 
@@ -521,7 +526,6 @@ def webgui(app=None):
             yArray = np.array(output_vals)
             xUnit = myUnits[inputName]
             yUnit = myUnits[outputName]
-                
 
         except KeyError:
             script, div = prepare_plot( CompareResultsPlot, ("",[]), ("",[]))
@@ -543,6 +547,9 @@ def webgui(app=None):
     #---------------
 
     def clear_recorder():
+        """ 
+        Clears the recorder (cpnt.gui_recorder) dictionary
+        """
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
@@ -556,11 +563,6 @@ def webgui(app=None):
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
-
-
-
-
-
         #     record_case()
         #     r = cpnt.gui_recorder['recorder']
 
@@ -572,6 +574,7 @@ def webgui(app=None):
     #---------------
 
     def fused_webapp(config_flag=False): 
+        """ Runs the analysis page """
         if analysis == 'Individual Analysis':
             sens_flag=False
         else:
@@ -646,8 +649,6 @@ def webgui(app=None):
                         print ' INPUTS ', outputs['inputs']
                         print 'OUTPUTS ', outputs['outputs']
                     if not failed_run_flag:
-
-                        # Start 
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
 
@@ -662,40 +663,16 @@ def webgui(app=None):
                         for el in myOutputs[:]:
                             if el['name'] not in myUnits.keys() and 'units' in el.keys():
                                 myUnits[el['name']] = el['units']
-
-
-
-                        def makePretty(myList):
-                            """ 
-                            This function takes in a list of dictionaries, where each dictionary represents an input/output
-                            It modifies variable names and descriptions to be more human readable. 
-
-                            * This mutative method may be a problem if trying to save a file then trying to reload the file.
-                            If needed, comment out from #start to #End and it should work.
-
-                            Alternatively, when importing you can just reverse these operations below. Make everything lower 
-                            case and replace white space with underscore. 
-
-                            EDIT: checking the saved files, it doesn't seem to affect what is recorded/saved in the .yaml files
-                            """
-                            for myDict in myList:
-                                if 'name' in myDict.keys():
-                                    myDict['name'] = myDict['name'].replace("_"," ").title()
-                                if 'desc' in myDict.keys():
-                                    myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+                        
                         makePretty(myInputs)
                         makePretty(myOutputs)
-                    
-                        # End
 
                         combIO = outputs['inputs'] + outputs['outputs']
-
                     else:
                         combIO = None
 
                     if not failed_run_flag:
                 #if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28
-                    # no plots for now since bootstrap-table and bokeh seem to be in conflict
                         try:
                             script, div = prepare_plot(cpnt.plot) # plots the capital costs
                             script_lcoe, div_lcoe = prepare_plot(cpnt.lcoe_plot) # plots Lcoe 
@@ -845,7 +822,7 @@ def webgui(app=None):
                             group_dic=group_dic,
                             desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
 
-        else: # a 'GET' request?
+        else: 
 
             extra_inputs={"sensitivity_iterations":1000}
             # Show the standard form
@@ -920,7 +897,8 @@ def GetSensPlot():
     return jsonify(**f)
 
 
-################################### SCRIPT #######################################################
+
+
 
 # Bokeh stuff after run
 try:
@@ -1045,7 +1023,8 @@ if use_bokeh:
 
 
 
-
+##################################################################################################
+## Initial global values
 
 
 cpnt = None
@@ -1053,4 +1032,6 @@ desc = ''
 analysis = 'Individual Analysis'
 sensitivityResults = {"empty":True}
 myUnits = {"empty":True}
+debug = True # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
+debug = False
 

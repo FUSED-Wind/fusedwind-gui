@@ -15,3 +15,20 @@ def finditem(obj, key):
 	        item = finditem(v, key)
 	        if item is not None:
 	            return item
+
+
+
+
+
+def makePretty(myList):
+    """ 
+    This function takes in a list of dictionaries, where each dictionary represents an input/output
+    It modifies variable names and descriptions to be more human readable. 
+
+    """
+    for myDict in myList:
+        if 'name' in myDict.keys():
+            myDict['name'] = myDict['name'].replace("_"," ").title()
+        if 'desc' in myDict.keys():
+            myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+
