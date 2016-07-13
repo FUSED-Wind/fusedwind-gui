@@ -46,6 +46,8 @@ $('#assembly-tree').treeview({
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/vendor/jquery.ui.widget.js') }}"></script>
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.iframe-transport.js') }}"></script>
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.fileupload.js') }}"></script>
+<!-- <script src="{{ bower_url_for('animate.css', filename='animate.min.css') }}"></script> -->
+
 
 
 <script>
@@ -188,6 +190,7 @@ $('#fileupload').fileupload({
 
 <script>
 // Case recorder scripts ------------------
+// http://api.jquery.com/jquery.ajax/
      function record_case() {
          console.log('calling record_case')
          $.ajax({
@@ -248,10 +251,10 @@ $('#fileupload').fileupload({
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Oswald:400,300,700">
 
 <!-- Font Awesome CSS -->
-<link rel="stylesheet" href="../bower_components/fontawesome/css/font-awesome.min.css">
+<!-- <link rel="stylesheet" href="../bower_components/fontawesome/css/font-awesome.min.css" type="text/css"> -->
 
 <!-- HEADER --> 
-<link href="../bower_components/animate.css/animate.min.css" rel="stylesheet">
+<!-- <link href="../bower_components/animate.css/animate.min.css" type="text/css" rel="stylesheet"> -->
 <link rel="stylesheet" href="static/css/mvpready-landing.css" type="text/css" />
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
 
@@ -470,7 +473,7 @@ $('#fileupload').fileupload({
                                   <div class="col-md-4">
                                     <div class="row">
                                       <div class="col-md-8 col-md-offset-2">
-                                        <form id="plot_controller__0">
+                                        <form id="plot_controller__1">
 
                                           <div class="form-group">
                                             <label for="input_plot_variable">Input</label>
@@ -500,6 +503,29 @@ $('#fileupload').fileupload({
                                       </div>
                                     </div>
                                   </div>
+                                      <!-- start plot -->
+                                            <div class="col-md-8" id="plot_space">
+                                            
+                                                {{ plot_script_comp|indent(4)|safe }}
+                                                {{ plot_div_comp|indent(4)|safe }}
+                                            
+                                            </div>
+                                                <!-- end plot -->
+
+                                            <script type="text/javascript">
+                                                $("form#plot_controller__1").submit( function(event) {
+                                                    event.preventDefault();
+                                                    var topDOM = $(this).closest("div#plot_row");
+                                                    var summaryDOM = topDOM.find("div#plot_summary");
+                                                    var plotDOM = topDOM.find("div#plot_space");
+                                                    var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
+                                                    var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
+                                                    $.post( "/compare_results", { inVar: inVar, outVar: outVar} , function(data){
+                                                        plotDOM.html( data.script + data.div );
+                                    
+                                                    });
+                                                });
+                                            </script>
                                 </div>
                               </div>
                             </div>

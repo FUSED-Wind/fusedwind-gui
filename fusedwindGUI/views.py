@@ -18,6 +18,7 @@ import numpy as np
 import datetime as dt
 
 from webcomponent import *
+from utils import *
 
 import json
 import yaml
@@ -485,6 +486,7 @@ def webgui(app=None):
             cpnt.gui_recorder['recorder'] = {}
             cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
         # flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
+        # print cpnt.gui_recorder['recorder']
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
     record_case.__name__ = 'analysis_record_case'
@@ -492,7 +494,7 @@ def webgui(app=None):
 
     #------------------
     # assume comparing results between 2 cases (varying 1 input causing other outputs)
-    @app.route('/compare_reults', methods=['POST'])
+    @app.route('/compare_results', methods=['POST'])
     def compare_results():
         if not 'gui_recorder' in vars(cpnt):     
             print '\n*** NO gui_recorder in component!\n'
@@ -504,27 +506,54 @@ def webgui(app=None):
         inputName = request.form['inVar']
         outputName = request.form['outVar']
 
-        myInputs, myOutputs = [], []
-        for case in cpnt.gui_recorder['recorder']: # cases will be string "case%i"
-            for comp in cpnt.gui_recorder['recorder'][case]:
-                for param in cpnt.gui_recorder['recorder'][case][comp]:
-                    if param == inputName:
-                        myInputs.append(param)
-                    if param == outputName:
-                        myOutputs.append(param)
+        try: # find all the values/units of the variables of interess
+            def _finditem(obj, key): 
+                """ 
+                Parameters: 
+                Obj -- going to be a dictionary; 
+                key -- key of a dictionary entry.
+                Returns: item -- a value associated with a key
 
-        # plot inputName vs outputName with the coordinates. This for loop iterates over multiple cases (can be > 2)
+                This function will perform a deep search in a dictionary
+                for a value associated with a key        
+                """
+                if key in obj: 
+                    return obj[key]
+                for k, v in obj.items():
+                    if isinstance(v, dict):
+                        item = _finditem(v, key)
+                        if item is not None:
+                            return item
 
+            # find values associated with the selected fields
+            input_vals, output_vals = [], []
+            num_cases = int(cpnt.gui_recorder['counter']) 
+            for i in range(num_cases):
+                caseNum = i + 1
+                input_vals.append(_finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], inputName) )
+                output_vals.append(_finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], outputName) )
+            global myUnits
+        
+            xArray = np.array(input_vals)
+            yArray = np.array(output_vals)
+            xUnit = myUnits[inputName]
+            yUnit = myUnits[outputName]
+                
 
-            
-        # FIGURE Out how the cases work:
-        # 1. Could Make a Dictionary with parameter as key and valueS (multiple) as values.
-        # 2. Can compare by selecting an input (parameter) and plotting 2 points. 
-        # 3. Point 1 will be first input and first concerned output, and point 2 will be 2nd input and 2nd concerned output
+        except KeyError:
+            script, div = prepare_plot( CompareResultsPlot, ("",[]), ("",[]))
+        else:
+            if (xUnit == "None" or xUnit==None):
+                xUnit = ""
+            if (yUnit == "None" or yUnit==None):
+                yUnit = ""
 
-
-            
-            
+            script, div = prepare_plot( CompareResultsPlot,
+                (inputName + (" (%s)"%xUnit if xUnit!="" else ""), xArray),
+                (outputName+ (" (%s)"%yUnit if yUnit!="" else ""), yArray),
+                units=(xUnit, yUnit) )
+        f = {"script":script, "div":div}
+        return jsonify(**f)
     compare_results.__name__ = 'analysis_compare_results'
     app.route('/analysis/compare_results', methods=['GET', 'POST'])(compare_results)
 
@@ -599,13 +628,13 @@ def webgui(app=None):
             assembly_structure[0]['nodes'] = structure
 
         failed_run_flag = False
-        if (not config_flag) and request.method == 'POST': # if not called from webgui i guess???
+        if (not config_flag) and request.method == 'POST': 
 
-            inputs =  request.form.to_dict() # gets the input values??? 
+            inputs =  request.form.to_dict() 
             io = traits2jsondict(cpnt)
 
 
-            if not sens_flag: # if this is not a sensitivity analysis: 
+            if not sens_flag: 
                 try:
                     for k in inputs.keys():
                         if k in io['inputs']: # Loading only the inputs allowed
@@ -616,7 +645,7 @@ def webgui(app=None):
                     failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     flash(failed_run_flag)
                 try:
-                    cpnt.run() #this is where the analysis actually occurs?
+                    cpnt.run() 
 
                 except:
                     print "Analysis did not execute properly (sens_flag = False)"
@@ -638,6 +667,21 @@ def webgui(app=None):
                         # Start 
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
+
+                        inputs_names_form = [myInputs[:][i]['name'] for i in range(len(myInputs))]
+                        outputs_names_form = [myOutputs[:][i]['name'] for i in range(len(myOutputs))]
+                     
+                        global myUnits
+                        for el in myInputs[:]:
+                            if el['name'] not in myUnits.keys() and 'units' in el.keys():
+
+                                myUnits[el['name']] = el['units']
+                        for el in myOutputs[:]:
+                            if el['name'] not in myUnits.keys() and 'units' in el.keys():
+                                myUnits[el['name']] = el['units']
+
+
+
                         def makePretty(myList):
                             """ 
                             This function takes in a list of dictionaries, where each dictionary represents an input/output
@@ -648,6 +692,8 @@ def webgui(app=None):
 
                             Alternatively, when importing you can just reverse these operations below. Make everything lower 
                             case and replace white space with underscore. 
+
+                            EDIT: checking the saved files, it doesn't seem to affect what is recorded/saved in the .yaml files
                             """
                             for myDict in myList:
                                 if 'name' in myDict.keys():
@@ -670,6 +716,7 @@ def webgui(app=None):
                         try:
                             script, div = prepare_plot(cpnt.plot) # plots the capital costs
                             script_lcoe, div_lcoe = prepare_plot(cpnt.lcoe_plot) # plots Lcoe 
+                            script_comp, div_comp = prepare_plot( CompareResultsPlot, ("", []), ("", []), ("",[]))
 
                             draw_plot = True
                         except:
@@ -686,6 +733,8 @@ def webgui(app=None):
                                 name=cpname,
                                 plot_script=script, plot_div=div, draw_plot=draw_plot,
                                 plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
+                                plot_inputVars=inputs_names_form, plot_outputVars=outputs_names_form,
+                                plot_script_comp=script_comp, plot_div_comp=div_comp,
                                 sub_comp_data=sub_comp_data,
                                 assembly_structure=assembly_structure,
                                 group_list=group_list,
@@ -832,10 +881,9 @@ def webgui(app=None):
     app.route('/'+ 'analysis', methods=['GET', 'POST'])(fused_webapp)
 
 
-# Retrieve data from sesnsitiviey analysis for plotting
+# Retrieve data from sensitivity analysis for plotting
 @app.route('/RetrieveSensPlot', methods=['POST'])
 def GetSensPlot():
-
     global sensitivityResults
 
     inputName = request.form['inVar']
@@ -900,6 +948,7 @@ try:
     from bokeh.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
     from bokeh._legacy_charts import Donut, output_file, show 
+    from bokeh.palettes import Spectral9
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
@@ -977,7 +1026,6 @@ if use_bokeh:
                 y = yPos - 0.05 * yDiff,
                 text = ["%s" %kwargs['colorAxis']['name']],
                 text_align="center" )
-
             #draw color scale
             fig.line(
                 x= [xPos, xPos + 0.25 * xDiff],
@@ -992,7 +1040,29 @@ if use_bokeh:
         return fig
 
     def CompareResultsPlot(fig, *args, **kwargs):
-        pass
+        if len(args)==0:
+            pass
+        import itertools
+        fig = figure( title="Compare Results",
+                    x_axis_label = args[0][0],
+                    y_axis_label = args[1][0])
+
+        # Set colors to bokeh palette (Can change palettes in import statement above)
+        # http://bokeh.pydata.org/en/0.10.0/docs/gallery/palettes.html
+        palette = itertools.cycle(Spectral9)
+        # plot data
+        def mscatter(p,x,y,typestr="circle"):
+            p.scatter(x,y,marker=typestr, line_color="#000000", fill_color=palette.next(), fill_alpha=0.8, size=12)
+
+        # use for loop to iterate through palette
+        print args[0]
+        print args[0][1]
+        numDataPoints = len(args[0][1])
+        for i in range(numDataPoints):
+            mscatter(fig, args[0][1][i], args[1][1][i])
+        return fig
+
+
 
 
 
@@ -1001,4 +1071,5 @@ cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
 sensitivityResults = {"empty":True}
+myUnits = {"empty":True}
 
