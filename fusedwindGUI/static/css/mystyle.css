@@ -31,6 +31,7 @@ div#pop-up {
 
 .navbar{
     margin-bottom:0px;
+
 }
 
 #HeadTitle{
@@ -123,4 +124,8 @@ html, body{
 
 #maincontent{
   min-width: 1350px;
+}
+
+#button-panel{
+  margin-left:4px;
 }

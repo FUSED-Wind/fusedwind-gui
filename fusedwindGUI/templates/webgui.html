@@ -1,311 +1,279 @@
 {% extends "base.html" %}
-
 {% block styles %}
 {{super()}}
 <!-- <link
-    href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
-    rel="stylesheet" type="text/css">
-<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script> -->
+   href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
+   rel="stylesheet" type="text/css">
+   <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script> -->
 <script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
-
 <link rel="stylesheet" href="{{ bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.css')}}">
 <script src="{{bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.js')}}"></script>
 <script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
-<script src="{{bower_url_for('notifyjs', filename='dist/notify.js')}}"></script>
-<script src="{{bower_url_for('notifyjs', filename='dist/styles/bootstrap/notify-bootstrap.js')}}"></script>
 
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
 <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.css" rel="stylesheet" type="text/css">
 <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.js"></script>
-
 {% endblock %}
-
-
-
 {% block scripts %}
 {{super()}}
 <script src="{{ bower_url_for('bootstrap-treeview', filename='src/js/bootstrap-treeview.js') }}"></script>
 <script>
-// The treeview script ---------------------------------------------------------
-var tree = {{ assembly_structure|safe }}
-$('#assembly-tree').treeview({
-        data: tree,
-        enableLinks: true,
-        showBorder: false,
-        onNodeSelected: function(event, data){
-            $('.comp-panels').hide();
-            if ( $('.panel-'+data['text']).hasClass( 'hidden' ) ) $('.panel-'+data['text']).hide().removeClass('hidden');
-            $('.panel-'+data['text']).toggle();
-        }});
+   // The treeview script ---------------------------------------------------------
+   var tree = {{ assembly_structure|safe }}
+   $('#assembly-tree').treeview({
+           data: tree,
+           enableLinks: true,
+           showBorder: false,
+           onNodeSelected: function(event, data){
+               $('.comp-panels').hide();
+               console.log(data)
+               if ( $('.panel-'+data['text']).hasClass( 'hidden' ) ) $('.panel-'+data['text']).hide().removeClass('hidden');
+               $('.panel-'+data['text']).toggle();
+           }});
 </script>
-
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/vendor/jquery.ui.widget.js') }}"></script>
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.iframe-transport.js') }}"></script>
 <script src="{{ bower_url_for('blueimp-file-upload', filename='js/jquery.fileupload.js') }}"></script>
 <!-- <script src="{{ bower_url_for('animate.css', filename='animate.min.css') }}"></script> -->
-
-
-
 <script>
-// The fileupload script -------------------------------------------------------
-$('#fileupload').fileupload({
-    dataType: 'json',
-    singleFileUploads: false,
-    forceIframeTransport: true,
-    url: '/upload/',
-    add: function (e, data) {
-        var jqXHR = data.submit()
-            .success(function (result, textStatus, jqXHR) {
-                console.log('success-result',result);
-                console.log('success-textStatus',textStatus);
-                console.log('success-jqXHR',jqXHR);
-
-                for ( var j = 0; j < result['files'].length; j++ ) {
-                    content = result['files'][j].content
-                    for (var key in content) {
-                       if (content.hasOwnProperty(key)) {
-                           var obj = content[key];
-                           console.log(key,obj)
-                           $('#'+key).val(function( index, value ) {
-                                return obj;
-                            });
-                        }
-                    }
-                }
-            });
-        }
-    });
-
-</script>
-
-
-<script>
-// Table expansion for bootstrap ------------------
-    function expandTable($detail, row) {
-        $detail.html();
-        if (row.type == 'Array') {
-            buildArrayTable($detail.html('<p><b>Description:</b> ' + row.desc + '</p>' +
-                                    '<p><b>Units:</b> ' + row.units + '</p>' +
-                                    '<table data-show-export="true"></table>').find('table'), row);
-        }
-        else if (row.type == 'VarTree') {
-            buildVTTable($detail.html('<p><b>Description:</b> ' + row.state.desc + '</p>' +
-                                    '<table data-show-export="true">' +
-                                        '<thead>' +
-                                        '<tr>' +
-                                            '<th data-field="name">Name</th>'+
-                                            '<th data-field="state">Value</th>'+
-                                        '</tr>'+
-                                        '</thead></table>').find('table'), row.state);
-
-        }
-        else {
-            $detail.html('<p><b>Description:</b> ' + row.desc + ';<b> Value (Units):</b> ' + row.state + ' (' + row.units + ')</p>');
-        }
-    }
-
-    function buildVTTable($el, vtdata) { /* variable tree */ 
-
-        var data = [], row = []
-        for (var key in vtdata) {
-            row = {};
-            if (vtdata.hasOwnProperty(key)) {
-                row['name'] = key ;
-                row['state'] = vtdata[key].toPrecision(5);
-            }
-            data.push(row)
-        }
-        $el.bootstrapTable({data: data});
-    }
-
-    function buildArrayTable($el, rowdata) {
-        var i, j, row, cell,
-                columns = [],
-                data = [];
-        var row0 = rowdata.state[0]
-        if (row0.length >= 2){
-            for (i = 0; i < row0.length; i++) {
-                columns.push({
-                    field: 'field' + i,
-                    title: 'Col' + i,
-                    sortable: true
-                });
-
-            }
-            for(var i = 0; i < rowdata.state.length; i++) {
-                var r = rowdata.state[i]
-                row = {};
-                for(var j = 0; j < r.length; j++) {
-                    row['field' + j] = r[j];
-
-                }
-                data.push(row);
-            }
-        }
-        else {
-                columns.push({
-                    field: 'field0',
-                    title: 'Col0',
-                    sortable: true
-                });
-                for(var i = 0; i < rowdata.state.length; i++) {
-                    var r = rowdata.state[i]
-                    row = {};
-                    row['field0'] = rowdata.state[i].toPrecision(5);
-                    data.push(row);
-                }
-        }
-
-        $el.bootstrapTable({
-            columns: columns,
-            data: data,
-            height: getHeight()
-        });
-    }
-</script>
-
-
-<script>
-// Alert script ---------------------------
-    function showalert(message,alerttype, delayms) {
-        delayms = typeof delayms !== 'undefined' ?  delayms : 2000; // default parameters do not work in function() stmt
-
-        $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +
-                                       alerttype +
-                                       '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
-                                       message +
-                                       '</span></div>')
-
-            setTimeout(function() { // this will automatically close the alert and remove this if the users doesn't close it in 'delayms' ms
-
-                $("#alertdiv").remove();
-
-            }, delayms); //2000);
-        }
-</script>
-
-<script>
-// Case recorder scripts ------------------
-// http://api.jquery.com/jquery.ajax/
-     function record_case() {
-         console.log('calling record_case')
-         $.ajax({
-             url: 'analysis/record_case',
-             type: 'POST',
-             success: function(response) {
-                 console.log(response);
-                 showalert(response, 'success');
-                },
-             error: function(error) {
-                 console.log(error);
-             }
-         });
-     };
-
-     function clear_recorder() {
-         console.log('calling clear_recorder')
-         $.ajax({
-             url: 'analysis/clear_recorder',
-             type: 'POST',
-             success: function(response) {
-                 console.log(response);
-
-                 showalert(response, 'success');
-             },
-             error: function(error) {
-                 console.log(error);
-             }
-         });
-     };
-
-    function compare_results() {
-       console.log('calling compare_results')
-       $.ajax({
-           url: 'analysis/compare_results',
-           type: 'POST',
-           success: function(response) {
-               console.log(response);
-               showalert(response, 'success');
-           },
-           error: function(error) {
-               console.log(error);
+   // The fileupload script -------------------------------------------------------
+   $('#fileupload').fileupload({
+       dataType: 'json',
+       singleFileUploads: false,
+       forceIframeTransport: true,
+       url: '/upload/',
+       add: function (e, data) {
+           var jqXHR = data.submit()
+               .success(function (result, textStatus, jqXHR) {
+                   console.log('success-result',result);
+                   console.log('success-textStatus',textStatus);
+                   console.log('success-jqXHR',jqXHR);
+   
+                   for ( var j = 0; j < result['files'].length; j++ ) {
+                       content = result['files'][j].content
+                       for (var key in content) {
+                          if (content.hasOwnProperty(key)) {
+                              var obj = content[key];
+                              console.log(key,obj)
+                              $('#'+key).val(function( index, value ) {
+                                   return obj;
+                               });
+                           }
+                       }
+                   }
+               });
            }
        });
-    };
-
-// Submit forms ------------------
-    submitForms = function(){
-        document.forms["global-inputs-form"].submit();
-    }
+   
 </script>
-
+<script>
+   // Table expansion for bootstrap ------------------
+       function expandTable($detail, row) {
+           $detail.html();
+           if (row.type == 'Array') {
+               buildArrayTable($detail.html('<p><b>Description:</b> ' + row.desc + '</p>' +
+                                       '<p><b>Units:</b> ' + row.units + '</p>' +
+                                       '<table data-show-export="true"></table>').find('table'), row);
+           }
+           else if (row.type == 'VarTree') {
+               buildVTTable($detail.html('<p><b>Description:</b> ' + row.state.desc + '</p>' +
+                                       '<table data-show-export="true">' +
+                                           '<thead>' +
+                                           '<tr>' +
+                                               '<th data-field="name">Name</th>'+
+                                               '<th data-field="state">Value</th>'+
+                                           '</tr>'+
+                                           '</thead></table>').find('table'), row.state);
+   
+           }
+           else {
+               $detail.html('<p><b>Description:</b> ' + row.desc + ';<b> Value (Units):</b> ' + row.state + ' (' + row.units + ')</p>');
+           }
+       }
+   
+       function buildVTTable($el, vtdata) { /* variable tree */ 
+   
+           var data = [], row = []
+           for (var key in vtdata) {
+               row = {};
+               if (vtdata.hasOwnProperty(key)) {
+                   row['name'] = key ;
+                   row['state'] = vtdata[key].toPrecision(5);
+               }
+               data.push(row)
+           }
+           $el.bootstrapTable({data: data});
+       }
+   
+       function buildArrayTable($el, rowdata) {
+           var i, j, row, cell,
+                   columns = [],
+                   data = [];
+           var row0 = rowdata.state[0]
+           if (row0.length >= 2){
+               for (i = 0; i < row0.length; i++) {
+                   columns.push({
+                       field: 'field' + i,
+                       title: 'Col' + i,
+                       sortable: true
+                   });
+   
+               }
+               for(var i = 0; i < rowdata.state.length; i++) {
+                   var r = rowdata.state[i]
+                   row = {};
+                   for(var j = 0; j < r.length; j++) {
+                       row['field' + j] = r[j];
+   
+                   }
+                   data.push(row);
+               }
+           }
+           else {
+                   columns.push({
+                       field: 'field0',
+                       title: 'Col0',
+                       sortable: true
+                   });
+                   for(var i = 0; i < rowdata.state.length; i++) {
+                       var r = rowdata.state[i]
+                       row = {};
+                       row['field0'] = rowdata.state[i].toPrecision(5);
+                       data.push(row);
+                   }
+           }
+   
+           $el.bootstrapTable({
+               columns: columns,
+               data: data,
+               height: getHeight()
+           });
+       }
+</script>
+<script>
+   // Alert script ---------------------------
+       function showalert(message,alerttype, delayms) {
+           delayms = typeof delayms !== 'undefined' ?  delayms : 2000; // default parameters do not work in function() stmt
+   
+           $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +
+                                          alerttype +
+                                          '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
+                                          message +
+                                          '</span></div>')
+   
+               setTimeout(function() { // this will automatically close the alert and remove this if the users doesn't close it in 'delayms' ms
+   
+                   $("#alertdiv").remove();
+   
+               }, delayms); //2000);
+           }
+</script>
+<script>
+   // Case recorder scripts ------------------
+   // http://api.jquery.com/jquery.ajax/
+        function record_case() {
+            console.log('calling record_case')
+            $.ajax({
+                url: 'analysis/record_case',
+                type: 'POST',
+                success: function(response) {
+                    console.log(response);
+                    showalert(response, 'success');
+                   },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        };
+   
+        function clear_recorder() {
+            console.log('calling clear_recorder')
+            $.ajax({
+                url: 'analysis/clear_recorder',
+                type: 'POST',
+                success: function(response) {
+                    console.log(response);
+   
+                    showalert(response, 'success');
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+        };
+   
+       function compare_results() {
+          console.log('calling compare_results')
+          $.ajax({
+              url: 'analysis/compare_results',
+              type: 'POST',
+              success: function(response) {
+                  console.log(response);
+                  showalert(response, 'success');
+              },
+              error: function(error) {
+                  console.log(error);
+              }
+          });
+       };
+   
+   // Submit forms ------------------
+       submitForms = function(){
+           document.forms["global-inputs-form"].submit();
+       }
+</script>
 {% endblock %}
-
 {% block head %}
 {{super()}}
 {% if plot_resources %}
 {{ plot_resources|indent(4)|safe }}
-
 {{ plot_script|indent(4)|safe }}
 {% endif %}
 {% endblock %}
-
 {% block content %}
-
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="">
 <meta name="author" content="">
-
 <!-- Google Font: Open Sans -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,800,800italic">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Oswald:400,300,700">
-
 <!-- Font Awesome CSS -->
 <!-- <link rel="stylesheet" href="../bower_components/fontawesome/css/font-awesome.min.css" type="text/css"> -->
-
 <!-- HEADER --> 
 <!-- <link href="../bower_components/animate.css/animate.min.css" type="text/css" rel="stylesheet"> -->
 <link rel="stylesheet" href="static/css/mvpready-landing.css" type="text/css" />
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
-
-
 <nav class="navbar navbar-default">
-  <div class="container">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" style="margin-top:10px;" href="#">FUSED-Wind GUI</a>
-    </div>
-
-    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
-        <li class="active"><a href="configure.html">Perform Analysis</a></li>
-        <li><a href="static/docs/index.html">Documentation</a></li>
-        <li><a href="about.html"> About </a></li>
-
-      </ul>
-      
-
-      <ul class="nav navbar-nav navbar-right">
-        <li><a href="https://github.com/FUSED-Wind/fusedwind-gui">Github</a></li>
-      </ul>
-    </div>
-  </div>
+   <div class="container" style="">
+      <div class="navbar-header">
+         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+         <span class="sr-only">Toggle navigation</span>
+         <span class="icon-bar"></span>
+         <span class="icon-bar"></span>
+         <span class="icon-bar"></span>
+         </button>
+         <a class="navbar-brand" style="margin-top:10px;" href="#">FUSED-Wind GUI</a>
+      </div>
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+         <ul class="nav navbar-nav">
+            <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
+            <li class="active"><a href="configure.html">Perform Analysis</a></li>
+            <li><a href="static/docs/index.html">Documentation</a></li>
+            <li><a href="about.html"> About </a></li>
+         </ul>
+         <ul class="nav navbar-nav navbar-right">
+            <li><a href="https://github.com/FUSED-Wind/fusedwind-gui">Github</a></li>
+         </ul>
+      </div>
+   </div>
 </nav>
 <div class="container banner webGUI">
-
 <div class="container-fluid" id="navigation-bar"></div>
-
 <!-- ################### Main Content ################### -->
 <div class="container" id="maincontent">
 {%- if not sens_flag %}
@@ -313,807 +281,751 @@ $('#fileupload').fileupload({
 {%- else %}
 <h1 style="color:#FFFFFF; margin-top:20px;"> Sensitivity Analysis </h1>
 {%- endif %}
-    <div class="container" id="alert_placeholder"></div>
-    <div class="panel panel-default">
-
+<div class="container" id="alert_placeholder"></div>
+<div class="panel panel-default">
 <!-- ####################  Buttons to run scripts ################### -->
-        <div class="panel-body" id='button-panel'>
-            <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms()" value="Run">
-            {%- if not sens_flag %}
-            <span class="btn btn-mvp fileinput-button" >
-                <i class="glyphicon glyphicon-plus"></i>
-                <span>Load inputs</span>
-                <input id="fileupload" type="file" name="files[]" multiple >
-            </span>
-
-            {%- endif %}
-            <div class="btn-group">
-                <button type="button"  id="save" class="btn btn-mvp nohover" >Save</button>
-                <button type="button" id="save_toggle" class="btn btn-mvp dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="caret"></span>
-                    <span class="sr-only">Toggle Dropdown</span>
-                </button>
-                <ul class="dropdown-menu">
-                    {%- if not sens_flag %}
-                    <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
-                    <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
-                    <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
-                    <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
-                    {%- else %}
-                    <li><a href="#" onClick='document.getElementById("download-sensitivity-results").submit()'>Results (CSV)</a></li>
-                    {%- endif %}
-                    <!-- <li role="separator" class="divider"></li>
-                    <li><a href="#">Separated link</a></li> -->
-                </ul>
-            </div>
-            {%- if outputs and not sens_flag %}
-            <div class="btn-group pull-right" id="myTabs">
-                <ul class="nav nav-tabs" role="tablist">
-                    <li role="presentation" class="active">
-                      <a href="#inputs" 
-                      role="tab" 
-                      onClick="document.getElementById('hideaway').style.display='none'; document.getElementById('hideaway2').style.display='none';
-                      document.getElementById('hideaway3').style.display='none';" data-toggle="tab">Inputs</a></li>
-                    <li role="presentation">
-                      <a href="#results" role="tab" 
-                      onClick="document.getElementById('hideaway').style.display='block';
-                      document.getElementById('hideaway2').style.display='none';
-                      document.getElementById('hideaway3').style.display='none';
-                      " data-toggle="tab">Results</a></li>
-                    <li role="presentation">
-                      <a href="#plots" role="tab" 
-                      onClick="document.getElementById('hideaway').style.display='none';
-                      document.getElementById('hideaway2').style.display='block';
-                      document.getElementById('hideaway3').style.display='none';" data-toggle="tab">Plots</a></li>
-                    <li role="presentation">
-                      <a href="#compare" role="tab" 
-                      onClick="document.getElementById('hideaway').style.display='none';
-                      document.getElementById('hideaway2').style.display='none';
-                      document.getElementById('hideaway3').style.display='block';" data-toggle="tab">Compare Results</a></li>
-                    
-                </ul>
-            </div>
-            {%- endif %}
-
-            <form id="download-inputs-form" method="get" action="/analysis/download"></form>
-            <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
-            <form id="download-sensitivity-results"  method="get" action="/analysis/download_sensitivity_results"></form>
-
-        </div>
-
+<div class="panel-body" id='button-panel'>
+   <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms()" value="Run">
+   {%- if not sens_flag %}
+   <span class="btn btn-mvp fileinput-button" >
+   <i class="glyphicon glyphicon-plus"></i>
+   <span>Load inputs</span>
+   <input id="fileupload" type="file" name="files[]" multiple >
+   </span>
+   {%- endif %}
+   <div class="btn-group">
+      <button type="button"  id="save" class="btn btn-mvp nohover" >Save</button>
+      <button type="button" id="save_toggle" class="btn btn-mvp dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="caret"></span>
+      <span class="sr-only">Toggle Dropdown</span>
+      </button>
+      <ul class="dropdown-menu">
+         {%- if not sens_flag %}
+         <li><a href="#" onClick='document.getElementById("download-inputs-form").submit()'>Save inputs</a></li>
+         <li><a href="#" id='recorder' onClick="record_case();">Record case</a></li>
+         <li><a href="#" id='clear-recorder' onClick="clear_recorder();">Clear recorder</a></li>
+         <li><a href="#" onClick='document.getElementById("download-full-model").submit()'>Save results</a></li>
+         {%- else %}
+         <li><a href="#" onClick='document.getElementById("download-sensitivity-results").submit()'>Results (CSV)</a></li>
+         {%- endif %}
+         <!-- <li role="separator" class="divider"></li>
+            <li><a href="#">Separated link</a></li> -->
+      </ul>
+   </div>
+   {%- if outputs and not sens_flag %}
+   <div class="btn-group pull-right" id="myTabs">
+      <ul class="nav nav-tabs" role="tablist">
+         <li role="presentation" class="active">
+            <a href="#inputs" 
+               role="tab" 
+               onClick=" document.getElementById('hideaway2').style.display='none';
+               document.getElementById('hideaway3').style.display='none';
+               document.getElementById('hideaway').style.display='none';
+               $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);
+               " data-toggle="tab">Inputs</a>
+         </li>
+         <li role="presentation">
+            <a href="#results" role="tab" 
+               onClick="document.getElementById('hideaway').style.display='block';
+               document.getElementById('hideaway2').style.display='none';
+               document.getElementById('hideaway3').style.display='none';
+               " data-toggle="tab">Results</a>
+         </li>
+         <li role="presentation">
+            <a href="#plots" role="tab" 
+               onClick="document.getElementById('hideaway').style.display='none';
+               document.getElementById('hideaway2').style.display='block';
+               document.getElementById('hideaway3').style.display='none';
+               $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);" data-toggle="tab">Plots</a>
+         </li>
+         <li role="presentation">
+            <a href="#compare" role="tab" 
+               onClick="document.getElementById('hideaway').style.display='none';
+               document.getElementById('hideaway2').style.display='none';
+               document.getElementById('hideaway3').style.display='block';
+               $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);" data-toggle="tab">Compare Results</a>
+         </li>
+      </ul>
+   </div>
+   {%- endif %}
+   <form id="download-inputs-form" method="get" action="/analysis/download"></form>
+   <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
+   <form id="download-sensitivity-results"  method="get" action="/analysis/download_sensitivity_results"></form>
+</div>
 <!-- ################### divider for error messages GNS 2015 09 21 ################### -->
-
-        <!-- display a failed run message if present -->
-
-        {% if failed_run_flag %}
-          <script>
-            console.log(' {{ failed_run_flag }} ');
-            // window.alert(' {{ failed_run_flag }} ');
-            $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-danger' +
-                                               '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
-                                               ' {{ failed_run_flag }} ' +
-                                               '</span></div>')
-          </script>
-        {% endif %}
-
-        <!-- display any flashed messages -->
-
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <div class='div2' style="background-color:#99FFFF;margin-left:30px;"> <!-- added GNS 2015 09 23 -->
-            <ul>
-            {% for message in messages %}
-                <li>{{ message }} </li>
-            {% endfor %}
-            </ul>
-            </div>
-          {% endif %}
-        {% endwith %}
-        <!-- end display any flashed messages -->
-
+<!-- display a failed run message if present -->
+{% if failed_run_flag %}
+<script>
+   console.log(' {{ failed_run_flag }} ');
+   // window.alert(' {{ failed_run_flag }} ');
+   $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-danger' +
+                                      '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
+                                      ' {{ failed_run_flag }} ' +
+                                      '</span></div>')
+</script>
+{% endif %}
+<!-- display any flashed messages -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class='div2' style="background-color:#99FFFF;margin-left:30px;">
+   <!-- added GNS 2015 09 23 -->
+   <ul>
+      {% for message in messages %}
+      <li>{{ message }} </li>
+      {% endfor %}
+   </ul>
+</div>
+{% endif %}
+{% endwith %}
+<!-- end display any flashed messages -->
 <!-- ################### divider to rest of content ################### -->
-        <div class="panel-body">
-        <div class="row" id="input_panels">
-
+<div class="panel-body">
+<div class="row" id="input_panels">
 <!-- ########################## The Description panel ############## -->
-            <div class="col-xs-3">
-                <div class="panel-body">
-                    <div class="panel panel-default" id='panel-'>
-                        <div class="panel-heading" style="background-color:#D8D8D8">
-                            <h3 class="panel-title">Model Description</h3>
-                        </div>
-                        <div class="panel-body">
-                            <p>{{desc}}</p>
-                            <p></p>
-                            {%- if sens_flag %}
-                            <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
-                            {%- else %}
-                                   <p>For the individual analysis, please specify all input values.</p>
-                            {%- endif %}
-                        </div>
-                    </div>
-                </div>
-
-<!-- ########################## The Assembly navigation panel ############## -->
-                {%- if outputs and not sens_flag %}
-                <div class="panel-body" id="hideaway2">
-                  <div class="panel panel-default">
-                    <div class="panel-heading" style="background-color:#D8D8D8">
-                      <h3 class="panel-title"> Choose Plot </h3> 
-                    </div>
-                    <div class="btn-group">
-                      <ul class="nav nav-pills nav-justified" id="plotTabs" role="tablist">
-                          <li role="presentation" class="active">
-                            <a href="#CAPEX" role="tab" onClick="
-                            document.getElementById('CAPEX').style.display='block';
-                            document.getElementById('LCOE').style.display='none';" data-toggle="tab">CAPEX</a></li>
-                          <li role="presentation">
-                            <a href="#LCOE" role="tab" onClick="
-                            document.getElementById('LCOE').style.display='block';
-                            document.getElementById('CAPEX').style.display='none';" data-toggle="tab">LCOE</a></li>
-                        </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="panel-body" id="hideaway3">
-                  <div class="panel panel-default">
-                    <div class="panel-heading" style="background-color:#D8D8D8">
-                      <h3 class="panel-title"> Instructions </h3> 
-                    </div>
-                    <div class="panel-body">
-
-                    <p> Record the cases you want to compare by selecting "Record Case" under the Save dropdown menu.</p> 
-                    </div>
-                  </div>
-                </div>
-              
-
-
-                <div class="panel-body" id="hideaway">
-                    <div class="panel panel-default" id='panel-'>
-                        <div class="panel-heading" style="background-color:#D8D8D8">
-                            <h3 class="panel-title">
-                                <a data-target="#collapse-tree"
-                                href="#collapse-tree" >
-                                System Hierarchy
-                                </a>
-                            </h3>
-                        </div>
-                        <div id="assembly-tree"></div>
-                    </div>  
-                </div> 
-                {%- endif %}            
-            </div>
-            
+<div class="col-xs-3">
+   <div class="panel-body">
+      <div class="panel panel-default" id='panel-'>
+         <div class="panel-heading" style="background-color:#D8D8D8">
+            <h3 class="panel-title">Model Description</h3>
+         </div>
+         <div class="panel-body">
+            <p>{{desc}}</p>
+            <p></p>
+            {%- if sens_flag %}
+            <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
+            {%- else %}
+            <p>For the individual analysis, please specify all input values.</p>
+            {%- endif %}
+         </div>
+      </div>
+   </div>
+   <!-- ########################## The Assembly navigation panel ############## -->
+   {%- if outputs and not sens_flag %}
+   <div class="panel-body" id="hideaway2">
+      <div class="panel panel-default">
+         <div class="panel-heading" style="background-color:#D8D8D8">
+            <h3 class="panel-title"> Choose Plot </h3>
+         </div>
+         <div class="btn-group">
+            <ul class="nav nav-pills nav-justified" id="plotTabs" role="tablist">
+               <li role="presentation" class="active">
+                  <a href="#CAPEX" role="tab" onClick="
+                     document.getElementById('CAPEX').style.display='block';
+                     document.getElementById('LCOE').style.display='none';" data-toggle="tab">CAPEX</a>
+               </li>
+               <li role="presentation">
+                  <a href="#LCOE" role="tab" onClick="
+                     document.getElementById('LCOE').style.display='block';
+                     document.getElementById('CAPEX').style.display='none';" data-toggle="tab">LCOE</a>
+               </li>
+            </ul>
+         </div>
+      </div>
+   </div>
+   <div class="panel-body" id="hideaway3">
+      <div class="panel panel-default">
+         <div class="panel-heading" style="background-color:#D8D8D8">
+            <h3 class="panel-title"> Instructions </h3>
+         </div>
+         <div class="panel-body">
+            <p> Record the cases you want to compare by selecting "Record Case" under the Save dropdown menu.</p>
+         </div>
+      </div>
+   </div>
+   <div class="panel-body" id="hideaway">
+      <div class="panel panel-default" id='panel-'>
+         <div class="panel-heading" style="background-color:#D8D8D8">
+            <h3 class="panel-title">
+               <a data-target="#collapse-tree"
+                  href="#collapse-tree" >
+               System Hierarchy
+               </a>
+            </h3>
+         </div>
+         <div id="assembly-tree"></div>
+      </div>
+   </div>
+   {%- endif %}            
+</div>
 <!-- @############################################################
-##########################################
-############################# -->
-            <div class="tab-content"> 
-
-                {%- if outputs and not sens_flag %}
-                <div role="tabpanel" class="tab-pane" id="compare">
-                  <div class="col-md-9">
-                        <div class="panel-body comp-panels panel-{{name}}">
-                            <div class="panel panel-default">
-                            <div class="panel-heading" style="background-color:#D8D8D8">
-                                <h3 class="panel-title" style="display:inline;">Compare Results</h3>
-                            </div>
-                            <div id="plot_area" class="panel-body", align="center">
-                              <div id="plot_base">
-                                <div class="row" id="plot_row">
-                                  <div class="col-md-3">
-                                    <div class="row">
-                                      <div class="col-md-9 col-md-offset-2">
-                                        <form id="plot_controller__1">
-
-                                          <div class="form-group">
-                                            <label for="input_plot_variable">Input</label>
-                                            <select class="form-control" id="input_plot_variable">
-                                              <optgroup label="Choose Input">
-                                                  {% for val in plot_inputVars %}
-                                                  <option>{{val}}</option>
-                                                  {% endfor %}
-                                              </optgroup>
-                                            </select>
-                                          </div>
-
-
-                                          <div class="form-group">
-                                            <label for="output_plot_variable">Output</label>
-                                            <select class="form-control" id="output_plot_variable">
-                                              <optgroup label="Choose Output">
-                                                  {% for val in plot_outputVars %}
-                                                  <option>{{val}}</option>
-                                                  {% endfor %}
-                                              </optgroup>
-                                            </select>
-                                          </div>
-
-                                          <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
-                                        </form> 
-                                      </div>
+   ##########################################
+   ############################# -->
+<div class="tab-content">
+   {%- if outputs and not sens_flag %}
+   <div role="tabpanel" class="tab-pane" id="compare">
+      <div class="col-md-9">
+         <div class="panel-body comp-panels panel-{{name}}">
+            <div class="panel panel-default">
+               <div class="panel-heading" style="background-color:#D8D8D8">
+                  <h3 class="panel-title" style="display:inline;">Compare Results</h3>
+               </div>
+               <div id="plot_area" class="panel-body", align="center">
+                  <div id="plot_base">
+                     <div class="row" id="plot_row">
+                        <div class="col-md-3">
+                           <div class="row">
+                              <div class="col-md-9 col-md-offset-2">
+                                 <form id="plot_controller__1">
+                                    <div class="form-group">
+                                       <label for="input_plot_variable">Input</label>
+                                       <select class="form-control" id="input_plot_variable">
+                                          <optgroup label="Choose Input">
+                                             {% for val in plot_inputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                       </select>
                                     </div>
-                                  </div>
-                                      <!-- start plot -->
-                                            <div class="col-md-9" id="plot_space">
-                                            
-                                                {{ plot_script_comp|indent(4)|safe }}
-                                                {{ plot_div_comp|indent(4)|safe }}
-                                            
-                                            </div>
-                                                <!-- end plot -->
-
-                                            <script type="text/javascript">
-
-                                                $("form#plot_controller__1").submit( function(event) {
-                                                    event.preventDefault();
-                                                    compare_results();
-                                                    var topDOM = $(this).closest("div#plot_row");
-                                                    var summaryDOM = topDOM.find("div#plot_summary");
-                                                    var plotDOM = topDOM.find("div#plot_space");
-                                                    var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
-                                                    var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
-                                                    $.post( "/compare_results", { inVar: inVar, outVar: outVar} , function(data){
-                                                        plotDOM.html( data.script + data.div );
-                                      
-                                                    });
-                                                });
-                                            </script>
-                                </div>
+                                    <div class="form-group">
+                                       <label for="output_plot_variable">Output</label>
+                                       <select class="form-control" id="output_plot_variable">
+                                          <optgroup label="Choose Output">
+                                             {% for val in plot_outputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                       </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                 </form>
                               </div>
-                            </div>
-                          </div>
+                           </div>
                         </div>
+                        <!-- start plot -->
+                        <div class="col-md-9" id="plot_space">
+                           {{ plot_script_comp|indent(4)|safe }}
+                           {{ plot_div_comp|indent(4)|safe }}
+                        </div>
+                        <!-- end plot -->
+                        <script type="text/javascript">
+                           $("form#plot_controller__1").submit( function(event) {
+                               event.preventDefault();
+                               compare_results();
+                               var topDOM = $(this).closest("div#plot_row");
+                               var summaryDOM = topDOM.find("div#plot_summary");
+                               var plotDOM = topDOM.find("div#plot_space");
+                               var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
+                               var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
+                               $.post( "/compare_results", { inVar: inVar, outVar: outVar} , function(data){
+                                   plotDOM.html( data.script + data.div );
+                           
+                               });
+                           });
+                        </script>
+                     </div>
                   </div>
-                </div>                
-                {%- endif %}
-
-                {%- if not sens_flag %}
-                <div role="tabpanel" class="tab-pane" id="plots">
-                {%- endif %}
-                
-<!-- ########################## The Plotting Panel ############################# -->
-                    {% if draw_plot %}
-                    <div class="tab-content">
-                    <div role="tabpanel" class="tab-pane active" style="display:block" id="CAPEX">
-
-                      <div class="col-xs-9">
-                          <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
-                              <div class="panel panel-default">
-                                  <div class="panel-heading" style="background-color:#D8D8D8">
-                                      <h3 class="panel-title">CAPEX Plot</h3>
-                                  </div>
-                                  <div class="panel-body", align="center">
-                                      <div id="plot_space">
-                                          {{ plot_script|indent(4)|safe }}
-                                          {{ plot_div|indent(4)|safe }}
-                                      </div>
-                                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   {%- endif %}
+   {%- if not sens_flag %}
+   <div role="tabpanel" class="tab-pane" id="plots">
+      {%- endif %}
+      <!-- ########################## The Plotting Panel ############################# -->
+      {% if draw_plot %}
+      <div class="tab-content">
+         <div role="tabpanel" class="tab-pane active" style="display:block" id="CAPEX">
+            <div class="col-xs-9">
+               <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
+                  <div class="panel panel-default">
+                     <div class="panel-heading" style="background-color:#D8D8D8">
+                        <h3 class="panel-title">CAPEX Plot</h3>
+                     </div>
+                     <div class="panel-body", align="center">
+                        <div id="plot_space">
+                           {{ plot_script|indent(4)|safe }}
+                           {{ plot_div|indent(4)|safe }}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div role="tabpanel" class="tab-pane" style="display:none" id="LCOE">
+            <div class="col-xs-9">
+               <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
+                  <div class="panel panel-default">
+                     <div class="panel-heading" style="background-color:#D8D8D8">
+                        <h3 class="panel-title">LCOE Plot</h3>
+                     </div>
+                     <div class="panel-body", align="center">
+                        <div id="plot_space">
+                           {{ plot_script_lcoe|indent(4)|safe }}
+                           {{ plot_div_lcoe|indent(4)|safe }}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      {% endif %}
+      {% if draw_sens_plot %}
+      <div class="col-md-9">
+         <div class="panel-body comp-panels panel-{{name}}">
+            <div class="panel panel-default">
+               <div class="panel-heading" style="background-color:#D8D8D8">
+                  <h3 class="panel-title" style="display:inline;">Results</h3>
+                  <div class="btn-group pull-right" role="group" aria="...">
+                     <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
+                  </div>
+               </div>
+               <div id="plot_area" class="panel-body", align="center">
+                  <div id="plot_base">
+                     <div class="row" id="plot_row">
+                        <div class="col-md-3">
+                           <div class="row">
+                              <div class="col-md-9 col-md-offset-2">
+                                 <form id="plot_controller__0">
+                                    <div class="form-group">
+                                       <label for="input_plot_variable">Input</label>
+                                       <select class="form-control" id="input_plot_variable">
+                                          <optgroup label="Choose Input">
+                                             {% for val in plot_inputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                       </select>
+                                    </div>
+                                    <div class="form-group">
+                                       <label for="output_plot_variable">Output</label>
+                                       <select class="form-control" id="output_plot_variable">
+                                          <optgroup label="Choose Output">
+                                             {% for val in plot_outputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                       </select>
+                                    </div>
+                                    <div class="form-group">
+                                       <label for="color_plot_variable">Colors</label>
+                                       <select class="form-control" id="color_plot_variable">
+                                          <option>Mono</option>
+                                          <optgroup label="Inputs">
+                                             {% for val in plot_inputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                          <optgroup label="Outputs">
+                                             {% for val in plot_outputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                       </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                 </form>
                               </div>
-                          </div>
-                      </div>
-                    </div> 
-
-                    <div role="tabpanel" class="tab-pane" style="display:none" id="LCOE">
-                      <div class="col-xs-9">
-                          <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
-                              <div class="panel panel-default">
-                                  <div class="panel-heading" style="background-color:#D8D8D8">
-                                      <h3 class="panel-title">LCOE Plot</h3>
-                                  </div>
-                                  <div class="panel-body", align="center">
-                                      <div id="plot_space">
-                                          {{ plot_script_lcoe|indent(4)|safe }}
-                                          {{ plot_div_lcoe|indent(4)|safe }}
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                    </div>  
-                    </div>
-
-                    {% endif %}
-
-
-                    {% if draw_sens_plot %}
-                    <div class="col-md-9">
-                        <div class="panel-body comp-panels panel-{{name}}">
-                            <div class="panel panel-default">
-                                <div class="panel-heading" style="background-color:#D8D8D8">
-                                    <h3 class="panel-title" style="display:inline;">Results</h3>
-                                    <div class="btn-group pull-right" role="group" aria="...">
-                                        <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
-                                    </div>
-                                </div>
-                                <div id="plot_area" class="panel-body", align="center">
-                                    <div id="plot_base">
-                                        <div class="row" id="plot_row">
-                                            <div class="col-md-3">
-                                                <div class="row">
-                                                    <div class="col-md-9 col-md-offset-2">
-                                                        <form id="plot_controller__0">
-
-                                                            <div class="form-group">
-                                                              <label for="input_plot_variable">Input</label>
-                                                              <select class="form-control" id="input_plot_variable">
-                                                                <optgroup label="Choose Input">
-                                                                    {% for val in plot_inputVars %}
-                                                                    <option>{{val}}</option>
-                                                                    {% endfor %}
-                                                                </optgroup>
-                                                              </select>
-                                                            </div>
-
-
-                                                            <div class="form-group">
-                                                              <label for="output_plot_variable">Output</label>
-                                                              <select class="form-control" id="output_plot_variable">
-                                                                <optgroup label="Choose Output">
-                                                                    {% for val in plot_outputVars %}
-                                                                    <option>{{val}}</option>
-                                                                    {% endfor %}
-                                                                </optgroup>
-                                                              </select>
-                                                            </div>
-
-                                                            <div class="form-group">
-                                                              <label for="color_plot_variable">Colors</label>
-                                                              <select class="form-control" id="color_plot_variable">
-                                                                <option>Mono</option>
-                                                                <optgroup label="Inputs">
-                                                                    {% for val in plot_inputVars %}
-                                                                    <option>{{val}}</option>
-                                                                    {% endfor %}
-                                                                </optgroup>
-                                                                <optgroup label="Outputs">
-                                                                    {% for val in plot_outputVars %}
-                                                                    <option>{{val}}</option>
-                                                                    {% endfor %}
-                                                                </optgroup>
-                                                              </select>
-                                                            </div>
-
-                                                            <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-
-
-                                                <h3 style="margin-top:50px">Summary</h3>
-                                                <!-- Plot summary goes here -->
-                                                <div id="plot_summary">
-                                                    <p>No inputs selected</p>
-                                                </div>
-                                            </div>
-                                                <!-- start plot -->
-                                            <div class="col-md-9" id="plot_space">
-                                                {{ plot_script|indent(4)|safe }}
-                                                {{ plot_div|indent(4)|safe }}
-                                            </div>
-                                                <!-- end plot -->
-
-                                            <script type="text/javascript">
-                                                $("form#plot_controller__0").submit( function(event) {
-                                                    event.preventDefault();
-
-                                                    var topDOM = $(this).closest("div#plot_row");
-
-                                                    var summaryDOM = topDOM.find("div#plot_summary");
-                                                    var plotDOM = topDOM.find("div#plot_space");
-
-
-                                                    var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
-                                                    var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
-                                                    var colVar = $(this).find("#color_plot_variable").find("option:selected").text();
-
-                                                    $.post( "/RetrieveSensPlot", { inVar: inVar, outVar: outVar, colVar:colVar } , function(data){
-                                                        plotDOM.html( data.script + data.div );
-                                                        summaryDOM.html( data.summary );
-                                                    });
-                                                });
-                                            </script>
-
-                                        </div>
-                                    </div>
-                                    <!-- Plot Controller Action -->
-                                    <script type="text/javascript">
-
-                                    var plotCount = 0;
-
-                                    var addPlotWindow = function(){
-                                        plotCount += 1;
-
-                                        var rawText = $("#plot_base").html();
-                                        rawText = rawText.replace(/__0/g, "__" + plotCount);
-
-                                        var plotText = rawText.substring(0,rawText.indexOf("<!-- start plot -->"));
-
-                                        plotText += '<div class="col-md-9" id="plot_space"></div>';
-
-                                        plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
-
-                                        $("#plot_area").append(plotText);
-                                        console.log(plotText);
-                                    }
-
-
-                                    $("#addPlotWindow-btn").click( function(){
-                                        addPlotWindow();
-                                    });
-
-                                    </script>
-                                </div>
-                            </div>
+                           </div>
+                           <h3 style="margin-top:50px">Summary</h3>
+                           <!-- Plot summary goes here -->
+                           <div id="plot_summary">
+                              <p>No inputs selected</p>
+                           </div>
                         </div>
-                    </div>
-                    {% endif %}
-
-                {%- if not sens_flag %}
-                </div>
-                {%- endif %}
-
-<!--                         The Inputs Panel                            -->
-                 
-                {% if not sens_flag %}
-
-                <div role="tabpanel" class="tab-pane active" id="inputs">
-
-                    <div class="col-xs-9" id='inputs_single'>
-                        <div class="panel-body">
-                            <form method="post" class="form" id='global-inputs-form'>
-                                <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
-                                    {%- for group in group_list %}
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
-                                            <h3 class="panel-title">
-                                            <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
-                                            {{group}} Inputs
-                                            </a>
-                                            </h3>
-                                        </div>
-                                        {%- if group == 'Global' %}
-                                        <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
-                                        {%- else %}
-                                        <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                                        {%- endif %}
-                                            <div class="panel-body"
-                                                 align="center" id='global-inputs-panel'>
-
-                                                {{ inputs.hidden_tag() }}
-                                                {{ wtf.form_errors(inputs, hiddens='only') }}
-                                                <table class="table table-hover" align="left">
-                                                    <col width="55%">
-                                                    <col width="45%">
-                                                    <tr>
-                                                        <th>Parameter</th>
-                                                        <th>Value</th>
-                                                    </tr>
-                                                    {%- for field in inputs %}
-                                                    {%- if field.name not in ('csrf_token', 'submit') %}
-                                                    {%- if group_dic[field.name] == group %}
-                                                    <tr>
-                                                        <td>{{field.description}} ({{field.name}})</td>
-                                                        <td>
-                                                            <div id='trigger-{{field.name|safe}}'>
-                                                                {{field(class="form-control")|safe}}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    {%- endif %}
-                                                    {%- endif %}
-                                                    {%- endfor %}
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {%- endfor %}
-
-                                    <script>
-                                    function getHeight() {
-                                        var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                                        var h_btn = document.getElementById('button-panel').offsetHeight;
-                                        var h_win = $(window).height() - h_nav - h_btn - 50;
-                                        return String(h_win)+'px'
-                                    }
-                                        console.log(getHeight())
-                                        document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-                                        document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                                    </script>
-                                </div>
-                            </form>
+                        <!-- start plot -->
+                        <div class="col-md-9" id="plot_space">
+                           {{ plot_script|indent(4)|safe }}
+                           {{ plot_div|indent(4)|safe }}
                         </div>
-                    </div>
-                </div>
-                {%- else %}
-                {%- if draw_sens_plot %}
-                <div class="col-xs-offset-3 col-xs-9" id='inputs_single'>
-
-
-                {%- else %}
-                <div class="col-xs-9" id='inputs_single'>
-                {%- endif %}
-                    <div class="panel-body">
-                        <form method="post" class="form" id='global-inputs-form'>
-                            <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
-                                        <h3 class="panel-title">
-                                            <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
-                                                Sensitivity Inputs
-                                            </a>
-                                        </h3>
-                                    </div>
-
-                                    {%- if not draw_sens_plot %}
-                                    <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
-                                    {%- else %}
-                                    <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
-                                        {%- endif %}
-
-                                        <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
-                                            {{ inputs.hidden_tag() }}
-                                            {{ wtf.form_errors(inputs, hiddens='only') }}
-                                            <table class="table table-hover" align="left">
-                                                <tr>
-                                                    <th>Parameter</th>
-                                                    <th>Initial Value</th>
-                                                </tr>
-                                                <tr>
-                                                    <td>Number of iterations in analysis (iteration_count)</td>
-                                                    <td>
-                                                        <div id='trigger-iteration_count'>
-                                                            <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count">
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            
-                                {%- for group in group_list %}
-                                <div class="panel panel-default">
-                                    <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
-                                        <h3 class="panel-title">
-                                        <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
-                                        {{group}} Inputs
-                                        </a>
-                                        </h3>
-                                    </div>
-                                    {%- if group == 'Global' %}
-                                    {% if not draw_sens_plot %}
-                                    <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
-                                    {%- else %}
-                                    <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                                    {%- endif %}
-                                    {%- else %}
-                                    <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                                    {%- endif %}
-                                        <div class="panel-body"
-                                             align="center" id='global-inputs-panel'>
-                                                {{ inputs.hidden_tag() }}
-                                                {{ wtf.form_errors(inputs, hiddens='only') }}
-                                            <table class="table table-hover" align="left">
-                                                <tr>
-                                                    <th>Parameter</th>
-                                                    <th>Initial Value</th>
-                                                    <th>Sensitivity Input</th>
-                                                    <th>Sensitivity Low Value</th>
-                                                    <th>Sensitivity High Value</th>
-                                                </tr>
-                                                {%- for field in inputs %}
-                                                {%- if ('select.' not in field.name) and ('low.' not in field.name) and ('high.' not in field_name) %}
-                                                    {%- if field.name not in ('csrf_token', 'submit') and group_dic[field.name] == group %}
-                                                    <tr>
-                                                        <td>{{field.description}} ({{field.name}})</td>
-                                                        <td>
-                                                            <div id='trigger-{{field.name|safe}}'>
-                                                                {{field(class="form-control")|safe}}
-                                                            </div>
-                                                        </td>
-                                                            <td>
-                                                                {%- for select_field in inputs %}
-                                                                {%- if ('select.'+field.name == select_field.name) %}
-                                                                <div id='trigger-{{select_field.name|safe}}'>
-                                                                    {{select_field(class="form-control")|safe}}
-                                                                </div>
-                                                                {%- endif %}
-                                                                {%- endfor %}
-                                                            </td>
-                                                            <td>
-                                                                {%- for low_field in inputs %}
-                                                                {%- if ('low.'+field.name == low_field.name) %}
-                                                                <div id='trigger-{{low_field.name|safe}}'>
-                                                                    {{low_field(class="form-control")|safe}}
-                                                                </div>
-                                                                {%- endif %}
-                                                                {%- endfor %}
-                                                            </td>
-                                                            <td>
-                                                                {%- for high_field in inputs %}
-                                                                {%- if ('high.'+field.name == high_field.name) %}
-                                                                <div id='trigger-{{high_field.name|safe}}'>
-                                                                    {{high_field(class="form-control")|safe}}
-                                                                </div>
-                                                                {%- endif %}
-                                                                {%- endfor %}
-                                                            </td>
-                                                    </tr>
-                                                    {%- endif %}
-                                                {%- endif %}
-                                                {%- endfor %}
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                                {%- endfor %}
-
-                                <script>
-                                function getHeight() {
-                                    var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                                    var h_btn = document.getElementById('button-panel').offsetHeight;
-                                    var h_win = $(window).height() - h_nav - h_btn - 50;
-                                    return String(h_win)+'px'
-                                }
-                                    console.log(getHeight())
-                                    document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
-                                    document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
-                                </script>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                {%- endif %}
-
-<!-- ###################### The Outputs panel ########################### -->
-
-            
-                {%if not sens_flag%}
-                {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-                <div role="tabpanel" class="tab-pane" id="results">
-                    <div class="col-xs-9">
-                        <div id="topLevel" class="panel panel-body  comp-panels panel-{{name}}">
-                            <div class="panel panel-default">
-                                <div class="panel-heading" style="background-color:#D8D8D8">
-                                    <h3 class="panel-title">Model Output Results and Current Input States</h3>
-                                </div>
-                                <div class="panel-body", align="center">
-                                    <table class="table col-xs-9"
-                                           id="global-outputs-table"
-                                           data-toggle="global-outputs-table"
-                                           data-sort-name="iotype"
-                                           data-show-columns="true"
-                                           data-search="true"
-                                           data-show-refresh="true"
-                                           data-show-toggle="true"
-                                           data-show-export="true"
-                                           data-detail-view="true">
-                                        <thead>
-                                        <tr>
-                                            <th data-field="name">Name</th>
-                                            <th data-field="desc">Description</th>
-                                            <th data-field="state" data-formatter='validateOutputs'>Value</th>
-                                            <th data-field="units">Units</th>
-                                            <th data-field="iotype">I/O Type</th>
-                                        </tr>
-                                        </thead>
-                                    </table>
-                                </div>
-                            </div>
-                            <script>
-                                window['global-outputs-data'] = {{ outputs | tojson | safe }};
-                                $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
-                                                                           height: getHeight(),
-                                                                           onExpandRow: function (index, row, $detail) {
-                                                                           expandTable($detail, row);
-                                                                           }
-                                                                          });
-                                function validateOutputs(value, row) {
-                                    if (row.type == 'Array') {
-                                        return 'Array data';
-                                    }
-                                    else if (row.type == 'VarTree') {
-                                        return 'Vartree data';
-                                    }
-                                    else if (row.type == 'Float'){
-                                        return row.state.toPrecision(5);
-                                    }
-                                    else {
-                                        return row.state;
-                                    }
-                                }
-                                function getHeight() {
-                                    var h_nav = document.getElementById('navigation-bar').offsetHeight;
-                                    var h_btn = document.getElementById('button-panel').offsetHeight;
-                                    console.log(h_nav, h_btn)
-                                    return $(window).height() - h_nav - h_btn - 50;
-                                }
-                            </script>
+                        <!-- end plot -->
+                        <script type="text/javascript">
+                           $("form#plot_controller__0").submit( function(event) {
+                               event.preventDefault();
+                           
+                               var topDOM = $(this).closest("div#plot_row");
+                           
+                               var summaryDOM = topDOM.find("div#plot_summary");
+                               var plotDOM = topDOM.find("div#plot_space");
+                           
+                           
+                               var inVar = $(this).find("#input_plot_variable").find("option:selected").text();
+                               var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
+                               var colVar = $(this).find("#color_plot_variable").find("option:selected").text();
+                           
+                               $.post( "/RetrieveSensPlot", { inVar: inVar, outVar: outVar, colVar:colVar } , function(data){
+                                   plotDOM.html( data.script + data.div );
+                                   summaryDOM.html( data.summary );
+                               });
+                           });
+                        </script>
+                     </div>
+                  </div>
+                  <!-- Plot Controller Action -->
+                  <script type="text/javascript">
+                     var plotCount = 0;
+                     
+                     var addPlotWindow = function(){
+                         plotCount += 1;
+                     
+                         var rawText = $("#plot_base").html();
+                         rawText = rawText.replace(/__0/g, "__" + plotCount);
+                     
+                         var plotText = rawText.substring(0,rawText.indexOf("<!-- start plot -->"));
+                     
+                         plotText += '<div class="col-md-9" id="plot_space"></div>';
+                     
+                         plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
+                     
+                         $("#plot_area").append(plotText);
+                         console.log(plotText);
+                     }
+                     
+                     
+                     $("#addPlotWindow-btn").click( function(){
+                         addPlotWindow();
+                     });
+                     
+                  </script>
+               </div>
+            </div>
+         </div>
+      </div>
+      {% endif %}
+      {%- if not sens_flag %}
+   </div>
+   {%- endif %}
+   <!--                         The Inputs Panel                            -->
+   {% if not sens_flag %}
+   <div role="tabpanel" class="tab-pane active" id="inputs">
+      <div class="col-xs-9" id='inputs_single'>
+         <div class="panel-body">
+            <form method="post" class="form" id='global-inputs-form'>
+               <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                  {%- for group in group_list %}
+                  <div class="panel panel-default">
+                     <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                        <h3 class="panel-title">
+                           <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                           {{group}} Inputs
+                           </a>
+                        </h3>
+                     </div>
+                     {%- if group == 'Global' %}
+                     <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
+                        {%- else %}
+                        <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                           {%- endif %}
+                           <div class="panel-body"
+                              align="center" id='global-inputs-panel'>
+                              {{ inputs.hidden_tag() }}
+                              {{ wtf.form_errors(inputs, hiddens='only') }}
+                              <table class="table table-hover" align="left">
+                                 <col width="55%">
+                                 <col width="45%">
+                                 <tr>
+                                    <th>Parameter</th>
+                                    <th>Value</th>
+                                 </tr>
+                                 {%- for field in inputs %}
+                                 {%- if field.name not in ('csrf_token', 'submit') %}
+                                 {%- if group_dic[field.name] == group %}
+                                 <tr>
+                                    <td>{{field.description}} ({{field.name}})</td>
+                                    <td>
+                                       <div id='trigger-{{field.name|safe}}'>
+                                          {{field(class="form-control")|safe}}
+                                       </div>
+                                    </td>
+                                 </tr>
+                                 {%- endif %}
+                                 {%- endif %}
+                                 {%- endfor %}
+                              </table>
+                           </div>
                         </div>
-                    </div>
-                </div>
-                {% endif %}
-                {% endif %}
-
-
-
-                {% if sub_comp_data %}
-
-                {% for field, inout in sub_comp_data.iteritems() %}
-                <div class="panel-body hidden col-xs-9 comp-panels not_lcoe panel-{{field}}">
-    <!-- ############## The Component Input panel ############################## -->
-                    <div class="panel panel-default">
-                        <div class="panel-heading" style="background-color:#D8D8D8">
-                            <h3 class="panel-title">{{field}}</h3>
-                        </div>
-                        <div class="panel-heading" style="background-color:#D8D8D8">Inputs & Outputs</div>
-                        <div class="panel-body", align="center">
-                            <table class="table"
-                                   id="{{field}}-table"
-                                   data-toggle="{{field}}-table"
-                                   data-sort-name="iotype"
-                                   data-show-columns="true"
-                                   data-search="true"
-                                   data-show-refresh="true"
-                                   data-show-toggle="true"
-                                   data-show-export="true"
-                                   data-detail-view="true">
-                                <thead>
-                                <tr>
-                                    <th data-field="name">Name</th>
-                                    <th data-field="desc">Description</th>
-                                    <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
-                                    <th data-field="units">Units</th>
-                                    <th data-field="iotype">I/O Type</th>
-                                </tr>
-                                </thead>
-                            </table>
-                        </div>
-                    </div>
-                    <script>
-                        window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
-                        $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
-                                                              height: getHeight(),
-                                                              onExpandRow: function (index, row, $detail) {
-                                                                  expandTable($detail, row);
-                                                              }
-                                                             });
-                        function validateOutputs(value, row) {
-                            if (row.type == 'Array') {
-                                return 'Array data';
-                            }
-                            else if (row.type == 'VarTree') {
-                                return 'Variable Collection';
-                            }
-                            else {
-                                return row.state;
-                            }
-                        }
+                     </div>
+                     {%- endfor %}
+                     <script>
                         function getHeight() {
                             var h_nav = document.getElementById('navigation-bar').offsetHeight;
                             var h_btn = document.getElementById('button-panel').offsetHeight;
-                            return $(window).height() - h_nav - h_btn - 50;
+                            var h_win = $(window).height() - h_nav - h_btn - 50;
+                            return String(h_win)+'px'
                         }
-                    </script>
-
-                    {% if inout.plot %}
-                    <div class="panel-body", align="center">
-                        {{ inout.plot.script|indent(4)|safe }}
-                        {{ inout.plot.div|indent(4)|safe }}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                {% endif %}
+                            console.log(getHeight())
+                            document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                            document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                     </script>
+                  </div>
+            </form>
             </div>
-        </div>
-        </div>
-
-    <!-- ################### ending dividers ################### -->
-    </div>
-</div>
+         </div>
+      </div>
+      {%- else %}
+      {%- if draw_sens_plot %}
+      <div class="col-xs-offset-3 col-xs-9" id='inputs_single'>
+         {%- else %}
+         <div class="col-xs-9" id='inputs_single'>
+            {%- endif %}
+            <div class="panel-body">
+               <form method="post" class="form" id='global-inputs-form'>
+                  <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
+                     <div class="panel panel-default">
+                        <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                           <h3 class="panel-title">
+                              <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
+                              Sensitivity Inputs
+                              </a>
+                           </h3>
+                        </div>
+                        {%- if not draw_sens_plot %}
+                        <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
+                           {%- else %}
+                           <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
+                              {%- endif %}
+                              <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
+                                 {{ inputs.hidden_tag() }}
+                                 {{ wtf.form_errors(inputs, hiddens='only') }}
+                                 <table class="table table-hover" align="left">
+                                    <tr>
+                                       <th>Parameter</th>
+                                       <th>Initial Value</th>
+                                    </tr>
+                                    <tr>
+                                       <td>Number of iterations in analysis (iteration_count)</td>
+                                       <td>
+                                          <div id='trigger-iteration_count'>
+                                             <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count">
+                                          </div>
+                                       </td>
+                                    </tr>
+                                 </table>
+                              </div>
+                           </div>
+                        </div>
+                        {%- for group in group_list %}
+                        <div class="panel panel-default">
+                           <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                              <h3 class="panel-title">
+                                 <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
+                                 {{group}} Inputs
+                                 </a>
+                              </h3>
+                           </div>
+                           {%- if group == 'Global' %}
+                           {% if not draw_sens_plot %}
+                           <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
+                              {%- else %}
+                              <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                                 {%- endif %}
+                                 {%- else %}
+                                 <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
+                                    {%- endif %}
+                                    <div class="panel-body"
+                                       align="center" id='global-inputs-panel'>
+                                       {{ inputs.hidden_tag() }}
+                                       {{ wtf.form_errors(inputs, hiddens='only') }}
+                                       <table class="table table-hover" align="left">
+                                          <tr>
+                                             <th>Parameter</th>
+                                             <th>Initial Value</th>
+                                             <th>Sensitivity Input</th>
+                                             <th>Sensitivity Low Value</th>
+                                             <th>Sensitivity High Value</th>
+                                          </tr>
+                                          {%- for field in inputs %}
+                                          {%- if ('select.' not in field.name) and ('low.' not in field.name) and ('high.' not in field_name) %}
+                                          {%- if field.name not in ('csrf_token', 'submit') and group_dic[field.name] == group %}
+                                          <tr>
+                                             <td>{{field.description}} ({{field.name}})</td>
+                                             <td>
+                                                <div id='trigger-{{field.name|safe}}'>
+                                                   {{field(class="form-control")|safe}}
+                                                </div>
+                                             </td>
+                                             <td>
+                                                {%- for select_field in inputs %}
+                                                {%- if ('select.'+field.name == select_field.name) %}
+                                                <div id='trigger-{{select_field.name|safe}}'>
+                                                   {{select_field(class="form-control")|safe}}
+                                                </div>
+                                                {%- endif %}
+                                                {%- endfor %}
+                                             </td>
+                                             <td>
+                                                {%- for low_field in inputs %}
+                                                {%- if ('low.'+field.name == low_field.name) %}
+                                                <div id='trigger-{{low_field.name|safe}}'>
+                                                   {{low_field(class="form-control")|safe}}
+                                                </div>
+                                                {%- endif %}
+                                                {%- endfor %}
+                                             </td>
+                                             <td>
+                                                {%- for high_field in inputs %}
+                                                {%- if ('high.'+field.name == high_field.name) %}
+                                                <div id='trigger-{{high_field.name|safe}}'>
+                                                   {{high_field(class="form-control")|safe}}
+                                                </div>
+                                                {%- endif %}
+                                                {%- endfor %}
+                                             </td>
+                                          </tr>
+                                          {%- endif %}
+                                          {%- endif %}
+                                          {%- endfor %}
+                                       </table>
+                                    </div>
+                                 </div>
+                              </div>
+                              {%- endfor %}
+                              <script>
+                                 function getHeight() {
+                                     var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                                     var h_btn = document.getElementById('button-panel').offsetHeight;
+                                     var h_win = $(window).height() - h_nav - h_btn - 50;
+                                     return String(h_win)+'px'
+                                 }
+                                     console.log(getHeight())
+                                     document.getElementById ( "global-inputs-panel" ).style.maxHeight = getHeight();
+                                     document.getElementById ( "global-inputs-panel" ).style.overflowY = "scroll";
+                              </script>
+                           </div>
+               </form>
+               </div>
+               </div>
+               {%- endif %}
+               <!-- ###################### The Outputs panel ########################### -->
+               {%if not sens_flag%}
+               {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+               <div role="tabpanel" class="tab-pane" id="results">
+               <div class="col-xs-9">
+               <div id="topLevel" class="panel panel-body  comp-panels panel-{{name}}">
+               <div class="panel panel-default">
+               <div class="panel-heading" style="background-color:#D8D8D8">
+               <h3 class="panel-title">Model Output Results and Current Input States</h3>
+               </div>
+               <div class="panel-body", align="center">
+               <table class="table col-xs-9"
+                  id="global-outputs-table"
+                  data-toggle="global-outputs-table"
+                  data-sort-name="iotype"
+                  data-show-columns="true"
+                  data-search="true"
+                  data-show-refresh="true"
+                  data-show-toggle="true"
+                  data-show-export="true"
+                  data-detail-view="true">
+               <thead>
+               <tr>
+               <th data-field="name">Name</th>
+               <th data-field="desc">Description</th>
+               <th data-field="state" data-formatter='validateOutputs'>Value</th>
+               <th data-field="units">Units</th>
+               <th data-field="iotype">I/O Type</th>
+               </tr>
+               </thead>
+               </table>
+               </div>
+               </div>
+               <script>
+                  window['global-outputs-data'] = {{ outputs | tojson | safe }};
+                  $('#global-outputs-table').bootstrapTable({data: window['global-outputs-data'],
+                                                             height: getHeight(),
+                                                             onExpandRow: function (index, row, $detail) {
+                                                             expandTable($detail, row);
+                                                             }
+                                                            });
+                  function validateOutputs(value, row) {
+                      if (row.type == 'Array') {
+                          return 'Array data';
+                      }
+                      else if (row.type == 'VarTree') {
+                          return 'Vartree data';
+                      }
+                      else if (row.type == 'Float'){
+                          return row.state.toPrecision(5);
+                      }
+                      else {
+                          return row.state;
+                      }
+                  }
+                  function getHeight() {
+                      var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                      var h_btn = document.getElementById('button-panel').offsetHeight;
+                      console.log(h_nav, h_btn)
+                      return $(window).height() - h_nav - h_btn - 50;
+                  }
+               </script>
+               </div>
+               </div>
+               </div>
+               {% endif %}
+               {% endif %}
+               {% if sub_comp_data %}
+               {% for field, inout in sub_comp_data.iteritems() %}
+               <div class="panel-body hidden col-xs-9 comp-panels not_lcoe panel-{{field}}">
+               <!-- ############## The Component Input panel ############################## -->
+               <div class="panel panel-default">
+               <div class="panel-heading" style="background-color:#D8D8D8">
+               <h3 class="panel-title">{{field}}</h3>
+               </div>
+               <div class="panel-heading" style="background-color:#D8D8D8">Inputs & Outputs</div>
+               <div class="panel-body", align="center">
+               <table class="table"
+                  id="{{field}}-table"
+                  data-toggle="{{field}}-table"
+                  data-sort-name="iotype"
+                  data-show-columns="true"
+                  data-search="true"
+                  data-show-refresh="true"
+                  data-show-toggle="true"
+                  data-show-export="true"
+                  data-detail-view="true">
+               <thead>
+               <tr>
+               <th data-field="name">Name</th>
+               <th data-field="desc">Description</th>
+               <th data-field="state" data-formatter='validateOutputs'>Current Value</th>
+               <th data-field="units">Units</th>
+               <th data-field="iotype">I/O Type</th>
+               </tr>
+               </thead>
+               </table>
+               </div>
+               </div>
+               <script>
+                  window['{{field}}-data'] = {{ inout['params'] | tojson | safe }};
+                  $('#{{field}}-table').bootstrapTable({data: window['{{field}}-data'],
+                                                        height: getHeight(),
+                                                        onExpandRow: function (index, row, $detail) {
+                                                            expandTable($detail, row);
+                                                        }
+                                                       });
+                  function validateOutputs(value, row) {
+                      if (row.type == 'Array') {
+                          return 'Array data';
+                      }
+                      else if (row.type == 'VarTree') {
+                          return 'Variable Collection';
+                      }
+                      else {
+                          return row.state;
+                      }
+                  }
+                  function getHeight() {
+                      var h_nav = document.getElementById('navigation-bar').offsetHeight;
+                      var h_btn = document.getElementById('button-panel').offsetHeight;
+                      return $(window).height() - h_nav - h_btn - 50;
+                  }
+               </script>
+               {% if inout.plot %}
+               <div class="panel-body", align="center">
+               {{ inout.plot.script|indent(4)|safe }}
+               {{ inout.plot.div|indent(4)|safe }}
+               </div>
+               {% endif %}
+               </div>
+               {% endfor %}
+               {% endif %}
+               </div>
+            </div>
+         </div>
+         <!-- ################### ending dividers ################### -->
+      </div>
+   </div>
 </div>
 {% endblock %}
-
