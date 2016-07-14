@@ -222,6 +222,21 @@ $('#fileupload').fileupload({
          });
      };
 
+    function compare_results() {
+       console.log('calling compare_results')
+       $.ajax({
+           url: 'analysis/compare_results',
+           type: 'POST',
+           success: function(response) {
+               console.log(response);
+               showalert(response, 'success');
+           },
+           error: function(error) {
+               console.log(error);
+           }
+       });
+    };
+
 // Submit forms ------------------
     submitForms = function(){
         document.forms["global-inputs-form"].submit();
@@ -337,19 +352,24 @@ $('#fileupload').fileupload({
                     <li role="presentation" class="active">
                       <a href="#inputs" 
                       role="tab" 
-                      onClick="document.getElementById('hideaway').style.display='none'; document.getElementById('hideaway2').style.display='none';" data-toggle="tab">Inputs</a></li>
+                      onClick="document.getElementById('hideaway').style.display='none'; document.getElementById('hideaway2').style.display='none';
+                      document.getElementById('hideaway3').style.display='none';" data-toggle="tab">Inputs</a></li>
                     <li role="presentation">
                       <a href="#results" role="tab" 
                       onClick="document.getElementById('hideaway').style.display='block';
-                      document.getElementById('hideaway2').style.display='none';" data-toggle="tab">Results</a></li>
+                      document.getElementById('hideaway2').style.display='none';
+                      document.getElementById('hideaway3').style.display='none';
+                      " data-toggle="tab">Results</a></li>
                     <li role="presentation">
                       <a href="#plots" role="tab" 
                       onClick="document.getElementById('hideaway').style.display='none';
-                      document.getElementById('hideaway2').style.display='block';" data-toggle="tab">Plots</a></li>
+                      document.getElementById('hideaway2').style.display='block';
+                      document.getElementById('hideaway3').style.display='none';" data-toggle="tab">Plots</a></li>
                     <li role="presentation">
                       <a href="#compare" role="tab" 
                       onClick="document.getElementById('hideaway').style.display='none';
-                      document.getElementById('hideaway2').style.display='none';" data-toggle="tab">Compare Results</a></li>
+                      document.getElementById('hideaway2').style.display='none';
+                      document.getElementById('hideaway3').style.display='block';" data-toggle="tab">Compare Results</a></li>
                     
                 </ul>
             </div>
@@ -435,6 +455,18 @@ $('#fileupload').fileupload({
                     </div>
                   </div>
                 </div>
+
+                <div class="panel-body" id="hideaway3">
+                  <div class="panel panel-default">
+                    <div class="panel-heading" style="background-color:#D8D8D8">
+                      <h3 class="panel-title"> Instructions </h3> 
+                    </div>
+                    <div class="panel-body">
+
+                    <p> Record the cases you want to compare by selecting "Record Case" under the Save dropdown menu.</p> 
+                    </div>
+                  </div>
+                </div>
               
 
 
@@ -470,9 +502,9 @@ $('#fileupload').fileupload({
                             <div id="plot_area" class="panel-body", align="center">
                               <div id="plot_base">
                                 <div class="row" id="plot_row">
-                                  <div class="col-md-4">
+                                  <div class="col-md-3">
                                     <div class="row">
-                                      <div class="col-md-8 col-md-offset-2">
+                                      <div class="col-md-9 col-md-offset-2">
                                         <form id="plot_controller__1">
 
                                           <div class="form-group">
@@ -504,7 +536,7 @@ $('#fileupload').fileupload({
                                     </div>
                                   </div>
                                       <!-- start plot -->
-                                            <div class="col-md-8" id="plot_space">
+                                            <div class="col-md-9" id="plot_space">
                                             
                                                 {{ plot_script_comp|indent(4)|safe }}
                                                 {{ plot_div_comp|indent(4)|safe }}
@@ -513,8 +545,10 @@ $('#fileupload').fileupload({
                                                 <!-- end plot -->
 
                                             <script type="text/javascript">
+
                                                 $("form#plot_controller__1").submit( function(event) {
                                                     event.preventDefault();
+                                                    compare_results();
                                                     var topDOM = $(this).closest("div#plot_row");
                                                     var summaryDOM = topDOM.find("div#plot_summary");
                                                     var plotDOM = topDOM.find("div#plot_space");
@@ -522,7 +556,7 @@ $('#fileupload').fileupload({
                                                     var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
                                                     $.post( "/compare_results", { inVar: inVar, outVar: outVar} , function(data){
                                                         plotDOM.html( data.script + data.div );
-                                    
+                                      
                                                     });
                                                 });
                                             </script>
@@ -532,17 +566,8 @@ $('#fileupload').fileupload({
                           </div>
                         </div>
                   </div>
-                </div>
-
-                       
-
-
-                
+                </div>                
                 {%- endif %}
-                
-
-
-
 
                 {%- if not sens_flag %}
                 <div role="tabpanel" class="tab-pane" id="plots">
@@ -605,9 +630,9 @@ $('#fileupload').fileupload({
                                 <div id="plot_area" class="panel-body", align="center">
                                     <div id="plot_base">
                                         <div class="row" id="plot_row">
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="row">
-                                                    <div class="col-md-8 col-md-offset-2">
+                                                    <div class="col-md-9 col-md-offset-2">
                                                         <form id="plot_controller__0">
 
                                                             <div class="form-group">
@@ -663,7 +688,7 @@ $('#fileupload').fileupload({
                                                 </div>
                                             </div>
                                                 <!-- start plot -->
-                                            <div class="col-md-8" id="plot_space">
+                                            <div class="col-md-9" id="plot_space">
                                                 {{ plot_script|indent(4)|safe }}
                                                 {{ plot_div|indent(4)|safe }}
                                             </div>
@@ -705,7 +730,7 @@ $('#fileupload').fileupload({
 
                                         var plotText = rawText.substring(0,rawText.indexOf("<!-- start plot -->"));
 
-                                        plotText += '<div class="col-md-8" id="plot_space"></div>';
+                                        plotText += '<div class="col-md-9" id="plot_space"></div>';
 
                                         plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
 
@@ -729,22 +754,9 @@ $('#fileupload').fileupload({
                 </div>
                 {%- endif %}
 
-                
+<!--                         The Inputs Panel                            -->
                  
                 {% if not sens_flag %}
-                <div role="tabpanel" class="tab-pane" id="compare">
-                  <div class="col-xs-9">
-
-                  <!-- Insert Waterfall Comparison Plots here -->
-
-
-
-
-
-                  </div>
-                </div>
-
-<!-- ########################## The Inputs panel ###    ######################## -->
 
                 <div role="tabpanel" class="tab-pane active" id="inputs">
 

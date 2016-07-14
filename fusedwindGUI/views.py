@@ -24,6 +24,8 @@ from utils import *
 import json
 import yaml
 
+import types
+
 from fusedwindGUI import app 
 
 ######### Function Definitions ###################################################################
@@ -518,12 +520,30 @@ def webgui(app=None):
             num_cases = int(cpnt.gui_recorder['counter']) 
             for i in range(num_cases):
                 caseNum = i + 1
-                input_vals.append(finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], inputName) )
-                output_vals.append(finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], outputName) )
+                current_input = finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], inputName)
+                current_output = finditem(cpnt.gui_recorder['recorder']['case%i' %caseNum], outputName)
+                
+                # # No longer needed 
+                # if not isinstance(current_input, NumberTypes):
+                #     print '\n *** Input is not valid to plot \n'
+                #     return 'Select a different Input'
+                # if not isinstance(current_output, NumberTypes):
+
+                #     print '\n *** Output is not valid to plot \n'
+                #     return 'Select a different Output'
+
+                input_vals.append( current_input )
+                output_vals.append( current_output )
+
             global myUnits
         
             xArray = np.array(input_vals)
             yArray = np.array(output_vals)
+            for i in range(len(xArray)):
+                xArray[i] = prettyNum(xArray[i])
+            for val in yArray:
+                yArray[i] = prettyNum(yArray[i])  
+            print xArray, yArray
             xUnit = myUnits[inputName]
             yUnit = myUnits[outputName]
 
@@ -540,6 +560,7 @@ def webgui(app=None):
                 (outputName+ (" (%s)"%yUnit if yUnit!="" else ""), yArray),
                 units=(xUnit, yUnit) )
         f = {"script":script, "div":div}
+
         return jsonify(**f)
     compare_results.__name__ = 'analysis_compare_results'
     app.route('/analysis/compare_results', methods=['GET', 'POST'])(compare_results)
@@ -652,18 +673,21 @@ def webgui(app=None):
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
 
-                        inputs_names_form = [myInputs[:][i]['name'] for i in range(len(myInputs))]
-                        outputs_names_form = [myOutputs[:][i]['name'] for i in range(len(myOutputs))]
+                        # saving the elements that will appear in the form under the compare results tab
+                        inputs_names_form = [myInputs[:][i]['name'] for i in range(len(myInputs)) if isinstance(myInputs[i]['state'], NumberTypes)]
+                        outputs_names_form = [myOutputs[:][i]['name'] for i in range(len(myOutputs)) if isinstance(myOutputs[i]['state'], NumberTypes) ]
                      
+                        # recording units for i/o variables for plotting purposes later
                         global myUnits
                         for el in myInputs[:]:
                             if el['name'] not in myUnits.keys() and 'units' in el.keys():
-
                                 myUnits[el['name']] = el['units']
                         for el in myOutputs[:]:
                             if el['name'] not in myUnits.keys() and 'units' in el.keys():
                                 myUnits[el['name']] = el['units']
                         
+                        # capitalize and change underscore to spaces for display purposes. Should not affect variables themselves for any other purposes
+                        # such as saving or plotting
                         makePretty(myInputs)
                         makePretty(myOutputs)
 
@@ -684,8 +708,12 @@ def webgui(app=None):
                             print "Failed to prepare any plots for " + cpnt.__class__.__name__
                             flash("Analysis ran; failed to prepare any plots for " + cpnt.__class__.__name__)
                             script, div, plot_resources, draw_plot = None, None, None, None
+                            script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
+                            script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
                     else:
                         script, div, plot_resources, draw_plot = None, None, None, None
+                        script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
+                        script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
 
                     return render_template('webgui.html', # basically rerenter webgui.html with results or no results dependingon success
                                 inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
@@ -903,13 +931,14 @@ def GetSensPlot():
 # Bokeh stuff after run
 try:
     from bokeh.embed import components
-    from bokeh.plotting import figure
+    from bokeh.plotting import *
     from bokeh.charts import  Line
     from bokeh.resources import INLINE #inline configures to provide entire BokehJS code and CSS inline
     from bokeh.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
     from bokeh._legacy_charts import Donut, output_file, show 
     from bokeh.palettes import Spectral9
+    from bokeh.models import HoverTool
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
@@ -1006,7 +1035,8 @@ if use_bokeh:
         import itertools
         fig = figure( title="Compare Results",
                     x_axis_label = args[0][0],
-                    y_axis_label = args[1][0])
+                    y_axis_label = args[1][0], 
+                    tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
 
         # Set colors to bokeh palette (Can change palettes in import statement above)
         # http://bokeh.pydata.org/en/0.10.0/docs/gallery/palettes.html
@@ -1014,12 +1044,38 @@ if use_bokeh:
         # plot data
         def mscatter(p,x,y,typestr="circle"):
             p.scatter(x,y,marker=typestr, line_color="#000000", fill_color=palette.next(), fill_alpha=0.8, size=12)
+        def mtext(p, x, y, textstr):
+            p.text(x, y, text=[textstr],
+            text_color="#449944", text_align="center", text_font_size="10pt")
 
         # use for loop to iterate through palette
         numDataPoints = len(args[0][1])
         for i in range(numDataPoints):
-            mscatter(fig, args[0][1][i], args[1][1][i])
+            x, y = args[0][1][i], args[1][1][i]
+            mscatter(fig, x, y)
+
+        # implement hovertool -- Can hover over data points to extract x,y details
+        fig.select(dict(type=HoverTool)).tooltips = {"%s" %args[0][0]:"$x", "%s" %args[1][0]:"$y"}
+        
         return fig
+
+        # source = ColumnDataSource(
+        #     data=dict(
+        #         x=args[0][1],
+        #         y=args[1][1],
+        #         label=["%s X %s" % (x_, y_) for x_, y_ in zip(x, y)]
+        #     )
+        # )
+        # print source
+        # fig.circle('x', 'y', color="#2222aa", line_width=2, source=source)
+
+        # hover =fig.select(dict(type=HoverTool))
+        # hover.tooltips = OrderedDict([
+        #     ("index", "$index"),
+        #     ("(xx,yy)", "(@x, @y)"),
+        #     ("label", "@label"),
+        # ])
+        # return fig
 
 
 
@@ -1034,4 +1090,4 @@ sensitivityResults = {"empty":True}
 myUnits = {"empty":True}
 debug = True # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
 debug = False
-
+NumberTypes = (types.IntType, types.LongType, types.FloatType, types.ComplexType)
