@@ -27,9 +27,22 @@
 
 {% block content %}
 
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
+
+<!-- Google Font: Open Sans -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,800,800italic">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Oswald:400,300,700">
+
+<!-- Font Awesome CSS -->
+<link rel="stylesheet" href="../bower_components/fontawesome/css/font-awesome.min.css">
+
 <!-- HEADER --> 
 <!-- used the bootswatch cerulean theme.--> 
-<link rel="stylesheet" href="static/css/bootstrap.min.css" type="text/css" />
+<link href="../bower_components/animate.css/animate.min.css" rel="stylesheet">
+<link rel="stylesheet" href="static/css/mvpready-landing.css">
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
 
 
@@ -42,7 +55,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
+      <a class="navbar-brand" style="margin-top:10px;" href="#">FUSED-Wind GUI</a>
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -61,7 +74,7 @@
 </nav>
 
 <div class="container banner about">
-    <div class="page-header">
+    <div class="page-header" style="margin-top:20px;">
         <div class="row">
           <div class="container">
                 <h1 style="color:#FFFFFF">FUSED-Wind</h1>
@@ -71,7 +84,7 @@
         </div>
         <div class="row">
         <div class="container">
-          <div class="content" style="color:#FFFFFF">
+          <div style="color:#FFFFFF">
                 <p> </p>
                 <p>Welcome to the DTU Wind Energy / NREL joint project on wind energy systems cost modeling!</p>  
                 
@@ -83,7 +96,7 @@
                 </p>
                 <p> </p>
 
-                <h4><b>Project Details</b></h4>
+                <h4 style="color:#FFFFFF;"><b>Project Details</b></h4>
                 <p>
                 The models here have been developed as part of the larger <a href="http://fusedwind.org">FUSED-Wind</a> collaboration.  
                 The FUSED-Wind framework is built on NASA's Open Multidiscilpinary Design Analysis and Optimization (<a href="http://openmdao.org">OpenMDAO</a>) platform.

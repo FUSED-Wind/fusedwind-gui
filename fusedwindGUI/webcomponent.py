@@ -181,3 +181,8 @@ class RESTComponent(Component):
         outputs = post(self.url, data=inputs).json()
         for o in self.get_io()['outputs'].keys():
             setattr(self, o, outputs[o])
+
+
+
+
+

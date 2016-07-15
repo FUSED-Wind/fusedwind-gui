@@ -1,33 +1,36 @@
 # -*- coding: utf-8 -*-
-from openmdao.main.vartree import VariableTree  
-from openmdao.main.api import set_as_top, Assembly 
-from openmdao.lib.drivers.api import DOEdriver 
-from openmdao.lib.doegenerators.api import Uniform  
+
+from openmdao.main.vartree import VariableTree
+from openmdao.main.api import set_as_top, Assembly
+from openmdao.lib.drivers.api import DOEdriver
+from openmdao.lib.doegenerators.api import Uniform
 
 import os
 import sys
 import platform
 
-from flask import flash, make_response  
-from flask import request, jsonify, redirect, render_template 
-from flask_wtf import Form 
+from flask import flash, make_response
+from flask import request, jsonify, redirect, render_template
+from flask_wtf import Form
 
-from wtforms import SelectField 
+from wtforms import SelectField
 
 import numpy as np
 import datetime as dt
 
 from webcomponent import *
+from utils import *
+
+from collections import OrderedDict
 
 import json
 import yaml
 
-from fusedwindGUI import app 
-debug = True # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
-debug = False
+import types
 
+from fusedwindGUI import app
 
-## Handling Forms -------------------------------------------------------------
+# Handling Forms -------------------------------------------------------------
 def unitfield(units, name):
     """A simple widget generating function. The nested function is necessary in order
     to have a different function name for each widget. This whole code should
@@ -38,24 +41,28 @@ def unitfield(units, name):
         field_id = kwargs.pop('id', field.id)
         html = []
         html.append(u'<div class="input-group">')
-        html.append(u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' % (field.name, field.name, field.data))
-        html.append(u'<span class="input-group-addon">%s</span>'%(units))
+        html.append(
+            u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' %
+            (field.name, field.name, field.data))
+        html.append(u'<span class="input-group-addon">%s</span>' % (units))
         html.append(u'</div>')
 
         return u''.join(html)
     myfield.__name__ = name
     return myfield
 
-def make_field(k,v):
+
+def make_field(k, v):
     """Create the widget of the field, adds the units when necessary
     """
     field = type_fields[v['type']]
     if 'units' in v:
         class MyField(field):
             widget = unitfield(v['units'], k)
-        MyField.__name__ = 'Field'+k
+        MyField.__name__ = 'Field' + k
         return MyField(k, **prep_field(v))
     return field(k, **prep_field(v))
+
 
 def WebGUIForm(dic, run=False, sens_flag=False):
     """Automagically generate the form from a FUSED I/O dictionary.
@@ -71,12 +78,11 @@ def WebGUIForm(dic, run=False, sens_flag=False):
         pass
 
     # sorting the keys alphabetically
-    skeys = dic.keys()
-    skeys.sort()
+    skeys = sorted(dic.keys())
 
     for k in skeys:
         v = dic[k]
-        setattr(MyForm, k, make_field(k,v))
+        setattr(MyForm, k, make_field(k, v))
 
     if sens_flag:
         for k in skeys:
@@ -87,14 +93,19 @@ def WebGUIForm(dic, run=False, sens_flag=False):
                 v['group'] = 'Other'
             if v['type'] == 'Float':
                 kselect = "select." + k
-                newdic = {'default':False, 'state':False, 'desc':kselect, 'type':'Bool', 'group':v['group']}
-                setattr(MyForm, kselect, make_field(kselect,newdic))
+                newdic = {
+                    'default': False,
+                    'state': False,
+                    'desc': kselect,
+                    'type': 'Bool',
+                    'group': v['group']}
+                setattr(MyForm, kselect, make_field(kselect, newdic))
                 klow = "low." + k
                 setattr(MyForm, klow, make_field(klow, v))
                 khigh = "high." + k
                 setattr(MyForm, khigh, make_field(khigh, v))
 
-    if run: # Add the run button
+    if run:  # Add the run button
         setattr(MyForm, 'submit', SubmitField("Run"))
 
     return MyForm
@@ -103,32 +114,35 @@ def WebGUIForm(dic, run=False, sens_flag=False):
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     for name in cpnt.list_components():
         comp = getattr(cpnt, name)
-        #if debug:
-        #    print '  bld_hierarchy: {:} : {:}'.format(name, comp) #gns
 
         cname = comp.__class__.__name__
-        if cname <> 'Driver':
+        if cname != 'Driver':
             sub_comp_data[cname] = {}
 
             asym_structure.append({
-                'text':cname,
-                'href':'#collapse-%s'%(cname)})
+                'text': cname,
+                'href': '#collapse-%s' % (cname)})
 
             tmp = get_io_dict(comp)
             sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
-            # no plots for now since bootstrap-table and bokeh seem to be in conflict
+            # no plots for now since bootstrap-table and bokeh seem to be in
+            # conflict
             if hasattr(comp, "plot"):
                 c_script, c_div = prepare_plot(comp.plot)
-                sub_comp_data[cname]['plot'] = {'script': c_script, 'div': c_div}
+                sub_comp_data[cname]['plot'] = {
+                    'script': c_script, 'div': c_div}
 
             if isinstance(comp, Assembly):
 
-                sub_comp_data, sub_structure = build_hierarchy(comp, sub_comp_data, [], name)
+                sub_comp_data, sub_structure = build_hierarchy(
+                    comp, sub_comp_data, [], name)
                 asym_structure[-1]['nodes'] = sub_structure
 
     return sub_comp_data, asym_structure
 
-## Handling file upload -------------------------------------------------------
+# Handling file upload -------------------------------------------------------
+
+
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
     using a yaml library, and return its content as a python object.
@@ -144,11 +158,13 @@ def _handleUpload(files):
 
         with open(os.path.join(tmpdir, upload_file.filename), 'r') as f:
             try:
-                inputs = yaml.load(f) # yaml.load returns a python object 
+                inputs = yaml.load(f)  # yaml.load returns a python object
             except:
                 inputs = None
-                print('File {:} not a valid YAML file!'.format(upload_file.filename)) # prints to terminal
-                flash('File {:} not a valid YAML file!'.format(upload_file.filename)) # flask-flash flashes to user
+                print('File {:} not a valid YAML file!'.format(
+                    upload_file.filename))  # prints to terminal
+                flash('File {:} not a valid YAML file!'.format(
+                    upload_file.filename))  # flask-flash flashes to user
                 return None
 
         outfiles.append({
@@ -156,39 +172,45 @@ def _handleUpload(files):
             'content': inputs
         })
 
-    return outfiles # list of dictionary 
+    return outfiles  # list of dictionary
 
 
-## Views -----------------------------------------------------------------------
-@app.route('/') # default page 
+# Views -----------------------------------------------------------------------
+@app.route('/')  # default page
 def hello():
     """ Welcoming page
     """
     provider = str(os.environ.get('PROVIDER', 'world'))
-    return render_template('index.html', form={'hello':'world'})
+    return render_template('index.html', form={'hello': 'world'})
 
-@app.route('/about.html') 
+
+@app.route('/about.html')
 def hello2():
-    """ Welcoming page
+    """ About Page
     """
     provider = str(os.environ.get('PROVIDER', 'world'))
-    return render_template('about.html', form={'hello':'world'})
+    return render_template('about.html', form={'hello': 'world'})
+
+
 @app.route('/documentation.html')
 def hello3():
-    return render_template('documentation.html', form={'hello':'world'})
+    """ Documentation
+    """
+    return render_template('documentation.html', form={'hello': 'world'})
 
-@app.route('/upload/', methods=['POST']) # when uplaod
+
+@app.route('/upload/', methods=['POST'])  # when uplaod
 def upload():
     """Take care of the reception of the file upload. Return a json file
     to be consumed by a jQuery function
     """
     try:
         files = request.files
-        uploaded_files = _handleUpload(files) # returned as a python object 
+        uploaded_files = _handleUpload(files)  # returned as a python object
         if uploaded_files is None:
             raise ValueError
             return jsonify({'status': 'error'})
-        response =  jsonify({'files': uploaded_files})
+        response = jsonify({'files': uploaded_files})
         # fix for legacy browsers
         response.headers['Content-Type'] = 'text/plain'
         return response
@@ -201,21 +223,29 @@ def traits2json(cpnt):
     """Get the traits information about the component and return a json dictionary"""
 
     # I/O are separated in two lists with a dict for each variable
-    out = {'inputs':[], 'outputs':[]}
+    out = {'inputs': [], 'outputs': []}
     for ty, se in zip(['inputs', 'outputs'],
-                    [set(cpnt.list_inputs()).difference(Assembly().list_inputs()),
-                     set(cpnt.list_outputs()).difference(Assembly().list_outputs())]):
+                      [set(cpnt.list_inputs()).difference(Assembly().list_inputs()),
+                       set(cpnt.list_outputs()).difference(Assembly().list_outputs())]):
         for s in se:
             t = cpnt.get_trait(s)
-            var = {'name':s}
+            var = {'name': s}
             var['type'] = t.trait_type.__class__.__name__
-            for d in ['iotype','desc', 'units', 'high', 'low','values', 'group']:
+            for d in [
+                'iotype',
+                'desc',
+                'units',
+                'high',
+                'low',
+                'values',
+                    'group']:
                 val = getattr(t, d)
-                if not val == None:
+                if not val is None:
                     var[d] = val
             var['state'] = getattr(cpnt, s)
             out[ty].append(var)
     return out
+
 
 def get_io_dict(cpnt):
     io = traits2json(cpnt)
@@ -228,32 +258,34 @@ def get_io_dict(cpnt):
 
 
 def serialize(thing):
-    if isinstance(thing, np.ndarray): # numpy ndarray 
-        return thing.tolist() # returns as list
+    if isinstance(thing, np.ndarray):  # numpy ndarray
+        return thing.tolist()  # returns as list
     elif isinstance(thing, np.float64):
-        return float(thing) # returns as float
+        return float(thing)  # returns as float
     elif isinstance(thing, Component):
-        return get_io_dict(thing) # returns dictionary of i/o
+        return get_io_dict(thing)  # returns dictionary of i/o
     elif isinstance(thing, VariableTree):
         out = {}
         for k in thing.list_vars():
-            out[k] = serialize(getattr(thing, k)) # returns dictionary after recursion
-        return out # 
+            # returns dictionary after recursion
+            out[k] = serialize(getattr(thing, k))
+        return out
     elif isinstance(thing, float):
-        return thing 
+        return thing
     elif isinstance(thing, int):
         return thing
     elif isinstance(thing, str):
         return thing
 
-    return '??_' +  str(thing.__class__)
+    return '??_' + str(thing.__class__)
+
 
 def to_unicode(dic):
-# returns dictionary 
     new = {}
     for k, v in dic.iteritems():
         new[k] = unicode(v)
     return new
+
 
 def webgui(app=None):
 
@@ -274,72 +306,96 @@ def webgui(app=None):
             pass
 
         models = [{'name': 'Model Selection',
-                   'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM', 'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
+                   'choices': ['Tier 1 Full Plant Analysis: WISDEM CSM',
+                               'Tier 2 Full Plant Analysis: WISDEM/DTU Plant']},
                   {'name': 'Analysis Type',
-                   'choices': ['Individual Analysis', 'Sensitivity Analysis']},
-                   {'name': 'Turbine Selection',
-                    'choices': ['NREL 5MW RWT',
-                                'DTU 10MW RWT']}]
+                   'choices': ['Individual Analysis',
+                               'Sensitivity Analysis']},
+                  {'name': 'Turbine Selection',
+                   'choices': ['NREL 5MW RWT',
+                               'DTU 10MW RWT']}]
 
         for dic in models:
             name = dic['name']
-            choices = [(val, val) for val in dic['choices']] # the tuple: 1st is value that will be submitted, 2nd is text that'll show to end user
-            setattr(ConfigForm, name, SelectField(name, choices=choices)) # adds fields. field = name, selectfield = choices
-            # for example, Field Model Selection has 2 options of Tier1 and Tier 2. 
+            # the tuple: 1st is value that will be submitted, 2nd is text
+            # that'll show to end user
+            choices = [(val, val) for val in dic['choices']]
+            # adds fields. field = name, selectfield = choices
+            setattr(ConfigForm, name, SelectField(name, choices=choices))
+            # for example, Field Model Selection has 2 options of Tier1 and
+            # Tier 2.
 
+        if request.method == 'POST':  # Receiving a POST request
 
-        if request.method == 'POST': # Receiving a POST request
-
-            inputs =  request.form.to_dict()
+            inputs = request.form.to_dict()
 
             winenv = ''
             if platform.system() == 'Windows':
-                winenv = os.getenv("SystemDrive").replace(":","")
+                winenv = os.getenv("SystemDrive").replace(":", "")
 
-            if inputs['Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
-                # 2015 09 28: move desc assignment AFTER import etc. so it doesn't get changed if import fails - GNS
+            if inputs[
+                    'Model Selection'] == 'Tier 1 Full Plant Analysis: WISDEM CSM':
+                # 2015 09 28: move desc assignment AFTER import etc. so it
+                # doesn't get changed if import fails - GNS
                 try:
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
                     cpnt = set_as_top(lcoe_csm_assembly())
+                    cpnt.gui_recorder = {}
+
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
-                        filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp') #TODO: fix abspath
+                        # TODO: fix abspath
+                        filename = winenv + \
+                            os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp')
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-                        filename = os.path.join(abspath, 'wt_models/dtu10mw_tier1.inp')
-                    f = open(filename, 'r') # returns a python object. 'r' means open text file for reading only. 
+                        filename = os.path.join(
+                            abspath, 'wt_models/dtu10mw_tier1.inp')
+                    # returns a python object. 'r' means open text file for
+                    # reading only.
+                    f = open(filename, 'r')
                     wt_inputs = to_unicode(yaml.load(f))
                 except:
                     print 'lcoe_csm_assembly could not be loaded!'
-                    return render_template('error.html',
-                                  errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(inputs['Model Selection']))
+                    return render_template(
+                        'error.html',
+                        errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(
+                            inputs['Model Selection']))
             else:
                 try:
                     from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
-                    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+                    lcoe_se = create_example_se_assembly(
+                        'I', 0., True, False, False, False, False, '')
                     cpnt = lcoe_se
+                    cpnt.gui_recorder = {}
+
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
-                        filename = winenv + os.path.join(abspath, 'wt_models', 'nrel5mw_tier2.inp') #TODO: fix abspath
+                        # TODO: fix abspath
+                        filename = winenv + \
+                            os.path.join(abspath, 'wt_models', 'nrel5mw_tier2.inp')
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-                        filename = os.path.join(abspath, 'wt_models/dtu10mw_tier2.inp')
+                        filename = os.path.join(
+                            abspath, 'wt_models/dtu10mw_tier2.inp')
                     f = open(filename, 'r')
                     wt_inputs = to_unicode(yaml.load(f))
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
-                    return render_template('error.html',
-                                   errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(inputs['Model Selection']))
+                    return render_template(
+                        'error.html',
+                        errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(
+                            inputs['Model Selection']))
 
             analysis = inputs['Analysis Type']
             fused_webapp(True)
 
             return render_template('configure.html',
-                            config=ConfigForm(MultiDict()),
-                            config_flag = True)
+                                   config=ConfigForm(MultiDict()),
+                                   config_flag=True)
 
         else:
             return render_template('configure.html',
-                config=ConfigForm(MultiDict()),
-                config_flag = False)
+                                   config=ConfigForm(MultiDict()),
+                                   config_flag=False)
 
     configure.__name__ = 'configure'
     app.route('/configure.html', methods=['Get', 'Post'])(configure)
@@ -347,16 +403,19 @@ def webgui(app=None):
     #---------------
 
     def download():
+        """ This downloads into a file called fused_inputs.yaml the inputs """
         out = get_io_dict(cpnt)
         params = {}
         for param in out['inputs']:
             params[param['name']] = param['state']
         r = yaml.dump(params, default_flow_style=False)
 
-        response = make_response(r) 
-        response.headers["Content-Disposition"] = "attachment; filename=fused_inputs.yaml"
+        response = make_response(r)
+        response.headers[
+            "Content-Disposition"] = "attachment; filename=fused_inputs.yaml"
         return response
-        # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
+        # return Response(r, content_type='text/yaml; charset=utf-8',
+        # filename='books.csv')
 
     download.__name__ = 'analysis_download'
     app.route('/analysis/download', methods=['GET'])(download)
@@ -364,10 +423,10 @@ def webgui(app=None):
     #---------------
 
     def download_full():
-
+        """ This downloads inputs and outputs to a file called fused_model.yaml """
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
-            flash('No case downloaded - NO gui_recorder in component!')
+            # flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
 
         if len(cpnt.gui_recorder.keys()) == 0:
@@ -376,9 +435,11 @@ def webgui(app=None):
 
         r = yaml.dump(cpnt.gui_recorder['recorder'], default_flow_style=False)
         response = make_response(r)
-        response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
+        response.headers[
+            "Content-Disposition"] = "attachment; filename=fused_model.yaml"
         return response
-        # return Response(r, content_type='text/yaml; charset=utf-8', filename='books.csv')
+        # return Response(r, content_type='text/yaml; charset=utf-8',
+        # filename='books.csv')
 
     download_full.__name__ = 'analysis_download_full'
     app.route('/analysis/download_full', methods=['GET'])(download_full)
@@ -388,60 +449,64 @@ def webgui(app=None):
     def download_sensitivity_results():
         global sensitivityResults
 
-        if not 'inputs' in sensitivityResults: 
-            msg =  "Could not find sensitivity results!"
+        if not 'inputs' in sensitivityResults:
+            msg = "Could not find sensitivity results!"
             print '\n***%s\n' % msg
             return '<h2>%s</h2>' % msg
 
-       
-        csvFile = "Results of sensitivity analysis, Created: %s\n" % str(dt.datetime.now())
+        csvFile = "Results of sensitivity analysis, Created: %s\n" % str(
+            dt.datetime.now())
 
         # Identify as input or output
         csvFile += "-"
-        for k,v in sensitivityResults['inputs'].iteritems():
+        for k, v in sensitivityResults['inputs'].iteritems():
             csvFile += ",input"
-        for k,v in sensitivityResults['outputs'].iteritems():
+        for k, v in sensitivityResults['outputs'].iteritems():
             csvFile += ",output"
         csvFile += "\n"
 
         # Print Units
         csvFile += "#"
-        for k,v in sensitivityResults['inputs'].iteritems():
+        for k, v in sensitivityResults['inputs'].iteritems():
             csvFile += ",%s" % v['units']
-        for k,v in sensitivityResults['outputs'].iteritems():
+        for k, v in sensitivityResults['outputs'].iteritems():
             csvFile += ",%s" % v['units']
         csvFile += "\n"
 
         # Print variable name
         csvFile += "Iteration Number"
-        for k,v in sensitivityResults['inputs'].iteritems():
+        for k, v in sensitivityResults['inputs'].iteritems():
             csvFile += ",%s" % k
-        for k,v in sensitivityResults['outputs'].iteritems():
+        for k, v in sensitivityResults['outputs'].iteritems():
             csvFile += ",%s" % k
         csvFile += "\n"
-        
+
         # Print Results
-        N = len( sensitivityResults['inputs'][ sensitivityResults['inputs'].keys()[0] ]['value'] )
-        N2 = len( sensitivityResults['outputs'][ sensitivityResults['outputs'].keys()[0] ]['value'] )
+        N = len(
+            sensitivityResults['inputs'][
+                sensitivityResults['inputs'].keys()[0]]['value'])
+        N2 = len(
+            sensitivityResults['outputs'][
+                sensitivityResults['outputs'].keys()[0]]['value'])
 
         for i in range(N):
-            csvFile += "%d" % (i+1)
-            for k,v in sensitivityResults['inputs'].iteritems():
+            csvFile += "%d" % (i + 1)
+            for k, v in sensitivityResults['inputs'].iteritems():
                 try:
                     csvFile += ",%f" % v['value'][i]
                 except IndexError:
                     csvFile += ",NaN"
-            for k,v in sensitivityResults['outputs'].iteritems():
+            for k, v in sensitivityResults['outputs'].iteritems():
                 try:
                     csvFile += ",%f" % v['value'][i]
                 except IndexError:
                     csvFile += ",NaN"
             csvFile += "\n"
-        
 
         # Create/send response
         response = make_response(csvFile)
-        response.headers["Content-Disposition"] = "attachment; filename=Sensitivity_Results.csv"
+        response.headers[
+            "Content-Disposition"] = "attachment; filename=Sensitivity_Results.csv"
         response.headers['Content-Type'] = "text/csv"
 
         return response
@@ -449,7 +514,11 @@ def webgui(app=None):
     #---------------
 
     def record_case():
-
+        """
+        Saves inputs/outputs into dictionary defined in the component.
+        cpnt.gui_recorder['counter'] contains a counter for the number of cases recorded
+        cpnt.gui_recorder['recorder'] contains all the names, values, units.
+        """
         if 'gui_recorder' not in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             #flash('No case recorded - NO gui_recorder in component!')
@@ -474,21 +543,98 @@ def webgui(app=None):
             for param in cmp_data[cmp_name]['params']:
                 pname = param['name']
                 params[cmp_name][pname] = param['state']
-
         try:
-            cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
+            cpnt.gui_recorder['recorder']['case%i' %
+                                          cpnt.gui_recorder['counter']] = params
         except:
             cpnt.gui_recorder['recorder'] = {}
-            cpnt.gui_recorder['recorder']['case%i' % cpnt.gui_recorder['counter']] = params
-        flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
+            cpnt.gui_recorder['recorder']['case%i' %
+                                          cpnt.gui_recorder['counter']] = params
+        # flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
     record_case.__name__ = 'analysis_record_case'
     app.route('/analysis/record_case', methods=['POST'])(record_case)
 
+    #------------------
+    @app.route('/compare_results', methods=['POST'])
+    def compare_results():
+        """
+        Finds relevant input/output values and units to be plotted
+        """
+
+        if not 'gui_recorder' in vars(cpnt):
+            print '\n*** NO gui_recorder in component!\n'
+            return 'No case downloaded - NO gui_recorder in component!'
+        if len(cpnt.gui_recorder.keys()) == 0:
+            print '\n *** NO cases recorded!\n'
+            return 'No Cases Recorded'
+
+        inputName = request.form['inVar']
+        outputName = request.form['outVar']
+        global myUnits
+
+        try:  # find all the values/units of the variables of interest
+            input_vals, output_vals = [], []
+            num_cases = int(cpnt.gui_recorder['counter'])
+            for i in range(num_cases):
+                caseNum = i + 1
+                current_input = finditem(
+                    cpnt.gui_recorder['recorder'][
+                        'case%i' %
+                        caseNum], inputName)
+                current_output = finditem(
+                    cpnt.gui_recorder['recorder'][
+                        'case%i' %
+                        caseNum], outputName)
+
+                input_vals.append(current_input)
+                output_vals.append(current_output)
+            
+            xArray = np.array(input_vals)
+            yArray = np.array(output_vals)
+
+            # for i in range(len(xArray)):
+            #     try:
+            #         xArray[i] = prettyNum(xArray[i])
+            #     except ValueError:
+            #         xArray[i] = prettyNum(float(xArray[i]))
+            # for val in yArray:
+            #     try:
+            #         yArray[i] = prettyNum(yArray[i])
+            #     except ValueError:
+            #         yArray[i] = prettyNum(float(yArray[i]))
+            xUnit = myUnits[inputName]
+            yUnit = myUnits[outputName]
+
+
+        except KeyError:
+            script, div = prepare_plot(CompareResultsPlot, ("", []), ("", []))
+        else:
+            if (xUnit == "None" or xUnit is None):
+                xUnit = ""
+            if (yUnit == "None" or yUnit is None):
+                yUnit = ""
+
+            script, div = prepare_plot(CompareResultsPlot, (inputName + (" (%s)" %
+                                                                         xUnit if xUnit != "" else ""), xArray), (outputName + (" (%s)" %
+                                                                                                                                yUnit if yUnit != "" else ""), yArray), units=(xUnit, yUnit))
+        f = {"script": script, "div": div}
+
+        return jsonify(**f)
+    compare_results.__name__ = 'analysis_compare_results'
+    app.route(
+        '/analysis/compare_results',
+        methods=[
+            'GET',
+            'POST'])(compare_results)
+
     #---------------
 
     def clear_recorder():
+        """
+        Clears the recorder (cpnt.gui_recorder) dictionary
+        """
 
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
@@ -502,13 +648,22 @@ def webgui(app=None):
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
+    #     record_case()
+    #     r = cpnt.gui_recorder['recorder']
+
+    # r = yaml.dump(cpnt.gui_recorder['recorder'], default_flow_style=False)
+    # response = make_response(r)
+    # response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
+    # return response
+
     #---------------
 
-    def fused_webapp(config_flag=False): 
+    def fused_webapp(config_flag=False):
+        """ Runs the analysis page """
         if analysis == 'Individual Analysis':
-            sens_flag=False
+            sens_flag = False
         else:
-            sens_flag=True
+            sens_flag = True
         cpname = cpnt.__class__.__name__
         if cpnt is None:
             print '\n*** WARNING: component is None\n'
@@ -523,45 +678,48 @@ def webgui(app=None):
         # Create input groups
         group_list = ['Global']
         group_dic = {}
-        skeys = io['inputs'].keys()
-        skeys.sort()
+        skeys = sorted(io['inputs'].keys())
         for k in skeys:
             v = io['inputs'][k]
             if 'group' in v.keys():
                 if v['group'] not in group_list:
                     group_list.append(v['group'])
                 group_dic[k] = v['group']
-            else: group_dic[k] = 'Global'
+            else:
+                group_dic[k] = 'Global'
         group_list.sort()
         group_list.insert(0, group_list.pop(group_list.index('Global')))
 
         # Build assembly hierarchy
-        assembly_structure = [{'text':cpname,
-                               'nodes':[]}]
+        assembly_structure = [{'text': cpname,
+                               'nodes': []}]
         sub_comp_data = {}
         if isinstance(cpnt, Assembly):
             sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
         failed_run_flag = False
-        if (not config_flag) and request.method == 'POST': # if not called from webgui i guess???
+        if (not config_flag) and request.method == 'POST':
 
-            inputs =  request.form.to_dict() # gets the input values??? 
+            inputs = request.form.to_dict()
             io = traits2jsondict(cpnt)
 
-
-            if not sens_flag: # if this is not a sensitivity analysis: 
+            if not sens_flag:
                 try:
                     for k in inputs.keys():
-                        if k in io['inputs']: # Loading only the inputs allowed
-                                setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                        if k in io[
+                                'inputs']:  # Loading only the inputs allowed
+                            setattr(
+                                cpnt, k, json2type[
+                                    io['inputs'][k]['type']](
+                                    inputs[k]))
                 except:
                     print "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     failed_run_flag = True
                     failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     flash(failed_run_flag)
                 try:
-                    cpnt.run() #this is where the analysis actually occurs?
+                    cpnt.run()
 
                 except:
                     print "Analysis did not execute properly (sens_flag = False)"
@@ -569,9 +727,10 @@ def webgui(app=None):
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
 
                 sub_comp_data = {}
-                if isinstance(cpnt, Assembly): 
+                if isinstance(cpnt, Assembly):
 
-                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                    sub_comp_data, structure = build_hierarchy(
+                        cpnt, sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
                     # show both inputs and outputs in right side table
                     outputs = get_io_dict(cpnt)
@@ -579,99 +738,129 @@ def webgui(app=None):
                         print ' INPUTS ', outputs['inputs']
                         print 'OUTPUTS ', outputs['outputs']
                     if not failed_run_flag:
-
-                        # Start 
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
-                        def makePretty(myList):
-                            """ 
-                            This function takes in a list of dictionaries, where each dictionary represents an input/output
-                            It modifies variable names and descriptions to be more human readable. 
 
-                            * This mutative method may be a problem if trying to save a file then trying to reload the file.
-                            If needed, comment out from #start to #End and it should work.
+                        # saving the elements that will appear in the form
+                        # under the compare results tab
+                        inputs_names_form = [
+                            myInputs[:][i]['name'] for i in range(
+                                len(myInputs)) if isinstance(
+                                myInputs[i]['state'],
+                                NumberTypes)]
+                        outputs_names_form = [
+                            myOutputs[:][i]['name'] for i in range(
+                                len(myOutputs)) if isinstance(
+                                myOutputs[i]['state'],
+                                NumberTypes)]
 
-                            Alternatively, when importing you can just reverse these operations below. Make everything lower 
-                            case and replace white space with underscore. 
-                            """
-                            for myDict in myList:
-                                if 'name' in myDict.keys():
-                                    myDict['name'] = myDict['name'].replace("_"," ").title()
-                                if 'desc' in myDict.keys():
-                                    myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+                        # recording units for i/o variables for plotting
+                        # purposes later
+                        global myUnits
+                        for el in myInputs[:]:
+                            if el['name'] not in myUnits.keys(
+                            ) and 'units' in el.keys():
+                                myUnits[el['name']] = el['units']
+                            elif el['name'] not in myUnits.keys() and isinstance(el['state'], NumberTypes):
+                                myUnits[el['name']] = None 
+                                
+                        for el in myOutputs[:]:
+                            if el['name'] not in myUnits.keys(
+                            ) and 'units' in el.keys():
+                                myUnits[el['name']] = el['units']
+                            elif el['name'] not in myUnits.keys() and isinstance(el['state'], NumberTypes):
+                                myUnits[el['name']] = None
+
+                        # capitalize and change underscore to spaces for display purposes. Should not affect variables themselves for any other purposes
+                        # such as saving or plotting
                         makePretty(myInputs)
                         makePretty(myOutputs)
-                    
-                        # End
 
                         combIO = outputs['inputs'] + outputs['outputs']
-
                     else:
                         combIO = None
 
                     if not failed_run_flag:
-                #if isinstance(cpnt, Assembly) and not failed_run_flag: # if added - GNS 2015 09 28
-                    # no plots for now since bootstrap-table and bokeh seem to be in conflict
+                        # if isinstance(cpnt, Assembly) and not
+                        # failed_run_flag: # if added - GNS 2015 09 28
                         try:
-                            script, div = prepare_plot(cpnt.plot) # plotss the capital costs
+                            # plots the capital costs
+                            script, div = prepare_plot(cpnt.plot)
+                            script_lcoe, div_lcoe = prepare_plot(
+                                cpnt.lcoe_plot)  # plots Lcoe
+                            script_comp, div_comp = prepare_plot(
+                                CompareResultsPlot, ("", []), ("", []), ("", []))
+
                             draw_plot = True
                         except:
-                            # TODO: gracefully inform the user of why he doesnt see his plots
+                            # TODO: gracefully inform the user of why he doesnt
+                            # see his plots
                             print "Failed to prepare any plots for " + cpnt.__class__.__name__
-                            flash("Analysis ran; failed to prepare any plots for " + cpnt.__class__.__name__)
+                            flash(
+                                "Analysis ran; failed to prepare any plots for " +
+                                cpnt.__class__.__name__)
                             script, div, plot_resources, draw_plot = None, None, None, None
+                            script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
+                            script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
                     else:
                         script, div, plot_resources, draw_plot = None, None, None, None
-                    #print MultiDict(inputs)
-                   #  print "assembly structure"
-                    #print assembly_structure
-                    # print "sub com data"
-                    # print sub_comp_data
-                    # print group_list
-                    # print group_dic
-                    return render_template('webgui.html', # basically rerenter webgui.html with results or no results dependingon success
-                                inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
-                                outputs=combIO,
-                                name=cpname,
-                                plot_script=script, plot_div=div, draw_plot=draw_plot,
-                                sub_comp_data=sub_comp_data,
-                                assembly_structure=assembly_structure,
-                                group_list=group_list,
-                                group_dic=group_dic,
-                                desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+                        script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
+                        script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
 
-            else: # sens_flag == True
+                    return render_template('webgui.html',  # basically rerenter webgui.html with results or no results dependingon success
+                                           inputs=WebGUIForm(
+                                               io['inputs'], run=True, sens_flag=sens_flag)(
+                                               MultiDict(inputs)),
+                                           outputs=combIO,
+                                           name=cpname,
+                                           plot_script=script, plot_div=div, draw_plot=draw_plot,
+                                           plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
+                                           plot_inputVars=inputs_names_form, plot_outputVars=outputs_names_form,
+                                           plot_script_comp=script_comp, plot_div_comp=div_comp,
+                                           sub_comp_data=sub_comp_data,
+                                           assembly_structure=assembly_structure,
+                                           group_list=group_list,
+                                           group_dic=group_dic,
+                                           desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+
+            else:  # sens_flag == True
 
                 my_sa = Assembly()
-                my_sa.add('asym',cpnt)
+                my_sa.add('asym', cpnt)
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
-                my_sa.driver.DOEgenerator = Uniform( int(inputs['iteration_count']) )
+                my_sa.driver.DOEgenerator = Uniform(
+                    int(inputs['iteration_count']))
 
-                extra_inputs = {"sensitivity_iterations":int(inputs['iteration_count'])}
+                extra_inputs = {
+                    "sensitivity_iterations": int(
+                        inputs['iteration_count'])}
                 skipInputs = ['iteration_count']
 
                 for k in inputs.keys():
-                    if k in skipInputs :
-                        continue # moves onto next k value 
+                    if k in skipInputs:
+                        continue
                     try:
-                        if k in io['inputs']: #   io = traits2jsondict(cpnt)
-                            setattr(cpnt, k, json2type[io['inputs'][k]['type']](inputs[k]))
+                        if k in io['inputs']:  # io = traits2jsondict(cpnt)
+                            setattr(
+                                cpnt, k, json2type[
+                                    io['inputs'][k]['type']](
+                                    inputs[k]))
                     except:
                         print "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         failed_run_flag = True
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
-                        if 'select.' in k: # k is a key in the input keys dictionary 
-                            for kselect in inputs.keys(): 
-                                if 'select.'+kselect == k: 
-                                    for klow in inputs.keys(): 
-                                        if 'low.'+kselect == klow: 
+                        if 'select.' in k:
+                            for kselect in inputs.keys():
+                                if 'select.' + kselect == k:
+                                    for klow in inputs.keys():
+                                        if 'low.' + kselect == klow:
                                             for khigh in inputs.keys():
-                                                if 'high.'+kselect == khigh:
-                                                    my_sa.driver.add_parameter('asym.'+kselect, low=float(inputs[klow]), high=float(inputs[khigh]))
-
+                                                if 'high.' + kselect == khigh:
+                                                    my_sa.driver.add_parameter(
+                                                        'asym.' + kselect, low=float(inputs[klow]), high=float(inputs[khigh]))
 
                 for s in io['outputs']:
                     t = cpnt.get_trait(s)
@@ -684,7 +873,8 @@ def webgui(app=None):
                     print "Analysis did not execute properly (sens_flag = True)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
-                    #flash(failed_run_flag) # no need to flash a failed_run_flag
+                    # flash(failed_run_flag) # no need to flash a
+                    # failed_run_flag
                 else:
                     try:
                         my_sa.driver.case_inputs.asym.list_vars()
@@ -697,12 +887,12 @@ def webgui(app=None):
 
                     else:
                         draw_plot = True
-                        ## Make plotting of results available (Severin)
+                        # Make plotting of results available (Severin)
                         global sensitivityResults
 
                         sensitivityResults = {
-                            "inputs":{},
-                            "outputs":{}
+                            "inputs": {},
+                            "outputs": {}
                         }
 
                         inputVars = []
@@ -711,8 +901,8 @@ def webgui(app=None):
                         for val in my_sa.driver.case_inputs.asym.list_vars():
                             try:
                                 sensitivityResults['inputs'][val] = {
-                                    'value':my_sa.driver.case_inputs.asym.get(val),
-                                    'units':getattr(cpnt.get_trait(val), 'units' )}
+                                    'value': my_sa.driver.case_inputs.asym.get(val),
+                                    'units': getattr(cpnt.get_trait(val), 'units')}
                             except Exception:
                                 pass
                             else:
@@ -724,21 +914,21 @@ def webgui(app=None):
                             except Exception:
                                 pass
                             else:
-                                if( isinstance(tmp.pop(), np.float64)):
+                                if(isinstance(tmp.pop(), np.float64)):
                                     sensitivityResults['outputs'][val] = {
-                                    'value':tmp,
-                                    'units':getattr(cpnt.get_trait(val), 'units' )}
+                                        'value': tmp,
+                                        'units': getattr(cpnt.get_trait(val), 'units')}
                                     outputVars.append(val)
 
-
-                        script, div = prepare_plot( SensPlot1D, ("", []), ("", []), ("",[]))
+                        script, div = prepare_plot(
+                            SensPlot1D, ("", []), ("", []), ("", []))
                         plot_controls = True
-
 
                 io = traits2jsondict(cpnt)
                 sub_comp_data = {}
                 if isinstance(cpnt, Assembly):
-                    sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+                    sub_comp_data, structure = build_hierarchy(
+                        cpnt, sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
                     # show both inputs and outputs in right side table
                     outputs = get_io_dict(cpnt)
@@ -747,44 +937,62 @@ def webgui(app=None):
                     else:
                         combIO = None
 
-                ##script, div, plot_resources = None, None, None
+                return render_template(
+                    'webgui.html',
+                    inputs=WebGUIForm(
+                        io['inputs'],
+                        run=True,
+                        sens_flag=sens_flag)(
+                        MultiDict(inputs)),
+                    extra_inputs=extra_inputs,
+                    outputs=combIO,
+                    name=cpname,
+                    plot_script=script,
+                    plot_div=div,
+                    draw_sens_plot=draw_plot,
+                    plot_controls=plot_controls,
+                    plot_inputVars=inputVars,
+                    plot_outputVars=outputVars,
+                    sub_comp_data=sub_comp_data,
+                    assembly_structure=assembly_structure,
+                    group_list=group_list,
+                    group_dic=group_dic,
+                    desc=desc,
+                    failed_run_flag=failed_run_flag,
+                    sens_flag=sens_flag)
 
-                return render_template('webgui.html',
-                            inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(inputs)),
-                            extra_inputs=extra_inputs,
-                            outputs=combIO,
-                            name=cpname,
-                            plot_script=script, plot_div=div, draw_sens_plot=draw_plot, plot_controls=plot_controls,
-                            plot_inputVars=inputVars, plot_outputVars=outputVars,
-                            sub_comp_data=sub_comp_data,
-                            assembly_structure=assembly_structure,
-                            group_list=group_list,
-                            group_dic=group_dic,
-                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+        else:
 
-        else: # a 'GET' request?
-
-            extra_inputs={"sensitivity_iterations":1000}
+            extra_inputs = {"sensitivity_iterations": 1000}
             # Show the standard form
-            return render_template('webgui.html',
-                inputs=WebGUIForm(io['inputs'], run=True, sens_flag=sens_flag)(MultiDict(wt_inputs)),
+            return render_template(
+                'webgui.html',
+                inputs=WebGUIForm(
+                    io['inputs'],
+                    run=True,
+                    sens_flag=sens_flag)(
+                    MultiDict(wt_inputs)),
                 extra_inputs=extra_inputs,
-                outputs=None, name=cpname,
-                plot_script=None, plot_div=None, plot_resources=None,
+                outputs=None,
+                name=cpname,
+                plot_script=None,
+                plot_div=None,
+                plot_resources=None,
                 sub_comp_data=sub_comp_data,
                 assembly_structure=assembly_structure,
                 group_list=group_list,
                 group_dic=group_dic,
-                desc=desc, failed_run_flag = failed_run_flag, sens_flag=sens_flag)
+                desc=desc,
+                failed_run_flag=failed_run_flag,
+                sens_flag=sens_flag)
 
     fused_webapp.__name__ = 'analysis'
-    app.route('/'+ 'analysis', methods=['GET', 'POST'])(fused_webapp)
+    app.route('/' + 'analysis', methods=['GET', 'POST'])(fused_webapp)
 
 
-# Retrieve data from sesnsitiviey analysis for plotting
+# Retrieve data from sensitivity analysis for plotting
 @app.route('/RetrieveSensPlot', methods=['POST'])
 def GetSensPlot():
-
     global sensitivityResults
 
     inputName = request.form['inVar']
@@ -798,57 +1006,64 @@ def GetSensPlot():
         yUnit = sensitivityResults['outputs'][outputName]['units']
 
         if(colorName != "Mono"):
-            #deterine if input or output
-            if( colorName in sensitivityResults['outputs']):
-                colors = np.array(sensitivityResults['outputs'][colorName]['value'])
+            # deterine if input or output
+            if(colorName in sensitivityResults['outputs']):
+                colors = np.array(
+                    sensitivityResults['outputs'][colorName]['value'])
             else:
-                colors = np.array(sensitivityResults['inputs'][colorName]['value'])
+                colors = np.array(
+                    sensitivityResults['inputs'][colorName]['value'])
         else:
             colors = None
     except KeyError:
-        script, div = prepare_plot( SensPlot1D, ("",[]), ("",[]))
+        script, div = prepare_plot(SensPlot1D, ("", []), ("", []))
 
         summary = "<p>Error Retrieving Data</p>"
 
     else:
-        if (xUnit == "None" or xUnit==None):
+        if (xUnit == "None" or xUnit is None):
             xUnit = ""
-        if (yUnit == "None" or yUnit==None):
+        if (yUnit == "None" or yUnit is None):
             yUnit = ""
 
-        script, div = prepare_plot( SensPlot1D,
-            (inputName + (" (%s)"%xUnit if xUnit!="" else ""), xArray),
-            (outputName+ (" (%s)"%yUnit if yUnit!="" else ""), yArray),
-            colorAxis={"name": colorName, "values":colors},
-            units=(xUnit, yUnit) )
+        script, div = prepare_plot(SensPlot1D,
+                                   (inputName + (" (%s)" % xUnit if xUnit != "" else ""), xArray),
+                                   (outputName + (" (%s)" % yUnit if yUnit != "" else ""), yArray),
+                                   colorAxis={"name": colorName, "values": colors},
+                                   units=(xUnit, yUnit))
 
-        ## Produce summary report
+        # Produce summary report
         summary = "<p>\n"
-        summary += "\t<b>Input Variable: %s </b><br>\n" %inputName
-        summary += "\t  Range: %s %s - %s %s<br>\n" %( prettyNum(min(xArray)), xUnit, prettyNum(max(xArray)), xUnit )
+        summary += "\t<b>Input Variable: %s </b><br>\n" % inputName
+        summary += "\t  Range: %s %s - %s %s<br>\n" % (
+            prettyNum(min(xArray)), xUnit, prettyNum(max(xArray)), xUnit)
         summary += "<br>\n"
-        summary += "\t<b>Output Variable: %s </b><br>\n" %outputName
-        summary += "\t  Range: %s %s - %s %s<br>\n" %( prettyNum(min(yArray)), yUnit, prettyNum(max(yArray)), yUnit )
-        summary += "\t  Average: %s %s<br>\n" %( prettyNum(yArray.mean()), yUnit )
-        summary += "\t  Std Dev: %s %s<br>\n" %( prettyNum(yArray.std()), yUnit )
+        summary += "\t<b>Output Variable: %s </b><br>\n" % outputName
+        summary += "\t  Range: %s %s - %s %s<br>\n" % (
+            prettyNum(min(yArray)), yUnit, prettyNum(max(yArray)), yUnit)
+        summary += "\t  Average: %s %s<br>\n" % (
+            prettyNum(yArray.mean()), yUnit)
+        summary += "\t  Std Dev: %s %s<br>\n" % (
+            prettyNum(yArray.std()), yUnit)
         summary += "</p>"
 
-    f = {"script":script, "div":div, "summary":summary}
+    f = {"script": script, "div": div, "summary": summary}
 
     return jsonify(**f)
 
 
-################################### SCRIPT #######################################################
-
 # Bokeh stuff after run
 try:
     from bokeh.embed import components
-    from bokeh.plotting import figure
-    from bokeh.charts import  Line
-    from bokeh.resources import INLINE #inline configures to provide entire BokehJS code and CSS inline
+    from bokeh.plotting import *
+    from bokeh.charts import Line
+    # inline configures to provide entire BokehJS code and CSS inline
+    from bokeh.resources import INLINE
     from bokeh.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
-    from bokeh._legacy_charts import Donut, output_file, show 
+    from bokeh._legacy_charts import Donut, output_file, show
+    from bokeh.palettes import Spectral9
+    from bokeh.models import HoverTool
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
@@ -856,7 +1071,8 @@ except:
 
 
 if use_bokeh:
-    def prepare_plot(func, *args, **kwargs): # the func seems to be either sens1dplot or copnt.plot 
+    # the func seems to be either sens1dplot or copnt.plot
+    def prepare_plot(func, *args, **kwargs):
         fig = figure()
         fig = func(fig, *args, **kwargs)
         # Create a polynomial line graph
@@ -873,43 +1089,52 @@ if use_bokeh:
 
         # For more details see:
         #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
-        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embed.html#components  (as of 2015 09 28)
-        script, div = components(fig, INLINE) # components(plot_objs) returns HTML components to embed a Bokeh Plot. THe data for the plot is stored direclty in the returned HTML. 
-        return script, div 
-            # Function used to print pretty numbers
-    def prettyNum( num ):
+        # http://bokeh.pydata.org/en/latest/docs/user_guide/embed.html#components
+        # (as of 2015 09 28)
+        # components(plot_objs) returns HTML components to embed a Bokeh Plot.
+        # THe data for the plot is stored direclty in the returned HTML.
+        script, div = components(fig, INLINE)
+        return script, div
+        # Function used to print pretty numbers
+
+    def prettyNum(num):
         anum = abs(num)
-        if( anum > 1e4 or anum < 1e-2):
-            return "%.2e" % num 
-        elif( anum > 10.0 ):
-            return "%.2f" % num # this just means to print the 2 values after the decimal point for float
-        elif( anum < 1.0):
+        if(anum > 1e4 or anum < 1e-2):
+            return "%.2e" % num
+        elif(anum > 10.0):
+            # this just means to print the 2 values after the decimal point for
+            # float
+            return "%.2f" % num
+        elif(anum < 1.0):
             return "%.4f" % num
         else:
             return "%.3f" % num
 
     # Create 1D sensitivitey Bokeh plots
-    def SensPlot1D( fig, *args, **kwargs ):
+    def SensPlot1D(fig, *args, **kwargs):
 
-        fig = figure( title="Sensitivity Results",
-                    x_axis_label = args[0][0],
-                    y_axis_label = args[1][0])
+        fig = figure(title="Sensitivity Results",
+                     x_axis_label=args[0][0],
+                     y_axis_label=args[1][0])
 
-        #Set colors according to input
+        # Set colors according to input
         colors = []
         try:
             colorData = kwargs['colorAxis']['values']
+            # colorData has the y-values for the colored coordinate
 
             for val in colorData:
-                d = 200* (max(colorData) - val) / (max(colorData) - min(colorData))
-                colors.append("#%02x%02x%02x" % (200-d, 150, d))
+                d = 200 * (max(colorData) - val) / \
+                    (max(colorData) - min(colorData))
+                colors.append("#%02x%02x%02x" % (200 - d, 150, d))
+
         except:
             colors = ["#22AEAA" for i in args[0][1]]
 
         # plot data
-        fig.scatter( args[0][1], args[1][1], size=10, fill_color=colors)
+        fig.scatter(args[0][1], args[1][1], size=10, fill_color=colors)
 
-        if( len(args[0][1])>0 and len(args[1][1])>0 and (kwargs['colorAxis']['name'] != "Mono" )):
+        if(len(args[0][1]) > 0 and len(args[1][1]) > 0 and (kwargs['colorAxis']['name'] != "Mono")):
             # draw color name
 
             xDiff = max(args[0][1]) - min(args[0][1])
@@ -919,35 +1144,114 @@ if use_bokeh:
             yPos = max(args[1][1]) + 0.10 * yDiff
 
             fig.text(
-                x = xPos + 0.125 * xDiff,
-                y = yPos - 0.05 * yDiff,
-                text = ["%s" %kwargs['colorAxis']['name']],
-                text_align="center" )
-
-            #draw color scale
+                x=xPos + 0.125 * xDiff,
+                y=yPos - 0.05 * yDiff,
+                text=["%s" % kwargs['colorAxis']['name']],
+                text_align="center")
+            # draw color scale
             fig.line(
-                x= [xPos, xPos + 0.25 * xDiff],
-                y= [yPos, yPos],
+                x=[xPos, xPos + 0.25 * xDiff],
+                y=[yPos, yPos],
                 line_color="black")
 
-            fig.circle(x= xPos, y= yPos, size=10, fill_color="#0096C8" )
-            fig.circle(x= xPos+0.25*xDiff, y= yPos, size=10, fill_color="#C89600" )
+            fig.circle(x=xPos, y=yPos, size=10, fill_color="#0096C8")
+            fig.circle(
+                x=xPos + 0.25 * xDiff,
+                y=yPos,
+                size=10,
+                fill_color="#C89600")
 
-            fig.text(x=xPos, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(min(colorData))], text_align="center")
-            fig.text(x=xPos+0.25*xDiff, y=yPos+0.02*yDiff, text = ["%s" % prettyNum(max(colorData))], text_align="center")
-        return fig;
+            fig.text(
+                x=xPos,
+                y=yPos +
+                0.02 *
+                yDiff,
+                text=[
+                    "%s" %
+                    prettyNum(
+                        min(colorData))],
+                text_align="center")
+            fig.text(
+                x=xPos +
+                0.25 *
+                xDiff,
+                y=yPos +
+                0.02 *
+                yDiff,
+                text=[
+                    "%s" %
+                    prettyNum(
+                        max(colorData))],
+                text_align="center")
+        return fig
+
+    def CompareResultsPlot(fig, *args, **kwargs):
+        if len(args) == 0:
+            pass
+        import itertools
+        fig = figure(title="Compare Results",
+                     x_axis_label=args[0][0],
+                     y_axis_label=args[1][0],
+                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
+
+        # Set colors to bokeh palette (Can change palettes in import statement above)
+        # http://bokeh.pydata.org/en/0.10.0/docs/gallery/palettes.html
+        # palette = itertools.cycle(Spectral9)
+        # # plot data
+        # def mscatter(p,x,y,typestr="circle"):
+        #     p.scatter(x,y,marker=typestr, line_color="#000000", fill_color=palette.next(), fill_alpha=0.8, size=12)
+        # def mtext(p, x, y, textstr):
+        #     p.text(x, y, text=[textstr],
+        #     text_color="#449944", text_align="center", text_font_size="10pt")
+
+        # # use for loop to iterate through palette
+        numDataPoints = len(args[0][1])
+        # for i in range(numDataPoints):
+        #     x, y = args[0][1][i], args[1][1][i]
+        #     mscatter(fig, x, y)
+
+        source = ColumnDataSource(
+            data=dict(
+                x=args[0][1],
+                y=args[1][1],
+                label=[i + 1 for i in range(numDataPoints)]
+            )
+        )
+        fig.circle(
+            'x',
+            'y',
+            color="#2222aa",
+            line_width=2,
+            source=source,
+            size=12)
+
+        hover = fig.select(dict(type=HoverTool))
+
+        hover.tooltips = OrderedDict([
+            ("(x,y)", "(@x, @y)"),
+            ("Case", "@label"),
+        ])
+        return fig
+
+import matplotlib.pyplot as plt
+@app.route('/tornado', methods=['POST'])
+def tornadoPlt(var_name, var_val):
+    pass
+
+
+##########################################################################
+# Initial global values
+
 
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
-sensitivityResults = {"empty":True}
-
-
-# photo creds:
-# https://www.flickr.com/photos/sandialabs/9205031702/in/photolist-f2qce9-5aamBz-Pi9Ej-558Lf4-7obLDR-5hNQmQ-kPvGoX-3B3EGX-8XdesP-5epYUS-5aakTz-71Jko6-2rhYDx-6BJKE8-dKrG7J-f2aV42-7ofEGJ-ferntZ-amvxV9-cbF8jW-6Y8Tcb-6BGAJy-5sabbm-8RJ1AN-6rsVAc-phVE7g-nFh2tj-oX52HF-5aamp2-4mMCZW-8oZpKo-a6AYLr-akPomq-4rjvuH-5XBRWJ-5b8nWS-ferjA6-75aiGh-pskKMf-uLnm91-fAMXr6-4mXsuj-8RyzMh-bqch7h-cT689h-83eqAR-dKmFLC-6Y8UAj-8Pvmwv-8Pysus
-# https://www.flickr.com/photos/cosmosfan/3212536952/in/photolist-5TT6j9-osyG56-8hYBNF-8No5uG-4ZFSCE-cDm1xs-qpaccj-61N1fT-5s5Qo4-7ji66U-73w4JD-a6Yh9L-q8jvpE-9wYazX-mnVekv-o6JPzX-6GjhaJ-k7hYSF-5s5QHr-dmvkeX-efdEkv-4RqGYD-rdG8Lm-26uYu1-e3ok2a-58VMkr-6Gfd5e-aSX5it-79B5tq-d9kVGY-5M25xm-7whBaC-63cMeE-cHee77-3WBGc4-fv4vEN-4eyzz1-4Y7bG6-HQpgxM-pardj1-6QxdWq-pHAYTx-dus9p5-6PmNR6-pm2UH5-7Jem9a-26vueS-6LmqsC-5prrst-cX6w3s
-# https://www.flickr.com/photos/tumblingrun/6271299222/in/photolist-ayb3LE-7wM855-71FHBG-gkWaEU-7jjiCa-8YPiDV-dx2iSv-5cX2ib-JTrBq-qLJqGL-5S9c7u-3ceue1-8srMww-6Qddor-yfFWo-2YzAeX-2jVXjF-5uoRZU-aiRccH-8zwDLt-7DZ6FE-7whdWq-apcyW5-oVTFKV-8cgQxD-r8xFnq-5ReUwr-6Mj391-7KKJq5-4PLhDb-8jQUWV-pnMq6M-73GgYV-o9jeZm-7Pk5Zp-rkc1LC-8jmCHR-5NBGD5-neV9eB-bt2vd3-7deXET-5prsxZ-ANQtm-72ruEr-dRx6Uv-ag7mSH-6ShVRA-5Cf85J-7uDs3A-5xKo1U
-# https://www.flickr.com/photos/germanborrillo/9662281133/in/photolist-fHPHy2-9hp3Mb-3NUM8f-9xRRfN-bsPYxN-8cgVun-5xsVsi-fuP5rt-4ZFWfs-8kJyfT-cCK41N-fwrhdj-foKf7H-5UPnxg-eWBFsj-eRyoTp-52VFok-ah9MMH-73LfvL-6MmCXT-2HHuhv-cRk8A5-fnUKsn-cBPnqj-8JkFDC-9KF588-hoxDBX-6ffneM-5YRtnV-7KFCWK-cvoF9h-bphhZ8-4MNKqT-6xAfsd-fB3eT3-32igdy-fuP6mP-5AXn2c-26qgu4-eCMT16-cHedYN-dzjuZ1-65Zosr-6Mr3sA-6G8WEA-CjfRLT-7Knzvh-6wR5DL-Jssf3-ew7hGC
-# https://www.flickr.com/photos/tdr1/8198244266/in/photolist-dus9p5-6PmNR6-pm2UH5-7Jem9a-26vueS-6LmqsC-5prrst-cX6w3s-duVGzY-7JY8Hy-8P9kok-99abGL-aSX5tk-5LWSDn-8PyrZq-e6RrRN-26qZai-73GiEX-hqZEgr-cHedBL-6bng8X-cqhUAC-ok6chp-6s5f3N-bCtJtu-7jSw4x-7fbWAU-u3kQrE-hekHy1-5P7pU6-4cRvba-qnAWnC-8Ji3TM-5jPh8h-69Zo1f-fmpybx-diAYcx-3Bbjqv-f74sny-99abGJ-cHeefo-73LfVm-5AGK5U-7jWpxG-q1aztd-fHPHy2-9hp3Mb-3NUM8f-9xRRfN-bsPYxN
-# https://www.flickr.com/photos/zhchen543/2708862013/in/photolist-58nCit-fnUKpK-HGDspq-6JMxWP-FxwZ1W-dujkn1-6PD6fr-7PzjkV-6AHwGS-fnUDLT-67vqWF-aF2JT6-nbTp8o-4FrE2Z-8JhzP4-3dLAso-73vYYe-6yFGM6-7PziFH-5FXDPW-5prrAp-5AXr5P-5xsUYV-91HbMW-bd5jDk-8JkGrG-6ShWkL-7Pzhvn-9CkhoT-nnzxiy-8UZa6t-bnAWnT-ayb3LE-7wM855-gkWaEU-7jjiCa-5S9c7u-3ceue1-2YzAeX-7DZ6FE-7whdWq-apcyW5-oVTFKV-8cgQxD-r8xFnq-pnMq6M-o9jeZm-rkc1LC-bt2vd3-5prsxZ
-
+sensitivityResults = {"empty": True}
+myUnits = {"empty": True}
+debug = True  # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
+debug = False
+NumberTypes = (
+    types.IntType,
+    types.LongType,
+    types.FloatType,
+    types.ComplexType)

@@ -31,6 +31,7 @@ div#pop-up {
 
 .navbar{
     margin-bottom:0px;
+
 }
 
 #HeadTitle{
@@ -72,7 +73,7 @@ html {
 
 #myTabs{
   align:right;
-  padding-right:100px;
+  padding-right:80px;
 }
 
 .startButton{
@@ -95,4 +96,36 @@ html, body{
 
 .panel-heading{
   background-color:#A8A8A8 ;
+}
+
+#maincontent{
+  padding-right:100px;
+  min-width:1350px;
+}
+
+#plotTabs{
+  margin-top:10px;
+}
+
+#hideaway2, #hideaway, #hideaway3{
+  display:none;
+}
+
+.btn-mvp{
+  background-color:#d74b4b;
+  color:#FFFFFF;
+}
+
+
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+#maincontent{
+  min-width: 1350px;
+}
+
+#button-panel{
+  margin-left:4px;
 }
