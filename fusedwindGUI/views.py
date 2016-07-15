@@ -30,10 +30,6 @@ import types
 
 from fusedwindGUI import app
 
-######### Function Definitions ###########################################
-##########################################################################
-
-
 # Handling Forms -------------------------------------------------------------
 def unitfield(units, name):
     """A simple widget generating function. The nested function is necessary in order
@@ -577,7 +573,6 @@ def webgui(app=None):
         inputName = request.form['inVar']
         outputName = request.form['outVar']
         global myUnits
-        print myUnits
 
         try:  # find all the values/units of the variables of interest
             input_vals, output_vals = [], []
@@ -592,7 +587,6 @@ def webgui(app=None):
                     cpnt.gui_recorder['recorder'][
                         'case%i' %
                         caseNum], outputName)
-                print current_input, current_output
 
                 input_vals.append(current_input)
                 output_vals.append(current_output)
@@ -613,10 +607,8 @@ def webgui(app=None):
             xUnit = myUnits[inputName]
             yUnit = myUnits[outputName]
 
-            print yArray, yUnit
 
         except KeyError:
-            print 'error'
             script, div = prepare_plot(CompareResultsPlot, ("", []), ("", []))
         else:
             if (xUnit == "None" or xUnit is None):
@@ -1240,6 +1232,11 @@ if use_bokeh:
             ("Case", "@label"),
         ])
         return fig
+
+import matplotlib.pyplot as plt
+@app.route('/tornado', methods=['POST'])
+def tornadoPlt(var_name, var_val):
+    pass
 
 
 ##########################################################################
