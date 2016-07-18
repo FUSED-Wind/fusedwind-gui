@@ -393,6 +393,7 @@
             <p></p>
             {%- if sens_flag %}
             <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
+            <p>For a tornado plot, select the inputs you want to vary and input a % deviation from the Initial Value that you would like to test </p> 
             {%- else %}
             <p>For the individual analysis, please specify all input values.</p>
             {%- endif %}
@@ -831,11 +832,15 @@
                                           {%- if field.name not in ('csrf_token', 'submit') and group_dic[field.name] == group %}
                                           <tr>
                                              <td>{{field.description}} ({{field.name}})</td>
+
+                                              <!-- Initial Values  -->
                                              <td>
                                                 <div id='trigger-{{field.name|safe}}'>
                                                    {{field(class="form-control")|safe}}
                                                 </div>
                                              </td>
+                                             
+                                             <!-- Must be the units.. or a check box  --> 
                                              <td>
                                                 {%- for select_field in inputs %}
                                                 {%- if ('select.'+field.name == select_field.name) %}
@@ -845,6 +850,7 @@
                                                 {%- endif %}
                                                 {%- endfor %}
                                              </td>
+
                                              <td>
                                                 {%- for low_field in inputs %}
                                                 {%- if ('low.'+field.name == low_field.name) %}
