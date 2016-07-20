@@ -783,16 +783,35 @@
                                  <table class="table table-hover" align="left">
                                     <tr>
                                        <th>Parameter</th>
-                                       <th>Initial Value</th>
+                                       <th>Sensitivity Type</th>
+                                       <th> Initial Value </th>
                                     </tr>
                                     <tr>
                                        <td>Number of iterations in analysis (iteration_count)</td>
+                                       <td></td>
                                        <td>
                                           <div id='trigger-iteration_count'>
                                              <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count">
                                           </div>
                                        </td>
                                     </tr>
+                                    <tr>
+                                      <td> Tornado Plot Variability </td>
+                                      
+                                      <td>
+                                        <div id='trigger-select.alpha'>
+                                          <input type="checkbox" class="form-control" value="y" name="select.alpha">
+                                         </div>
+                                      </td>
+                                    <td>  
+                                        <div id='trigger-alpha'>
+                                          <input type="text" class="form-control" value="{{extra_inputs['alpha']}}" name="alpha">
+                                         </div>
+                                        
+                                     </td>
+                           
+                                    </tr>
+
                                  </table>
                               </div>
                            </div>
@@ -839,7 +858,7 @@
                                                    {{field(class="form-control")|safe}}
                                                 </div>
                                              </td>
-                                             
+
                                              <!-- Must be the units.. or a check box  --> 
                                              <td>
                                                 {%- for select_field in inputs %}
