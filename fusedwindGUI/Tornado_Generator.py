@@ -30,28 +30,19 @@ class Tornado_Generator(Container):
         # num_samples defaults to 3 because low, base, high values required for each parameter
 
         if alpha is not None:
-            self.alpha = alpha
+            self.alpha = float(alpha)/100
 
     
         
     def __iter__(self):
         """Return an iterator over our sets of input values"""
-        print "here iter"
+        # print "here iter"
         if self.num_samples != 3: 
             raise ValueError("Tornado must have 3 samples")
-        print (np.array([
-            1-self.alpha,
-            1,
-           1+self.alpha])
-            for i in range(self.num_samples))
-        return (np.array([
-            1-self.alpha,
-            1,
-           1+self.alpha])
-            for i in range(self.num_samples))
-            
-
-
+        
+        start = 1-self.alpha
+        return (np.array([start + x*self.alpha for i in range(self.num_parameters)]) for x in range(self.num_samples+1))    
+        # the +1 is necessary at the end because it 
 
 
 
@@ -77,7 +68,7 @@ from openmdao.main.interfaces import IDOEgenerator
 from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
 
 def check_parameter(parameter):
-    print "checking parameter"
+    # print "checking parameter"
     try:
         if parameter.vartypename == 'Array':
             if 'float' not in parameter.valtypename:
@@ -123,7 +114,6 @@ class TORdriver(CaseIteratorDriver):
         super(TORdriver, self).add_parameter(target, low, high, scaler, adder,
             start, fd_step, name, scope)
         parameters = self.get_parameters()
-        print parameters
 
         try:
             parameter = parameters[target]
@@ -142,24 +132,32 @@ class TORdriver(CaseIteratorDriver):
                 self.remove_parameter(tuple(parameter.targets))
                 self.raise_exception(type_error.message, type_error.__class__)
 
+    def get_starter(self, dtype='d'):
+        result = []
+        for param in self.get_parameters().values():
+            result.extend([param.start])
+        if dtype:
+            result = np.array(result, dtype)
+        return result
 
     def execute(self):
         """Generate and evaluate cases."""
-        print "here execute"
+        # print "here execute"
         self.set_inputs(self._get_cases())
         self._csv_file = None
         try:
             super(TORdriver, self).execute()
-            print "here after super execute"
+            # print "here after super execute"
         finally:
             if self._csv_file is not None:
                 self._csv_file.close()
 
     def _get_cases(self):
         """Generate each case."""
-        print "here get cases"
+        # print "here get cases"
         self.DOEgenerator.num_parameters = self.total_parameters()
-        record_doe = self.record_doe
+        # record_doe = self.record_doe
+        record_doe = False
         if record_doe:
             if not self.doe_filename:
                 self.doe_filename = '%s.csv' % self.name
@@ -167,21 +165,16 @@ class TORdriver(CaseIteratorDriver):
             self._csv_file = open(self.doe_filename, 'wb')
             csv_writer = csv.writer(self._csv_file)
 
-        print 'here'
-        params = self.get_parameters()
-        print params[0]
-        print 'blah'
-        print params['start']
-        curr_param = params['start']
+        # The start vector should be a np.ndarray of np.float64 values 
 
-        # NEED TO GET START VALUE 
-        # start = _____SOMETHIGN HERE _+____
-        print start
+        start = self.get_starter()
+
         for row in self.DOEgenerator:
-            if record_doe:
-                csv_writer.writerow(['%.16g' % val for val in row])
-            yield vals * start
+            # row will always have 3 entries
+            # if record_doe:
+            #     csv_writer.writerow(['%.16g' % val for val in row])
+            yield row * start
 
-        if record_doe:
-            self._csv_file.close()
-            self._csv_file = None
+        # if record_doe:
+        #     self._csv_file.close()
+        #     self._csv_file = None

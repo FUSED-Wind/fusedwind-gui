@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from openmdao.main.vartree import VariableTree
 from openmdao.main.api import set_as_top, Assembly
 from openmdao.lib.drivers.api import DOEdriver
@@ -54,17 +56,17 @@ def makePretty(myList):
             myDict['name'] = myDict['name'].replace("_"," ").title()
         if 'desc' in myDict.keys():
             myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
-
+import types
+NumberTypes = (types.IntType,
+    types.LongType,
+    types.FloatType,
+    types.ComplexType)
 def form_names(varList):
 	""" 
 	Returns the variables to populate the drop down forms. It has to be a number type to populate the forms
 
 	"""
-	import types
-	NumberTypes = (types.IntType,
-	    types.LongType,
-	    types.FloatType,
-	    types.ComplexType)
+
 	return [varList[:][i]['name'] for i in range(len(varList)) if isinstance(varList[i]['state'], NumberTypes)]
 
 def prettyNum(num):
@@ -138,6 +140,7 @@ def WebGUIForm(dic, run=False, sens_flag=False):
         v = dic[k]
         setattr(MyForm, k, make_field(k, v))
 
+
     if sens_flag:
         for k in skeys:
             v = dic[k]
@@ -158,6 +161,7 @@ def WebGUIForm(dic, run=False, sens_flag=False):
                 setattr(MyForm, klow, make_field(klow, v))
                 khigh = "high." + k
                 setattr(MyForm, khigh, make_field(khigh, v))
+        setattr(MyForm, "select.alpha", make_field("select.alpha", newdic))
 
     if run:  # Add the run button
         setattr(MyForm, 'submit', SubmitField("Run"))

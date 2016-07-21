@@ -4,6 +4,7 @@ from openmdao.main.vartree import VariableTree
 from openmdao.main.api import set_as_top, Assembly
 from openmdao.lib.drivers.api import DOEdriver
 from openmdao.lib.doegenerators.api import Uniform
+from Tornado_Generator import *
 
 import os
 import sys
@@ -458,7 +459,7 @@ def webgui(app=None):
 
 
     #---------------
-    
+
     def fused_webapp(config_flag=False):
         """ Runs the analysis page """
         if analysis == 'Individual Analysis':
@@ -505,6 +506,12 @@ def webgui(app=None):
             inputs = request.form.to_dict()
             io = traits2jsondict(cpnt)
 
+            try:
+                if inputs['select.alpha'] is not None:
+
+                    tornado = True
+            except KeyError:
+                tornado = False
             if not sens_flag:
                 try:
                     for k in inputs.keys():
@@ -535,14 +542,14 @@ def webgui(app=None):
                     assembly_structure[0]['nodes'] = structure
                     # show both inputs and outputs in right side table
                     outputs = get_io_dict(cpnt)
-                    if debug:
-                        print ' INPUTS ', outputs['inputs']
-                        print 'OUTPUTS ', outputs['outputs']
+                    # if debug:
+                    #     print ' INPUTS ', outputs['inputs']
+                    #     print 'OUTPUTS ', outputs['outputs']
                     if not failed_run_flag:
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
 
-                        
+        
                         # saving the elements that will appear in the form
                         # under the compare results tab
                         inputs_names_form = form_names(myInputs)
@@ -605,8 +612,149 @@ def webgui(app=None):
                                            group_dic=group_dic,
                                            desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
 
-            else:  # sens_flag == True
 
+
+            elif sens_flag and tornado:
+                alpha = inputs['alpha']
+                my_sa = Assembly()
+                my_sa.add('asym', cpnt)
+                my_sa.add('driver', TORdriver())
+                my_sa.driver.workflow.add('asym')
+                my_sa.driver.DOEgenerator = Tornado_Generator(alpha)
+                tornadoInputs = {}
+                tornadoOutputs = {}
+
+                extra_inputs = {"sensitivity_iterations": int(
+                                    inputs['iteration_count']),
+                                "alpha": alpha }
+                skipInputs = ['iteration_count', 'alpha', 'select.alpha']
+                #print inputs.keys()  - this has all the inputs not just the ones we selected from the form
+                for k in inputs.keys():
+                    if k in skipInputs:
+                        continue
+                    try:
+                        if k in io['inputs']:                         
+                            setattr(
+                                cpnt, k, json2type[
+                                    io['inputs'][k]['type']](
+                                    inputs[k]))
+                    except:
+                        print "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        failed_run_flag = True
+                        failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        flash(failed_run_flag)
+                                            # this adds the input variable to vary 
+                for k in inputs.keys():
+                    if k in skipInputs:
+                        continue
+                    if 'select.' not in k:
+                        continue
+                    else:
+                        my_sa = Assembly()
+                        my_sa.add('asym', cpnt)
+                        my_sa.add('driver', TORdriver())
+                        my_sa.driver.workflow.add('asym')
+                        my_sa.driver.DOEgenerator = Tornado_Generator(alpha)
+
+                        kselect = k[7:] 
+                        tornadoInputs[kselect] = {}
+                        tornadoOutputs[kselect] = {}
+
+                        my_sa.driver.add_parameter(
+                            'asym.' + kselect, start=float(inputs[kselect]))
+
+                        for s in io['outputs']:
+                            t = cpnt.get_trait(s)
+                            if t.trait_type.__class__.__name__ != 'VarTree':
+                                my_sa.driver.add_response('asym.' + s)
+
+                        try:
+                            my_sa.run()
+
+                        except NameError as detail:
+                            print "att Error:" , detail
+                        except TypeError as detail:
+                            print "att Error:" , detail
+                        except AttributeError as detail:
+                            print "att Error:" , detail
+                        except ValueError as detail:
+                            print "att Error:" , detail
+
+
+                        except:
+                            print sys.exc_info()[0]
+                            print "Analysis did not execute properly (sens_flag = True)"
+                            failed_run_flag = True
+                            failed_run_flag = "Analysis did not execute properly - check input parameters!"
+                            draw_plot = False
+                            script, div = None, None
+                            inputVars = None
+                            outputVars = None
+                            plot_controls = None
+
+                        else:
+                            try:
+                                my_sa.driver.case_inputs.asym.list_vars()
+                            except:
+                                draw_plot = False
+                                script, div = None, None
+                                inputVars = None
+                                outputVars = None
+                                plot_controls = None
+
+                            else:
+                                draw_plot = True
+                                for val in my_sa.driver.case_inputs.asym.list_vars():
+                                    try:
+                                        tornadoInputs[val] = {
+                                            'value': my_sa.driver.case_inputs.asym.get(val),
+                                            'units': getattr(cpnt.get_trait(val), 'units')}
+                                    except Exception:
+                                        pass
+
+                                for val in my_sa.driver.case_outputs.asym.list_vars():
+                                    try:
+                                        tmp = my_sa.driver.case_outputs.asym.get(val)
+                                    except Exception:
+                                        pass
+                                    else:
+                                        if(isinstance(tmp.pop(), np.float64)):
+                                            tornadoOutputs[kselect][val] = {
+                                                'value': tmp,
+                                                'units': getattr(cpnt.get_trait(val), 'units')}
+                                print "\n"
+                                print "tornado Results"
+                                print tornadoOutputs
+
+                            script, div = prepare_plot(
+                                SensPlot1D, ("", []), ("", []), ("", []))
+                            plot_controls = True
+
+                io = traits2jsondict(cpnt)
+                
+
+                return render_template(
+                    'webgui.html',
+                    inputs=WebGUIForm(
+                        io['inputs'],
+                        run=True,
+                        sens_flag=sens_flag)(
+                        MultiDict(inputs)),
+                    extra_inputs=extra_inputs,
+                    name=cpname,
+                    plot_script=script,
+                    plot_div=div,
+                    draw_sens_plot=draw_plot,
+                    plot_controls=plot_controls,
+                    # plot_inputVars=inputVars,
+                    # plot_outputVars=outputVars,
+                    group_list=group_list,
+                    group_dic=group_dic,
+                    desc=desc,
+                    failed_run_flag=failed_run_flag,
+                    sens_flag=sens_flag)
+
+            else:  # sens_flag == True
                 my_sa = Assembly()
                 my_sa.add('asym', cpnt)
                 my_sa.add('driver', DOEdriver())
@@ -643,6 +791,9 @@ def webgui(app=None):
                         if 'select.' in k:
                             for kselect in inputs.keys():
                                 if 'select.' + kselect == k and 'low.' + kselect in inputs.keys() and 'high.' + kselect in inputs.keys():
+                                    # print k, kselect, inputs[kselect]
+                                    # print inputs['select.' + kselect] prints "y" if selected
+
                                     my_sa.driver.add_parameter(
                                         'asym.' + kselect, low=float(inputs['low.' + kselect]), high=float(inputs['high.' + kselect]))
 
@@ -651,9 +802,9 @@ def webgui(app=None):
                     t = cpnt.get_trait(s)
                     if t.trait_type.__class__.__name__ != 'VarTree':
                         my_sa.driver.add_response('asym.' + s)
-
                 try:
                     my_sa.run()
+
                 except:
                     print "Analysis did not execute properly (sens_flag = True)"
                     failed_run_flag = True
@@ -705,6 +856,7 @@ def webgui(app=None):
                                         'value': tmp,
                                         'units': getattr(cpnt.get_trait(val), 'units')}
                                     outputVars.append(val)
+                        print sensitivityResults
 
                         script, div = prepare_plot(
                             SensPlot1D, ("", []), ("", []), ("", []))
@@ -722,7 +874,6 @@ def webgui(app=None):
                         combIO = outputs['inputs'] + outputs['outputs']
                     else:
                         combIO = None
-
                 return render_template(
                     'webgui.html',
                     inputs=WebGUIForm(
@@ -749,7 +900,7 @@ def webgui(app=None):
 
         else:
 
-            extra_inputs = {"sensitivity_iterations": 1000}
+            extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
             # Show the standard form
             return render_template(
                 'webgui.html',
@@ -787,8 +938,10 @@ def GetSensPlot():
 
     try:
         xArray = np.array(sensitivityResults['inputs'][inputName]['value'])
+        print xArray
         xUnit = sensitivityResults['inputs'][inputName]['units']
         yArray = np.array(sensitivityResults['outputs'][outputName]['value'])
+        print yArray
         yUnit = sensitivityResults['outputs'][outputName]['units']
 
         if(colorName != "Mono"):
@@ -953,6 +1106,7 @@ if use_bokeh:
         return fig
 
     def CompareResultsPlot(fig, *args, **kwargs):
+        """ Configures the compare results plot """
         if len(args) == 0:
             pass
         import itertools
@@ -1010,19 +1164,19 @@ def tornadoPlt(var_name, var_val):
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
+tornadoResults = {"empty": True}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
 debug = True  # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
 debug = False
-NumberTypes = (
-    types.IntType,
-    types.LongType,
-    types.FloatType,
-    types.ComplexType)
+
 tornado = False
 alpha = 0 
 
 def saveUnits(inputList): 
+    """ Saves the units to a global variable for use later (when using compare case feature).
+    Saves only number types, which are identified if they have units -- compared to booleans or "geared"
+    """
     global myUnits
     for el in inputList:
         if el['name'] not in myUnits.keys() and 'units' in el.keys():
