@@ -621,6 +621,8 @@ def webgui(app=None):
                 my_sa.add('driver', TORdriver())
                 my_sa.driver.workflow.add('asym')
                 my_sa.driver.DOEgenerator = Tornado_Generator(alpha)
+                global tornadoInputs
+                global tornadoOutputs
                 tornadoInputs = {}
                 tornadoOutputs = {}
 
@@ -645,11 +647,12 @@ def webgui(app=None):
                         flash(failed_run_flag)
                                             # this adds the input variable to vary 
                 for k in inputs.keys():
-                    if k in skipInputs:
-                        continue
-                    if 'select.' not in k:
+
+                    if k in skipInputs or 'select.' not in k:
                         continue
                     else:
+
+                        
                         my_sa = Assembly()
                         my_sa.add('asym', cpnt)
                         my_sa.add('driver', TORdriver())
@@ -722,15 +725,20 @@ def webgui(app=None):
                                             tornadoOutputs[kselect][val] = {
                                                 'value': tmp,
                                                 'units': getattr(cpnt.get_trait(val), 'units')}
-                                print "\n"
-                                print "tornado Results"
-                                print tornadoOutputs
+                                # print "\n"
+                                # print "tornado Results"
+                                # print tornadoOutputs
+                                setattr(
+                                cpnt, kselect, json2type[
+                                    io['inputs'][kselect]['type']](
+                                    inputs[kselect]))
 
                             script, div = prepare_plot(
                                 SensPlot1D, ("", []), ("", []), ("", []))
                             plot_controls = True
 
                 io = traits2jsondict(cpnt)
+                tornadoPlt()
                 
 
                 return render_template(
@@ -1141,19 +1149,95 @@ if use_bokeh:
             ("Case", "@label")
         ])
         return fig
+    
+
 
 # --------------------------
 
-import matplotlib.pyplot as plt
-@app.route('/tornado', methods=['POST'])
-def tornadoPlt(var_name, var_val):
+from matplotlib import pyplot as plt
+# matplotlib doesnt work with virtualenv (openmdao). have to copy+paste this to activate.bat in openmdao/scripts
+# set "TCL_LIBRARY=C:\Python27\tcl\tcl8.5"
+# set "TK_LIBRARY=C:\Python27\tcl\tk8.5"
+@app.route("/tornado", methods=['POST'])
+def tornadoPlt():
+
+    global tornadoInputs
+    global tornadoOutputs
+
+    variables = tornadoInputs.keys()
+
+    # base = choose middle number from tornadoOutputs depending on which output the user wants to see 
+    # outputName = request.form['outVar']
+    outputName = "net_aep"
+    # outputName is the metric that the user wants to see
+
+    base = tornadoOutputs[variables[0]][outputName]['value'][1] 
+
+    lows, highs, values = [], [], []
+    value_dic = {}
+    for i in range(len(variables)):
+        low_val = tornadoOutputs[variables[i]][outputName]['value'][0]
+        lows.append(low_val)
+        high_val = tornadoOutputs[variables[i]][outputName]['value'][2]
+        highs.append(high_val)
+        val = tornadoOutputs[variables[i]][outputName]['value'][1] 
+        values.append(val)
+        value_dic[variables[i]] = {'low': low_val, 'high':high_val, 'total':high_val-low_val}
+
+
+    # sorting algorithm - sort by bar length
+    value_keys = value_dic.keys()
+    for k in value_dic.keys():
+        if value_dic[k]['total']
+
+
+
+
+    # generate script, div into dictionary and jsonify it 
+    # then can put it in the function script_tornado=script_tornado
+    # put in HTML site
+
+    ys = range(len(lows))[::-1]  
+    smallest_low = min(lows)
+    largest_high = max(highs)
+
+    for y, low, high, value in zip(ys, lows, highs, values):
+        low_width = base - low
+        high_width = high - base
+
+        plt.broken_barh(
+            [(low, low_width), (base, high_width)],
+            (y - 0.4, 0.8),
+            facecolors=['white', '#000000'],  
+            edgecolors=['black', 'black'],
+            linewidth=1,
+        )
+        x = base + high_width / 2
+        if x <= base + 50:
+            x = base + high_width + 50
+        plt.text(x, y, str(value), va='center', ha='center')
+
+    plt.axvline(base, color='black')
+
+    axes = plt.gca()  # (gca = get current axes)
+    axes.spines['left'].set_visible(False)
+    axes.spines['right'].set_visible(False)
+    axes.spines['bottom'].set_visible(False)
+    axes.xaxis.set_ticks_position('top')
+    plt.yticks(ys, variables)
+    plt.xlim(smallest_low - 0.1*base, largest_high + .1*base)
+    plt.ylim(-1, len(variables))
+    plt.show()
+
+    script = None
     div = None 
-
-
-
     f = {"script": script, "div": div}
 
     return jsonify(**f)
+
+tornadoPlt.__name__ = 'tornadoPlt'
+app.route("/tornado", methods=['GET', 'POST'])(tornadoPlt)
+
 
 
 
@@ -1165,6 +1249,8 @@ cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
 tornadoResults = {"empty": True}
+tornadoInputs = {}
+tornadoOutputs = {}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
 debug = True  # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
