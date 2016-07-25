@@ -1173,29 +1173,50 @@ def tornadoPlt():
 
     base = tornadoOutputs[variables[0]][outputName]['value'][1] 
 
-    lows, highs, values = [], [], []
-    value_dic = {}
+    lows, highs, values, totals = [], [], [], []
+    names = variables[:]
+
+    # # this dic is for testing purposes. validating results after sort
+    # value_dic = {}
+
     for i in range(len(variables)):
         low_val = tornadoOutputs[variables[i]][outputName]['value'][0]
         lows.append(low_val)
         high_val = tornadoOutputs[variables[i]][outputName]['value'][2]
         highs.append(high_val)
-        val = tornadoOutputs[variables[i]][outputName]['value'][1] 
+        val = tornadoOutputs[variables[i]][outputName]['value'][1]
         values.append(val)
-        value_dic[variables[i]] = {'low': low_val, 'high':high_val, 'total':high_val-low_val}
+        totals.append(high_val - low_val)
+        # value_dic[variables[i]] = {'low': low_val, 'high':high_val, 'total':high_val-low_val}
 
+    # insertion sort. Sorting by total width of bars (high - low)
+    if (len(totals)-1) > 0:
+        for i in range(len(totals)-1):
+            i += 1
+            temp_total = totals[i]
+            temp_lows = lows[i]
+            temp_highs = highs[i]
+            temp_name = names[i]
+            j = i - 1
+            while j >= 0 and totals[j] > temp_total:
+                totals[j+1] = totals[j]
+                lows[j+1] = lows[j]
+                highs[j+1] = highs[j]
+                names[j+1] = names[j]
+                j = j - 1
 
-    # sorting algorithm - sort by bar length
-    value_keys = value_dic.keys()
-    for k in value_dic.keys():
-        if value_dic[k]['total']
+            totals[j+1] = temp_total
+            lows[j+1] = temp_lows
+            highs[j+1] = temp_highs
+            names[j+1] = temp_name
+        # this sorted from lowest to highest. Need to reverse. 
+        totals.reverse()
+        lows.reverse()
+        highs.reverse()
+        names.reverse()
 
+    # instead of using lists maybe use tuples?
 
-
-
-    # generate script, div into dictionary and jsonify it 
-    # then can put it in the function script_tornado=script_tornado
-    # put in HTML site
 
     ys = range(len(lows))[::-1]  
     smallest_low = min(lows)
@@ -1208,14 +1229,14 @@ def tornadoPlt():
         plt.broken_barh(
             [(low, low_width), (base, high_width)],
             (y - 0.4, 0.8),
-            facecolors=['white', '#000000'],  
+            facecolors=['white', 'white'],  
             edgecolors=['black', 'black'],
             linewidth=1,
         )
         x = base + high_width / 2
-        if x <= base + 50:
-            x = base + high_width + 50
-        plt.text(x, y, str(value), va='center', ha='center')
+        # if x <= base + 50:
+        #     x = base + high_width + 50
+        # plt.text(x, y, str(value), va='center', ha='center')
 
     plt.axvline(base, color='black')
 
@@ -1224,7 +1245,7 @@ def tornadoPlt():
     axes.spines['right'].set_visible(False)
     axes.spines['bottom'].set_visible(False)
     axes.xaxis.set_ticks_position('top')
-    plt.yticks(ys, variables)
+    plt.yticks(ys, names)
     plt.xlim(smallest_low - 0.1*base, largest_high + .1*base)
     plt.ylim(-1, len(variables))
     plt.show()
