@@ -508,7 +508,6 @@ def webgui(app=None):
 
             try:
                 if inputs['select.alpha'] is not None:
-
                     tornado = True
             except KeyError:
                 tornado = False
@@ -528,8 +527,20 @@ def webgui(app=None):
                     flash(failed_run_flag)
                 try:
                     cpnt.run()
+                except NameError as detail:
+                        print "att Error:" , detail
+                except TypeError as detail:
+                    print "att Error:" , detail
+                except AttributeError as detail:
+                    print "att Error:" , detail
+                except ValueError as detail:
+                    print "att Error:" , detail
+
 
                 except:
+                    print sys.exc_info()[0]
+
+                
                     print "Analysis did not execute properly (sens_flag = False)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
@@ -582,6 +593,7 @@ def webgui(app=None):
 
                             draw_plot = True
                         except:
+                            
                             # TODO: gracefully inform the user of why he doesnt
                             # see his plots
                             print "Failed to prepare any plots for " + cpnt.__class__.__name__
@@ -625,6 +637,8 @@ def webgui(app=None):
                 global tornadoOutputs
                 tornadoInputs = {}
                 tornadoOutputs = {}
+                outputVars = []
+                removeFromOutputs = []
 
                 extra_inputs = {"sensitivity_iterations": int(
                                     inputs['iteration_count']),
@@ -714,17 +728,33 @@ def webgui(app=None):
                                             'units': getattr(cpnt.get_trait(val), 'units')}
                                     except Exception:
                                         pass
-
+                                
+                                global myUnits
                                 for val in my_sa.driver.case_outputs.asym.list_vars():
                                     try:
                                         tmp = my_sa.driver.case_outputs.asym.get(val)
                                     except Exception:
+                                        print val
                                         pass
                                     else:
                                         if(isinstance(tmp.pop(), np.float64)):
                                             tornadoOutputs[kselect][val] = {
                                                 'value': tmp,
                                                 'units': getattr(cpnt.get_trait(val), 'units')}
+                                            if val not in outputVars:
+                                                outputVars.append(val)
+                                            myUnits[val] = getattr(cpnt.get_trait(val), 'units')
+                                        else:
+                                            if val not in removeFromOutputs:
+                                                removeFromOutputs.append(val)
+
+                                # for some reason rotor torque/rated_rotor_speed
+                                # dont consistently pass the if check so I am removing them to avoid problems
+
+                                
+                                # print outputVars
+                                # print tornadoOutputs
+                            
                                 # print "\n"
                                 # print "tornado Results"
                                 # print tornadoOutputs
@@ -732,14 +762,16 @@ def webgui(app=None):
                                 cpnt, kselect, json2type[
                                     io['inputs'][kselect]['type']](
                                     inputs[kselect]))
+                            script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
 
-                            script, div = prepare_plot(
-                                SensPlot1D, ("", []), ("", []), ("", []))
                             plot_controls = True
 
                 io = traits2jsondict(cpnt)
-                tornadoPlt()
-                
+                # tornadoPlt()
+                for el in removeFromOutputs:
+                    if el in outputVars:
+                        outputVars.remove(el)
+            
 
                 return render_template(
                     'webgui.html',
@@ -755,12 +787,13 @@ def webgui(app=None):
                     draw_sens_plot=draw_plot,
                     plot_controls=plot_controls,
                     # plot_inputVars=inputVars,
-                    # plot_outputVars=outputVars,
+                    plot_outputVars=outputVars,
                     group_list=group_list,
                     group_dic=group_dic,
                     desc=desc,
                     failed_run_flag=failed_run_flag,
-                    sens_flag=sens_flag)
+                    sens_flag=sens_flag,
+                    tornado_flag=tornado)
 
             else:  # sens_flag == True
                 my_sa = Assembly()
@@ -864,10 +897,9 @@ def webgui(app=None):
                                         'value': tmp,
                                         'units': getattr(cpnt.get_trait(val), 'units')}
                                     outputVars.append(val)
-                        print sensitivityResults
 
                         script, div = prepare_plot(
-                            SensPlot1D, ("", []), ("", []), ("", []))
+                            SensPlot1D, ("", []), ("", []))
                         plot_controls = True
 
                 io = traits2jsondict(cpnt)
@@ -946,10 +978,8 @@ def GetSensPlot():
 
     try:
         xArray = np.array(sensitivityResults['inputs'][inputName]['value'])
-        print xArray
         xUnit = sensitivityResults['inputs'][inputName]['units']
         yArray = np.array(sensitivityResults['outputs'][outputName]['value'])
-        print yArray
         yUnit = sensitivityResults['outputs'][outputName]['units']
 
         if(colorName != "Mono"):
@@ -1004,7 +1034,7 @@ try:
     from bokeh.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
     from bokeh._legacy_charts import Donut, output_file, show
-    from bokeh.palettes import Spectral9
+    from bokeh.palettes import Spectral11
     from bokeh.models import HoverTool
     use_bokeh = True
 except:
@@ -1117,7 +1147,6 @@ if use_bokeh:
         """ Configures the compare results plot """
         if len(args) == 0:
             pass
-        import itertools
         fig = figure(title="Compare Results",
                      x_axis_label=args[0][0],
                      y_axis_label=args[1][0],
@@ -1154,31 +1183,89 @@ if use_bokeh:
 
 # --------------------------
 
-from matplotlib import pyplot as plt
-# matplotlib doesnt work with virtualenv (openmdao). have to copy+paste this to activate.bat in openmdao/scripts
-# set "TCL_LIBRARY=C:\Python27\tcl\tcl8.5"
-# set "TK_LIBRARY=C:\Python27\tcl\tk8.5"
-@app.route("/tornado", methods=['POST'])
-def tornadoPlt():
 
+    def tornadoPlt(fig, *args, **kwargs):
+        if len(args) != 2:
+            return fig
+    
+        try:
+            totals = args[1][0]
+            lows = args[1][1]
+            highs = args[1][2]
+            values = args[1][3]
+            names = args[1][4]
+            outputName = args[1][5]
+
+            ys = range(len(lows))[::-1]  
+            smallest_low = min(lows)
+            largest_high = max(highs)
+
+
+            # ------------------------
+
+
+            output_file("tornado.html", title="Tornado Plot for Sensitivity")
+
+            # create a new plot with a title and axis labels
+            fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters')
+            import itertools
+            palette = itertools.cycle(Spectral11)
+
+            def addBar(top, bottom, left, right):
+                fig.quad(top=top, bottom=bottom, left=left, right=right, color=palette.next())
+
+            def mtext(x, y, textstr, color="black"):
+                fig.text(x, y, text=[textstr],
+                text_color=color, text_align="center", text_font_size="10pt")
+
+            numVars = len(lows)
+            start = numVars * 2
+            for i in range(len(lows)):
+                if highs[i] >= lows[i]:
+                    mtext(lows[i]-.1*lows[i], start-.75, prettyNum(lows[i]), "red")
+                    mtext(highs[i]+.1*highs[i], start-.75, prettyNum(highs[i]),"green")
+                else:
+                    mtext(lows[i]+.1*lows[i], start-.75, prettyNum(lows[i]), "red")
+                    mtext(highs[i]-.1*highs[i], start-.75, prettyNum(highs[i]), "green")
+
+                addBar(start, start-1.5, lows[i], highs[i])
+                
+                mtext(values[i], start, names[i])
+
+                start -= 2
+            # add baseline
+            fig.line([values[0], values[0]],[numVars*2, start+.5], line_width=2, line_color="black")
+            mtext(values[0], start-.5, prettyNum(values[0]))
+            mtext(values[0], start, "Baseline")
+            # show(fig)
+        
+        except:
+            # create a new plot with a title and axis labels
+            fig = figure(title="Parameter Sensitivity", x_axis_label=None , y_axis_label='Parameters')
+            import itertools
+            palette = itertools.cycle(Spectral11)
+
+            def addBar(top, bottom, left, right):
+                fig.quad(top=top, bottom=bottom, left=left, right=right, color=palette.next())
+
+            def mtext(x, y, textstr):
+                fig.text(x, y, text=[textstr],
+                text_color="black", text_align="center", text_font_size="10pt")
+        return fig
+
+
+@app.route("/tornado", methods=['POST'])
+def GetTornado():
+
+    outputName = str(request.form['outVar'])
     global tornadoInputs
     global tornadoOutputs
+    variables = tornadoInputs.keys()  
+    
 
-    variables = tornadoInputs.keys()
-
-    # base = choose middle number from tornadoOutputs depending on which output the user wants to see 
-    # outputName = request.form['outVar']
-    outputName = "net_aep"
-    # outputName is the metric that the user wants to see
-
-    base = tornadoOutputs[variables[0]][outputName]['value'][1] 
 
     lows, highs, values, totals = [], [], [], []
     names = variables[:]
-
-    # # this dic is for testing purposes. validating results after sort
-    # value_dic = {}
-
     for i in range(len(variables)):
         low_val = tornadoOutputs[variables[i]][outputName]['value'][0]
         lows.append(low_val)
@@ -1186,10 +1273,9 @@ def tornadoPlt():
         highs.append(high_val)
         val = tornadoOutputs[variables[i]][outputName]['value'][1]
         values.append(val)
-        totals.append(high_val - low_val)
-        # value_dic[variables[i]] = {'low': low_val, 'high':high_val, 'total':high_val-low_val}
+        totals.append(abs(high_val - low_val))
+        base = tornadoOutputs[variables[0]][outputName]['value'][1] 
 
-    # insertion sort. Sorting by total width of bars (high - low)
     if (len(totals)-1) > 0:
         for i in range(len(totals)-1):
             i += 1
@@ -1204,60 +1290,39 @@ def tornadoPlt():
                 highs[j+1] = highs[j]
                 names[j+1] = names[j]
                 j = j - 1
-
             totals[j+1] = temp_total
             lows[j+1] = temp_lows
             highs[j+1] = temp_highs
             names[j+1] = temp_name
-        # this sorted from lowest to highest. Need to reverse. 
         totals.reverse()
         lows.reverse()
         highs.reverse()
         names.reverse()
+    try:
+        yUnit = myUnits[outputName]
+    except KeyError:
+        script, div = prepare_plot(tornadoPlt, ("", []), ("", []))
+        summary = "<p>Error Retrieving Data</p>"
+    else:
+        if (yUnit == "None" or yUnit is None):
+            yUnit = ""
+        script, div = prepare_plot(tornadoPlt,
+                                   (outputName + (" (%s)" % yUnit if yUnit != "" else "")),
+                                   (totals, lows, highs, values, names, outputName) )
 
-    # instead of using lists maybe use tuples?
-
-
-    ys = range(len(lows))[::-1]  
-    smallest_low = min(lows)
-    largest_high = max(highs)
-
-    for y, low, high, value in zip(ys, lows, highs, values):
-        low_width = base - low
-        high_width = high - base
-
-        plt.broken_barh(
-            [(low, low_width), (base, high_width)],
-            (y - 0.4, 0.8),
-            facecolors=['white', 'white'],  
-            edgecolors=['black', 'black'],
-            linewidth=1,
-        )
-        x = base + high_width / 2
-        # if x <= base + 50:
-        #     x = base + high_width + 50
-        # plt.text(x, y, str(value), va='center', ha='center')
-
-    plt.axvline(base, color='black')
-
-    axes = plt.gca()  # (gca = get current axes)
-    axes.spines['left'].set_visible(False)
-    axes.spines['right'].set_visible(False)
-    axes.spines['bottom'].set_visible(False)
-    axes.xaxis.set_ticks_position('top')
-    plt.yticks(ys, names)
-    plt.xlim(smallest_low - 0.1*base, largest_high + .1*base)
-    plt.ylim(-1, len(variables))
-    plt.show()
-
-    script = None
-    div = None 
     f = {"script": script, "div": div}
-
     return jsonify(**f)
+
+
+
 
 tornadoPlt.__name__ = 'tornadoPlt'
 app.route("/tornado", methods=['GET', 'POST'])(tornadoPlt)
+
+
+
+
+
 
 
 
@@ -1285,6 +1350,7 @@ def saveUnits(inputList):
     Saves only number types, which are identified if they have units -- compared to booleans or "geared"
     """
     global myUnits
+    
     for el in inputList:
         if el['name'] not in myUnits.keys() and 'units' in el.keys():
             myUnits[el['name']] = el['units']

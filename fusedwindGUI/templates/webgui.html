@@ -563,6 +563,7 @@
          </div>
       </div>
       {% endif %}
+
       {% if draw_sens_plot %}
       <div class="col-md-9">
          <div class="panel-body comp-panels panel-{{name}}">
@@ -573,6 +574,82 @@
                      <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
                   </div>
                </div>
+                {% if tornado_flag %}
+                <div id="plot_area" class="panel-body", align="center">
+                  <div id="plot_base">
+                     <div class="row" id="plot_row">
+                        <div class="col-md-3">
+                           <div class="row">
+                              <div class="col-md-9 col-md-offset-2">
+                                 <form id="plot_controller__2">
+
+                                    <div class="form-group">
+
+                                       <label for="output_plot_variable">Output</label>
+                                       <select class="form-control" id="output_plot_variable">
+                                          <optgroup label="Choose Output">
+                                             {% for val in plot_outputVars %}
+                                             <option>{{val}}</option>
+                                             {% endfor %}
+                                          </optgroup>
+                                       </select>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                 </form>
+                              </div>
+                           </div>
+                        </div>
+                        <!-- start plot -->
+                        <div class="col-md-9" id="plot_space">
+                           {{ plot_script|indent(4)|safe }}
+                           {{ plot_div|indent(4)|safe }}
+                        </div>
+                        <!-- end plot -->
+                        <script type="text/javascript">
+                           $("form#plot_controller__2").submit( function(event) {
+                               event.preventDefault();
+                           
+                               var topDOM = $(this).closest("div#plot_row");
+                               var plotDOM = topDOM.find("div#plot_space");
+                               var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
+                           
+                               $.post( "/tornado", { outVar: outVar } , function(data){
+                                   plotDOM.html( data.script + data.div );
+                               });
+                           });
+                        </script>
+                     </div>
+                  </div>
+                  <!-- Plot Controller Action -->
+                  <script type="text/javascript">
+                     var plotCount = 0;
+                     
+                     var addPlotWindow = function(){
+                         plotCount += 1;
+                     
+                         var rawText = $("#plot_base").html();
+                         rawText = rawText.replace(/__0/g, "__" + plotCount);
+                     
+                         var plotText = rawText.substring(0,rawText.indexOf("<!-- start plot -->"));
+                     
+                         plotText += '<div class="col-md-9" id="plot_space"></div>';
+                     
+                         plotText += rawText.substring(rawText.indexOf("<!-- end plot -->") + 17);
+                     
+                         $("#plot_area").append(plotText);
+                         console.log(plotText);
+                     }
+                     
+                     
+                     $("#addPlotWindow-btn").click( function(){
+                         addPlotWindow();
+                     });
+                     
+                  </script>
+               </div>
+
+                {% else %}
                <div id="plot_area" class="panel-body", align="center">
                   <div id="plot_base">
                      <div class="row" id="plot_row">
@@ -580,6 +657,7 @@
                            <div class="row">
                               <div class="col-md-9 col-md-offset-2">
                                  <form id="plot_controller__0">
+                                 
                                     <div class="form-group">
                                        <label for="input_plot_variable">Input</label>
                                        <select class="form-control" id="input_plot_variable">
@@ -681,10 +759,12 @@
                      
                   </script>
                </div>
+               {% endif %}
             </div>
          </div>
       </div>
       {% endif %}
+
       {%- if not sens_flag %}
    </div>
    {%- endif %}
