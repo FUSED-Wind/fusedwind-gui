@@ -1,10 +1,7 @@
 {% extends "base.html" %}
 {% block styles %}
 {{super()}}
-<!-- <link
-   href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css"
-   rel="stylesheet" type="text/css">
-   <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script> -->
+
 <script src="{{ bower_url_for('jquery', filename='dist/jquery.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('.static', filename='css/mystyle.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
@@ -249,7 +246,7 @@
 <link rel="stylesheet" href="static/css/mvpready-landing.css" type="text/css" />
 <link rel="stylesheet" href="static/css/mystyle.css" type="text/css" />
 <nav class="navbar navbar-default">
-   <div class="container" style="">
+   <div class="container" >
       <div class="navbar-header">
          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
          <span class="sr-only">Toggle navigation</span>
@@ -257,7 +254,7 @@
          <span class="icon-bar"></span>
          <span class="icon-bar"></span>
          </button>
-         <a class="navbar-brand" style="margin-top:10px;" href="#">FUSED-Wind GUI</a>
+         <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
       </div>
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
          <ul class="nav navbar-nav">
@@ -277,9 +274,9 @@
 <!-- ################### Main Content ################### -->
 <div class="container" id="maincontent">
 {%- if not sens_flag %}
-<h1 style="color:#FFFFFF; margin-top:20px;">  Individual Analysis </h1>
+<h1>  Individual Analysis </h1>
 {%- else %}
-<h1 style="color:#FFFFFF; margin-top:20px;"> Sensitivity Analysis </h1>
+<h1> Sensitivity Analysis </h1>
 {%- endif %}
 <div class="container" id="alert_placeholder"></div>
 <div class="panel panel-default">
@@ -367,7 +364,7 @@
 <!-- display any flashed messages -->
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-<div class='div2' style="background-color:#99FFFF;margin-left:30px;">
+<div class='div2'>
    <!-- added GNS 2015 09 23 -->
    <ul>
       {% for message in messages %}
@@ -385,7 +382,7 @@
 <div class="col-xs-3">
    <div class="panel-body">
       <div class="panel panel-default" id='panel-'>
-         <div class="panel-heading" style="background-color:#D8D8D8">
+         <div class="panel-heading">
             <h3 class="panel-title">Model Description</h3>
          </div>
          <div class="panel-body">
@@ -393,7 +390,7 @@
             <p></p>
             {%- if sens_flag %}
             <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
-            <p>For a tornado plot, select the inputs you want to vary and input a % deviation from the Initial Value that you would like to test </p> 
+            <p>For a tornado plot, first select the tornado plot sensitivity type then select the parameters you want to vary and input a % deviation from the Initial Value that you would like to test </p> 
             {%- else %}
             <p>For the individual analysis, please specify all input values.</p>
             {%- endif %}
@@ -404,7 +401,7 @@
    {%- if outputs and not sens_flag %}
    <div class="panel-body" id="hideaway2">
       <div class="panel panel-default">
-         <div class="panel-heading" style="background-color:#D8D8D8">
+         <div class="panel-heading">
             <h3 class="panel-title"> Choose Plot </h3>
          </div>
          <div class="btn-group">
@@ -425,7 +422,7 @@
    </div>
    <div class="panel-body" id="hideaway3">
       <div class="panel panel-default">
-         <div class="panel-heading" style="background-color:#D8D8D8">
+         <div class="panel-heading">
             <h3 class="panel-title"> Instructions </h3>
          </div>
          <div class="panel-body">
@@ -435,7 +432,7 @@
    </div>
    <div class="panel-body" id="hideaway">
       <div class="panel panel-default" id='panel-'>
-         <div class="panel-heading" style="background-color:#D8D8D8">
+         <div class="panel-heading">
             <h3 class="panel-title">
                <a data-target="#collapse-tree"
                   href="#collapse-tree" >
@@ -457,8 +454,8 @@
       <div class="col-md-9">
          <div class="panel-body comp-panels panel-{{name}}">
             <div class="panel panel-default">
-               <div class="panel-heading" style="background-color:#D8D8D8">
-                  <h3 class="panel-title" style="display:inline;">Compare Results</h3>
+               <div class="panel-heading">
+                  <h3 class="panel-title">Compare Results</h3>
                </div>
                <div id="plot_area" class="panel-body", align="center">
                   <div id="plot_base">
@@ -487,7 +484,7 @@
                                           </optgroup>
                                        </select>
                                     </div>
-                                    <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                    <button type="submit" class="btn btn-success">Plot</button>
                                  </form>
                               </div>
                            </div>
@@ -527,11 +524,11 @@
       <!-- ########################## The Plotting Panel ############################# -->
       {% if draw_plot %}
       <div class="tab-content">
-         <div role="tabpanel" class="tab-pane active" style="display:block" id="CAPEX">
+         <div role="tabpanel" class="tab-pane active" id="CAPEX">
             <div class="col-xs-9">
                <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
                   <div class="panel panel-default">
-                     <div class="panel-heading" style="background-color:#D8D8D8">
+                     <div class="panel-heading">
                         <h3 class="panel-title">CAPEX Plot</h3>
                      </div>
                      <div class="panel-body", align="center">
@@ -544,11 +541,11 @@
                </div>
             </div>
          </div>
-         <div role="tabpanel" class="tab-pane" style="display:none" id="LCOE">
+         <div role="tabpanel" class="tab-pane"  id="LCOE">
             <div class="col-xs-9">
                <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
                   <div class="panel panel-default">
-                     <div class="panel-heading" style="background-color:#D8D8D8">
+                     <div class="panel-heading">
                         <h3 class="panel-title">LCOE Plot</h3>
                      </div>
                      <div class="panel-body", align="center">
@@ -568,8 +565,8 @@
       <div class="col-md-9">
          <div class="panel-body comp-panels panel-{{name}}">
             <div class="panel panel-default">
-               <div class="panel-heading" style="background-color:#D8D8D8">
-                  <h3 class="panel-title" style="display:inline;">Results</h3>
+               <div class="panel-heading">
+                  <h3 class="panel-title" >Results</h3>
                   <div class="btn-group pull-right" role="group" aria="...">
                      <button type="button" id="addPlotWindow-btn" class="btn-small btn-success">Add Plot Window</button>
                   </div>
@@ -595,7 +592,7 @@
                                        </select>
                                     </div>
                                     
-                                    <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                    <button type="submit" class="btn btn-default btn-success" >Plot</button>
                                  </form>
                               </div>
                            </div>
@@ -694,11 +691,11 @@
                                           </optgroup>
                                        </select>
                                     </div>
-                                    <button type="submit" class="btn btn-default btn-success" style="width:100%">Plot</button>
+                                    <button type="submit" class="btn btn-default btn-success" >Plot</button>
                                  </form>
                               </div>
                            </div>
-                           <h3 style="margin-top:50px">Summary</h3>
+                           <h3 id="summary_heading">Summary</h3>
                            <!-- Plot summary goes here -->
                            <div id="plot_summary">
                               <p>No inputs selected</p>
@@ -777,7 +774,7 @@
                <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
                   {%- for group in group_list %}
                   <div class="panel panel-default">
-                     <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                     <div class="panel-heading" role="tab" id="headingOne">
                         <h3 class="panel-title">
                            <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
                            {{group}} Inputs
@@ -845,7 +842,7 @@
                <form method="post" class="form" id='global-inputs-form'>
                   <div class="panel panel-group" id="accordion" role="tablist" area-multiselectable="true">
                      <div class="panel panel-default">
-                        <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                        <div class="panel-heading" role="tab" id="headingOne">
                            <h3 class="panel-title">
                               <a role="button" data-toggle="collapse" href="#collapseSensitivity" aria-expanded="true" aria-controls="collapseSensitivity">
                               Sensitivity Inputs
@@ -864,10 +861,10 @@
                                     <tr>
                                        <th>Parameter</th>
                                        <th>Sensitivity Type</th>
-                                       <th> Initial Value </th>
+                                       <th>Initial Value</th>
                                     </tr>
                                     <tr>
-                                       <td>Number of iterations in analysis (iteration_count)</td>
+                                       <td>Number of Iterations in Sensitivity Analysis (iteration_count)</td>
                                        <td></td>
                                        <td>
                                           <div id='trigger-iteration_count'>
@@ -876,7 +873,7 @@
                                        </td>
                                     </tr>
                                     <tr>
-                                      <td> Tornado Plot Variability </td>
+                                      <td> Tornado Plot Variability (%) (alpha) </td>
                                       
                                       <td>
                                         <div id='trigger-select.alpha'>
@@ -898,7 +895,7 @@
                         </div>
                         {%- for group in group_list %}
                         <div class="panel panel-default">
-                           <div class="panel-heading" style="background-color:#D8D8D8" role="tab" id="headingOne">
+                           <div class="panel-heading" role="tab" id="headingOne">
                               <h3 class="panel-title">
                                  <a role="button" data-toggle="collapse" href="#collapse{{group}}" aria-expanded="true" aria-controls="collapse{{group}}">
                                  {{group}} Inputs
@@ -1000,7 +997,7 @@
                <div class="col-xs-9">
                <div id="topLevel" class="panel panel-body  comp-panels panel-{{name}}">
                <div class="panel panel-default">
-               <div class="panel-heading" style="background-color:#D8D8D8">
+               <div class="panel-heading">
                <h3 class="panel-title">Model Output Results and Current Input States</h3>
                </div>
                <div class="panel-body", align="center">
@@ -1065,10 +1062,10 @@
                <div class="panel-body hidden col-xs-9 comp-panels not_lcoe panel-{{field}}">
                <!-- ############## The Component Input panel ############################## -->
                <div class="panel panel-default">
-               <div class="panel-heading" style="background-color:#D8D8D8">
+               <div class="panel-heading">
                <h3 class="panel-title">{{field}}</h3>
                </div>
-               <div class="panel-heading" style="background-color:#D8D8D8">Inputs & Outputs</div>
+               <div class="panel-heading">Inputs & Outputs</div>
                <div class="panel-body", align="center">
                <table class="table"
                   id="{{field}}-table"

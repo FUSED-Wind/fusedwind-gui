@@ -41,7 +41,6 @@ div#pop-up {
   margin-top:15%;
   }
 
-
 .banner{
   background-image: url('../img/26777.jpg');
   background-size:cover; /* this stretches image based on sizing of window! */
@@ -49,12 +48,10 @@ div#pop-up {
   min-width:100%;
 
 }
-
 .about{
     background-image: url('../img/16303.jpg');
 
 }
-
 
 .webGUI{
   background-image: url('../img/16303.jpg');
@@ -95,7 +92,7 @@ html, body{
 
 
 .panel-heading{
-  background-color:#A8A8A8 ;
+  background-color:#D8D8D8 !important;
 }
 
 #maincontent{
@@ -115,17 +112,81 @@ html, body{
   background-color:#d74b4b;
   color:#FFFFFF;
 }
-
+button.btn-success{
+  width:100%;
+}
 
 .hidden {
   display: none !important;
   visibility: hidden !important;
 }
 
-#maincontent{
-  min-width: 1350px;
-}
-
 #button-panel{
   margin-left:4px;
+}
+
+#plot_controller__2{
+  margin-top:50px;
+}
+
+#CAPEX{
+  display:block;
+}
+
+#LCOE{
+  display:none;
+}
+
+h3.panel-title{
+  display:inline;
+}
+
+#summary_heading{
+  margin-top:50px;
+}
+
+a.navbar-brand{
+  margin-top:10px;
+}
+
+h1{
+  color:#FFFFFF;
+  margin-top:20px;
+}
+
+div.div2{
+  background-color:#99FFFF;
+  margin-left:30px;
+}
+
+div.page-header{
+  margin-top:20px;
+}
+
+h2>small{
+  color:#FFFFFF;
+}
+
+h4{
+  color:#FFFFFF;
+}
+
+#about-content{
+  color:#FFFFFF;
+}
+
+#configure-content{
+  background-color:#FFFFFF;
+  margin-top:0px;
+}
+
+#modelselect{
+  box-sizing:content-box;
+  margin-bottom:10px;
+}
+
+input.btn-mvp{
+  margin-left:2px;
+  margin-top:-20px;
+  margin-bottom:10px;
 }

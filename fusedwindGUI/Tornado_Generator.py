@@ -36,20 +36,14 @@ class Tornado_Generator(Container):
         
     def __iter__(self):
         """Return an iterator over our sets of input values"""
-        # print "here iter"
         if self.num_samples != 3: 
             raise ValueError("Tornado must have 3 samples")
         
         start = 1-self.alpha
         return (np.array([start + x*self.alpha for i in range(self.num_parameters)]) for x in range(self.num_samples+1))    
-        # the +1 is necessary at the end because it 
+        # the +1 is necessary at the end because OpenMDAO cuts a number out for some reason ??
 
-
-
-
-
-
-
+# --------------------------------------------------------------------
 
 """
 .. _`DOEdriver.py`:
@@ -68,7 +62,6 @@ from openmdao.main.interfaces import IDOEgenerator
 from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
 
 def check_parameter(parameter):
-    # print "checking parameter"
     try:
         if parameter.vartypename == 'Array':
             if 'float' not in parameter.valtypename:
@@ -142,21 +135,17 @@ class TORdriver(CaseIteratorDriver):
 
     def execute(self):
         """Generate and evaluate cases."""
-        # print "here execute"
         self.set_inputs(self._get_cases())
         self._csv_file = None
         try:
             super(TORdriver, self).execute()
-            # print "here after super execute"
         finally:
             if self._csv_file is not None:
                 self._csv_file.close()
 
     def _get_cases(self):
         """Generate each case."""
-        # print "here get cases"
         self.DOEgenerator.num_parameters = self.total_parameters()
-        # record_doe = self.record_doe
         record_doe = False
         if record_doe:
             if not self.doe_filename:
@@ -165,16 +154,10 @@ class TORdriver(CaseIteratorDriver):
             self._csv_file = open(self.doe_filename, 'wb')
             csv_writer = csv.writer(self._csv_file)
 
-        # The start vector should be a np.ndarray of np.float64 values 
-
         start = self.get_starter()
 
         for row in self.DOEgenerator:
-            # row will always have 3 entries
-            # if record_doe:
-            #     csv_writer.writerow(['%.16g' % val for val in row])
+
             yield row * start
 
-        # if record_doe:
-        #     self._csv_file.close()
-        #     self._csv_file = None
+
