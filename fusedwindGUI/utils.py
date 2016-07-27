@@ -56,6 +56,7 @@ def makePretty(myList):
             myDict['name'] = myDict['name'].replace("_"," ").title()
         if 'desc' in myDict.keys():
             myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+            
 import types
 NumberTypes = (types.IntType,
     types.LongType,
@@ -120,53 +121,7 @@ def make_field(k, v):
     return field(k, **prep_field(v))
 
 
-def WebGUIForm(dic, run=False, sens_flag=False):
-    """Automagically generate the form from a FUSED I/O dictionary.
-    TODO:
-    [ ] Add type validators
-    [ ] Add low/high validators
-    [x] Add units nice looking extension using 'input-group-addon'
-             (http://getbootstrap.com/components/#input-groups)
-    [ ] Move the units formating into the html code directly
-    """
 
-    class MyForm(Form):
-        pass
-
-    # sorting the keys alphabetically
-    skeys = sorted(dic.keys())
-
-    for k in skeys:
-        v = dic[k]
-        setattr(MyForm, k, make_field(k, v))
-
-
-    if sens_flag:
-        for k in skeys:
-            v = dic[k]
-            if not 'group' in v.keys():
-                v['group'] = 'Other'
-            elif v['group'] is None:
-                v['group'] = 'Other'
-            if v['type'] == 'Float':
-                kselect = "select." + k
-                newdic = {
-                    'default': False,
-                    'state': False,
-                    'desc': kselect,
-                    'type': 'Bool',
-                    'group': v['group']}
-                setattr(MyForm, kselect, make_field(kselect, newdic))
-                klow = "low." + k
-                setattr(MyForm, klow, make_field(klow, v))
-                khigh = "high." + k
-                setattr(MyForm, khigh, make_field(khigh, v))
-        setattr(MyForm, "select.alpha", make_field("select.alpha", newdic))
-
-    if run:  # Add the run button
-        setattr(MyForm, 'submit', SubmitField("Run"))
-
-    return MyForm
 
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
