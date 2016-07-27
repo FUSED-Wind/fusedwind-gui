@@ -163,17 +163,10 @@ div.page-header{
   margin-top:20px;
 }
 
-h2>small{
+h2>small, h4, #about-content{
   color:#FFFFFF;
 }
 
-h4{
-  color:#FFFFFF;
-}
-
-#about-content{
-  color:#FFFFFF;
-}
 
 #configure-content{
   background-color:#FFFFFF;
