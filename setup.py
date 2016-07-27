@@ -146,7 +146,6 @@ setup(
    "gunicorn==18.0",
    "gevent==1.0",
    "requests==1.2.3",
-   "mpld3==0.2",
    "matplotlib"
    ],
   include_package_data=True,
