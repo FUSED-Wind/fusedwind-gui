@@ -163,12 +163,18 @@ div.page-header{
   margin-top:20px;
 }
 
-h2>small, h4, #about-content{
+h2>small{
   color:#FFFFFF;
 }
 
+h4{
+  color:#FFFFFF;
+}
 
-/* Configure */ 
+#about-content{
+  color:#FFFFFF;
+}
+
 #configure-content{
   background-color:#FFFFFF;
   margin-top:0px;
@@ -183,10 +189,4 @@ input.btn-mvp{
   margin-left:2px;
   margin-top:-20px;
   margin-bottom:10px;
-}
-
-#button-panel>input#submit{
-  margin-top:0px;
-  margin-left:0px;
-  margin-bottom:0px;
 }
