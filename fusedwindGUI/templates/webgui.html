@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('blueimp-file-upload', filename='css/jquery.fileupload-ui.css') }}">
 <link rel="stylesheet" href="{{ bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.css')}}">
+
 <script src="{{bower_url_for('bootstrap-table', filename='dist/bootstrap-table.min.js')}}"></script>
 <script src="{{bower_url_for('bootstrap-table', filename='dist/extensions/export/bootstrap-table-export.js')}}"></script>
 
@@ -14,6 +15,9 @@
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
 <link href="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.css" rel="stylesheet" type="text/css">
 <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.10.0.min.js"></script>
+
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
 {% endblock %}
 {% block scripts %}
 {{super()}}
@@ -222,6 +226,8 @@
        submitForms = function(){
            document.forms["global-inputs-form"].submit();
        }
+
+
 </script>
 {% endblock %}
 {% block head %}
@@ -282,8 +288,17 @@
 <div class="panel panel-default">
 <!-- ####################  Buttons to run scripts ################### -->
 <div class="panel-body" id='button-panel'>
-   <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms()" value="Run">
+  {%- if not sens_flag and toggle %}
+   <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms();record_case();" value="Run">
+
+
+  {% else %}
+       <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms();" value="Run">
+
+  {% endif %}
+
    {%- if not sens_flag %}
+
    <span class="btn btn-mvp fileinput-button" >
    <i class="glyphicon glyphicon-plus"></i>
    <span>Load inputs</span>
@@ -315,7 +330,7 @@
          <li role="presentation" class="active">
             <a href="#inputs" 
                role="tab" 
-               onClick=" document.getElementById('hideaway2').style.display='none';
+               onClick="document.getElementById('hideaway2').style.display='none';
                document.getElementById('hideaway3').style.display='none';
                document.getElementById('hideaway').style.display='none';
                $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);
@@ -389,8 +404,15 @@
             <p>{{desc}}</p>
             <p></p>
             {%- if sens_flag %}
+            {%- if not tornado_flag %}
             <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
-            <p>For a tornado plot, first select the tornado plot sensitivity type then select the parameters you want to vary and input a % deviation from the Initial Value that you would like to test </p> 
+            <p>For a tornado plot, first select the tornado plot sensitivity type then select the parameters you want to vary and input a % deviation from the Initial Value that you would like to test.
+            </p>
+            {% else %}
+            <p>
+            Green numbers indicate the result due to increasing the value of the parameter.</p><p>
+            Red numbers indicate the result due to decreasing the values of the parameter.</p> 
+            {% endif %}
             {%- else %}
             <p>For the individual analysis, please specify all input values.</p>
             {%- endif %}
@@ -793,6 +815,18 @@
                               <table class="table table-hover" align="left">
                                  <col width="55%">
                                  <col width="45%">
+
+                                 <tr> 
+                                  <td> Record Case </td> <td> 
+                                  {% if toggle %}
+                                  <input type="checkbox" class="form-control" value="y" name="toggle_record" checked data-toggle="toggle"> 
+                                  {% else %}
+                                  <input type="checkbox" class="form-control" value="y" name="toggle_record" onClick="document.getElementById('submit').onclick+=record_case;" data-toggle="toggle"> 
+                                  {% endif %}
+
+                                  </td>
+                                 </tr>
+
                                  <tr>
                                     <th>Parameter</th>
                                     <th>Value</th>
@@ -865,7 +899,11 @@
                                     </tr>
                                     <tr>
                                        <td>Number of Iterations in Sensitivity Analysis (iteration_count)</td>
-                                       <td></td>
+                                       <td>
+                                        <div id='trigger-select.sens'>
+                                          <input type="radio" class="form-control" value="n" name="select.alpha" checked>
+                                         </div>
+                                      </td>
                                        <td>
                                           <div id='trigger-iteration_count'>
                                              <input type="text" class="form-control" value="{{ extra_inputs['sensitivity_iterations']}}" name="iteration_count">
@@ -873,11 +911,11 @@
                                        </td>
                                     </tr>
                                     <tr>
-                                      <td> Tornado Plot Variability (%) (alpha) </td>
+                                      <td> Tornado Plot Variability (%) </td>
                                       
                                       <td>
                                         <div id='trigger-select.alpha'>
-                                          <input type="checkbox" class="form-control" value="y" name="select.alpha">
+                                          <input type="radio" class="form-control" value="y" name="select.alpha">
                                          </div>
                                       </td>
                                     <td>  

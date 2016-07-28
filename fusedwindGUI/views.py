@@ -507,11 +507,19 @@ def webgui(app=None):
             io = traits2jsondict(cpnt)
 
             try:
-                if inputs['select.alpha'] is not None:
+                if inputs['select.alpha'] == "y":
                     tornado = True
+                else:
+                    tornado = False
             except KeyError:
                 tornado = False
-            if not sens_flag:
+
+            if not sens_flag:    
+                toggle = False
+                try:
+                    toggle = 'toggle_record' in inputs
+                except KeyError:
+                    pass
                 try:
                     for k in inputs.keys():
                         if k in io[
@@ -573,6 +581,7 @@ def webgui(app=None):
                         combIO = outputs['inputs'] + outputs['outputs']
                     else:
                         combIO = None
+                        inputs_names_form, outputs_names_form = None, None
 
                     if not failed_run_flag:
                         # if isinstance(cpnt, Assembly) and not
@@ -614,7 +623,7 @@ def webgui(app=None):
                                            assembly_structure=assembly_structure,
                                            group_list=group_list,
                                            group_dic=group_dic,
-                                           desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+                                           desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag, toggle=toggle)
 
             # if sensitivity analysis and selected tornado option
             elif sens_flag and tornado:
@@ -654,7 +663,8 @@ def webgui(app=None):
                         group_dic=group_dic,
                         desc=desc,
                         failed_run_flag=failed_run_flag,
-                        sens_flag=sens_flag)
+                        sens_flag=sens_flag,
+                        tornado_flag=tornado)
 
                 
                 global tornadoInputs
@@ -1313,5 +1323,4 @@ tornadoOutputs = {}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
 debug = False
-tornado = False
 
