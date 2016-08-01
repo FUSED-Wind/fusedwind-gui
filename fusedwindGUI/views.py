@@ -589,8 +589,8 @@ def webgui(app=None):
                         try:
                             # plots the capital costs
                             script, div = prepare_plot(cpnt.plot)
-                            script_lcoe, div_lcoe = prepare_plot(
-                                cpnt.lcoe_plot) 
+                            # script_lcoe, div_lcoe = prepare_plot(
+                            #     cpnt.lcoe_plot) 
                             script_comp, div_comp = prepare_plot(
                                 CompareResultsPlot, ("", []), ("", []), ("", []))
                             draw_plot = True
@@ -608,7 +608,6 @@ def webgui(app=None):
                         script, div, plot_resources, draw_plot = None, None, None, None
                         script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                         script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
-
                     return render_template('webgui.html',  # basically rerenter webgui.html with results or no results dependingon success
                                            inputs=WebGUIForm(
                                                io['inputs'], run=True, sens_flag=sens_flag)(
@@ -616,7 +615,7 @@ def webgui(app=None):
                                            outputs=combIO,
                                            name=cpname,
                                            plot_script=script, plot_div=div, draw_plot=draw_plot,
-                                           plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
+                                           # plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
                                            plot_inputVars=inputs_names_form, plot_outputVars=outputs_names_form,
                                            plot_script_comp=script_comp, plot_div_comp=div_comp,
                                            sub_comp_data=sub_comp_data,
@@ -1034,11 +1033,9 @@ def GetSensPlot():
 try:
     from bokeh.embed import components
     from bokeh.plotting import *
-    from bokeh.charts import Line
     from bokeh.resources import INLINE
-    from bokeh.templates import JS_RESOURCES
+    from bokeh.core.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
-    from bokeh._legacy_charts import Donut, output_file, show
     from bokeh.palettes import Spectral11
     from bokeh.models import HoverTool
     use_bokeh = True
@@ -1077,7 +1074,8 @@ if use_bokeh:
 
         fig = figure(title="Sensitivity Results",
                      x_axis_label=args[0][0],
-                     y_axis_label=args[1][0])
+                     y_axis_label=args[1][0],
+                     toolbar_location="above")
 
         # Set colors according to input
         colors = []
@@ -1154,7 +1152,8 @@ if use_bokeh:
         fig = figure(title="Compare Results",
                      x_axis_label=args[0][0],
                      y_axis_label=args[1][0],
-                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
+                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave",
+                     toolbar_location="above")
 
         
         numDataPoints = len(args[0][1])
@@ -1293,8 +1292,6 @@ def GetTornado():
 
     f = {"script": script, "div": div}
     return jsonify(**f)
-tornadoPlt.__name__ = 'tornadoPlt'
-app.route("/tornado", methods=['GET', 'POST'])(tornadoPlt)
 
 
 
