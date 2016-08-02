@@ -104,8 +104,12 @@ html, body{
   margin-top:10px;
 }
 
-#hideaway2, #hideaway, #hideaway3{
+#hideaway2, #hideaway3{
   display:none;
+}
+
+#hideaway{
+  display:block;
 }
 
 .btn-mvp{

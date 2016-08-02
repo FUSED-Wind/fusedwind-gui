@@ -158,7 +158,7 @@
 <script>
    // Alert script ---------------------------
        function showalert(message,alerttype, delayms) {
-           delayms = typeof delayms !== 'undefined' ?  delayms : 2000; // default parameters do not work in function() stmt
+           delayms = typeof delayms !== 'undefined' ?  delayms : 5000; // default parameters do not work in function() stmt
    
            $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-' +
                                           alerttype +
@@ -227,7 +227,10 @@
            document.forms["global-inputs-form"].submit();
        }
 
-
+      $(document).ready( function() {
+        $('#alertdiv').delay(5000).remove();
+      });
+       
 </script>
 {% endblock %}
 {% block head %}
@@ -284,18 +287,32 @@
 {%- else %}
 <h1> Sensitivity Analysis </h1>
 {%- endif %}
-<div class="container" id="alert_placeholder"></div>
+<div class="container" id="alert_placeholder">
+  
+<!-- display any flashed messages -->
+{% if messages %}
+
+<div id="alertdiv" class="alert alert-success" role="alert" >
+<a class="close" data-dismiss="alert">×</a>
+<span> 
+{{messages}} 
+</span>
+</div>
+
+{% endif %}
+<!-- end display any flashed messages -->
+
+
+
+</div>
 <div class="panel panel-default">
 <!-- ####################  Buttons to run scripts ################### -->
 <div class="panel-body" id='button-panel'>
-  {%- if not sens_flag and toggle %}
-   <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms();record_case();" value="Run">
+   
 
 
-  {% else %}
-       <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms();" value="Run">
+  <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms();" value="Run">
 
-  {% endif %}
 
    {%- if not sens_flag %}
 
@@ -327,7 +344,7 @@
    {%- if outputs and not sens_flag %}
    <div class="btn-group pull-right" id="myTabs">
       <ul class="nav nav-tabs" role="tablist">
-         <li role="presentation" class="active">
+         <li role="presentation">
             <a href="#inputs" 
                role="tab" 
                onClick="document.getElementById('hideaway2').style.display='none';
@@ -336,7 +353,7 @@
                $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);
                " data-toggle="tab">Inputs</a>
          </li>
-         <li role="presentation">
+         <li role="presentation" class="active">
             <a href="#results" role="tab" 
                onClick="document.getElementById('hideaway').style.display='block';
                document.getElementById('hideaway2').style.display='none';
@@ -376,20 +393,7 @@
                                       '</span></div>')
 </script>
 {% endif %}
-<!-- display any flashed messages -->
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<div class='div2'>
-   <!-- added GNS 2015 09 23 -->
-   <ul>
-      {% for message in messages %}
-      <li>{{ message }} </li>
-      {% endfor %}
-   </ul>
-</div>
-{% endif %}
-{% endwith %}
-<!-- end display any flashed messages -->
+
 <!-- ################### divider to rest of content ################### -->
 <div class="panel-body">
 <div class="row" id="input_panels">
@@ -453,6 +457,7 @@
       </div>
    </div>
    <div class="panel-body" id="hideaway">
+
       <div class="panel panel-default" id='panel-'>
          <div class="panel-heading">
             <h3 class="panel-title">
@@ -564,14 +569,15 @@
          </div>
          <div role="tabpanel" class="tab-pane"  id="LCOE">
             <div class="col-xs-9">
-               <div class="panel-body col-xs-9 comp-panels panel-{{name}}">
+               <div class="panel-body comp-panels panel-{{name}}">
                   <div class="panel panel-default">
                      <div class="panel-heading">
                         <h3 class="panel-title">LCOE Plot</h3>
                      </div>
                      <div class="panel-body", align="center">
                         <div id="plot_space">
-                          
+                           {{ plot_script_lcoe|indent(4)|safe }}
+                           {{ plot_div_lcoe|indent(4)|safe }}
                         </div>
                      </div>
                   </div>
@@ -787,7 +793,11 @@
    {%- endif %}
    <!--                         The Inputs Panel                            -->
    {% if not sens_flag %}
+   {% if not outputs %}
    <div role="tabpanel" class="tab-pane active" id="inputs">
+   {% else %}
+   <div role="tabpanel" class="tab-pane" id="inputs">
+   {% endif %}
       <div class="col-xs-9" id='inputs_single'>
          <div class="panel-body">
             <form method="post" class="form" id='global-inputs-form'>
@@ -813,17 +823,20 @@
                               <table class="table table-hover" align="left">
                                  <col width="55%">
                                  <col width="45%">
-
+                                 {%- if group == 'Global' %}
                                  <tr> 
                                   <td> Record Case </td> <td> 
                                   {% if toggle %}
-                                  <input type="checkbox" class="form-control" value="y" name="toggle_record" checked data-toggle="toggle"> 
+                                  <input id="toggle-button" type="checkbox" class="form-control"  
+                                  name="toggle_record" checked data-toggle="toggle" onClick="toggleButton();"> 
                                   {% else %}
-                                  <input type="checkbox" class="form-control" value="y" name="toggle_record" onClick="document.getElementById('submit').onclick+=record_case;" data-toggle="toggle"> 
+                                  <input id="toggle-button" type="checkbox" class="form-control"  
+                                  name="toggle_record" onClick="toggleButton();" data-toggle="toggle"> 
                                   {% endif %}
 
                                   </td>
                                  </tr>
+                                 {% endif %}
 
                                  <tr>
                                     <th>Parameter</th>
@@ -849,6 +862,8 @@
                      </div>
                      {%- endfor %}
                      <script>
+                       
+
                         function getHeight() {
                             var h_nav = document.getElementById('navigation-bar').offsetHeight;
                             var h_btn = document.getElementById('button-panel').offsetHeight;
@@ -1029,7 +1044,7 @@
                <!-- ###################### The Outputs panel ########################### -->
                {%if not sens_flag%}
                {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
-               <div role="tabpanel" class="tab-pane" id="results">
+               <div role="tabpanel" class="tab-pane active" id="results">
                <div class="col-xs-9">
                <div id="topLevel" class="panel panel-body  comp-panels panel-{{name}}">
                <div class="panel panel-default">

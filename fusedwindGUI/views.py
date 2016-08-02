@@ -370,7 +370,8 @@ def webgui(app=None):
             cpnt.gui_recorder['recorder'] = {}
             cpnt.gui_recorder['recorder']['case%i' %
                                           cpnt.gui_recorder['counter']] = params
-        # flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
+
+        # flash('Case %i recorded successfully!' % cpnt.gui_recorder['counter'], category='message')
         return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
 
     record_case.__name__ = 'analysis_record_case'
@@ -589,8 +590,8 @@ def webgui(app=None):
                         try:
                             # plots the capital costs
                             script, div = prepare_plot(cpnt.plot)
-                            # script_lcoe, div_lcoe = prepare_plot(
-                            #     cpnt.lcoe_plot) 
+                            script_lcoe, div_lcoe = prepare_plot(
+                                cpnt.lcoe_plot) 
                             script_comp, div_comp = prepare_plot(
                                 CompareResultsPlot, ("", []), ("", []), ("", []))
                             draw_plot = True
@@ -608,14 +609,17 @@ def webgui(app=None):
                         script, div, plot_resources, draw_plot = None, None, None, None
                         script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                         script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
+                    messages = None
+                    if toggle:
+                        messages = record_case()
                     return render_template('webgui.html',  # basically rerenter webgui.html with results or no results dependingon success
                                            inputs=WebGUIForm(
                                                io['inputs'], run=True, sens_flag=sens_flag)(
                                                MultiDict(inputs)),
                                            outputs=combIO,
-                                           name=cpname,
+                                           name=cpname, messages=messages,
                                            plot_script=script, plot_div=div, draw_plot=draw_plot,
-                                           # plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
+                                           plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
                                            plot_inputVars=inputs_names_form, plot_outputVars=outputs_names_form,
                                            plot_script_comp=script_comp, plot_div_comp=div_comp,
                                            sub_comp_data=sub_comp_data,
@@ -1200,7 +1204,8 @@ if use_bokeh:
             outputName = args[1][5]
 
             # create a new plot with a title and axis labels
-            fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters')
+            fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters',
+                toolbar_location="above")
 
             # iterate through palette
             import itertools
