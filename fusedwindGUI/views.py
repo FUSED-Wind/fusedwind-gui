@@ -1041,7 +1041,9 @@ try:
     from bokeh.core.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
     from bokeh.palettes import Spectral11
-    from bokeh.models import HoverTool
+    from bokeh.models import HoverTool, Arrow, OpenHead, NormalHead, VeeHead
+    from bokeh.models.glyphs import Quad
+    from bokeh.charts import show, output_file
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
@@ -1150,7 +1152,15 @@ if use_bokeh:
         return fig
 
     def CompareResultsPlot(fig, *args, **kwargs):
-        """ Configures the compare results plot """
+        """ 
+        Configures the compare results plot
+        Params:
+            @fig: figure object from bokeh
+            @args: data for plotting
+            @kwargs: not used
+        Returns:
+            @fig: returns the bokeh figure object after populating it
+        """
         if len(args) == 0:
             pass
         fig = figure(title="Compare Results",
@@ -1159,7 +1169,6 @@ if use_bokeh:
                      tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave",
                      toolbar_location="above")
 
-        
         numDataPoints = len(args[0][1])
         source = ColumnDataSource(
             data=dict(
@@ -1177,7 +1186,6 @@ if use_bokeh:
             size=12)
 
         hover = fig.select(dict(type=HoverTool))
-
         hover.tooltips = OrderedDict([
             ("x", "%s" % args[0][0]),
             ("y", "%s" % args[1][0]),
@@ -1192,10 +1200,22 @@ if use_bokeh:
 
 
     def tornadoPlt(fig, *args, **kwargs):
+        """
+        Generates a tornado plot for sensitivity analysis.
+        Params:
+            @fig: figure object from bokeh
+            @args: parameters are either empty or from the GetTornado() function.
+                   these args include numerical values to be plotted
+            @kwargs: keywords aren't used in this function, but
+                     added as optional input for consistency with other plots
+        Returns:
+            @fig: returns the bokeh figure object after populating it 
+
+        """
         if len(args) != 2:
             return fig
-    
         try:
+            import itertools
             totals = args[1][0]
             lows = args[1][1]
             highs = args[1][2]
@@ -1205,37 +1225,117 @@ if use_bokeh:
 
             # create a new plot with a title and axis labels
             fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters',
-                toolbar_location="above")
-
-            # iterate through palette
-            import itertools
-            palette = itertools.cycle(Spectral11)
-
-            def addBar(top, bottom, left, right):
-                fig.quad(top=top, bottom=bottom, left=left, right=right, color=palette.next())
+                toolbar_location="above", tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
 
             def mtext(x, y, textstr, color="black"):
+                """
+                Adds text at coordinates
+                Params:
+                    @x: x coordinate, type = int, float, etc.
+                    @y: y coordinate
+                    @textstr: text to display, type='str'
+                    @color: color of text, can be str or hex values
+                Returns:
+                    None
+                """
                 fig.text(x, y, text=[textstr],
                 text_color=color, text_align="center", text_font_size="10pt")
 
             numVars = len(lows)
-            start = numVars * 2
-            for i in range(len(lows)):
-                if highs[i] >= lows[i]:
-                    mtext(lows[i]-.03*lows[i], start-.75, prettyNum(lows[i]), "red")
-                    mtext(highs[i]+.03*highs[i], start-.75, prettyNum(highs[i]),"green")
+            start = numVars * 3 
+
+            # colors is a palette for a gradient between red and green. Can change this to desired colors
+            # via importing an existing palette or changing values below
+            colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
+                    '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
+                    '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
+                    '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
+                    '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
+                    '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
+                    '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
+                    '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
+            numColors = len(colors)
+
+            # color, width, x-coord, y-coord and relevant information for glyphs
+            param_colors = []
+            c_width, c_x, c_y, c_lows, c_highs, c_base, c_names = [], [], [], [], [], [], []
+            
+            # for every parameter the user selected
+            for i in range(numVars): 
+                param_range = highs[i]-lows[i]
+                width = param_range/numColors
+                mtext(values[0], start, names[i] )
+
+                # sometimes increasing parameter value decreases output value
+                if highs[i] < lows[i]:
+                    temp = highs[i]
+                    for x in range(numColors):
+                        c_lows.append(lows[i])
+                        c_highs.append( highs[i] )
+                        c_base.append(values[0])
+                        c_width.append(width)
+                        c_y.append(start-1)
+                        c_x.append(temp-width/2)
+                        c_names.append(names[i])
+                        temp-=width
+                        param_colors.append(colors[numColors-x-1])
                 else:
-                    mtext(lows[i]+.03*lows[i], start-.75, prettyNum(lows[i]), "red")
-                    mtext(highs[i]-.03*highs[i], start-.75, prettyNum(highs[i]), "green")
-                addBar(start, start-1.25, lows[i], highs[i])
-                mtext(values[i], start, names[i])
-                start -= 1.75
+                    temp = lows[i]
+                    for x in range(numColors):
+                        c_lows.append(lows[i])
+                        c_highs.append( highs[i] )
+                        c_base.append(values[0])
+                        c_width.append(width)
+                        c_y.append(start-1)
+                        c_x.append(temp+width/2)
+                        c_names.append(names[i])
+                        temp+= width
+                        param_colors.append(colors[x])
+                start -= 3 
+            
+            # data source for graph
+            source = ColumnDataSource(
+                data=dict(
+                    x=c_x,
+                    y=c_y,
+                    width=c_width,
+                    colors=param_colors,
+                    lows=c_lows,
+                    highs=c_highs,
+                    base=c_base,
+                    names=c_names))
+
+            # adds rectangle glyphs
+            fig.rect(x='x', y='y', width='width', height=2,
+                       color='colors', source=source)
+
+            # implement hover tool
+            hover = fig.select(dict(type=HoverTool))
+            hover.tooltips = OrderedDict([
+                ("Parameter", "@names"),
+                ("decreasing parameter results in this %s:" %outputName , "@lows" ),
+                ("base %s:" %outputName, "@base"),
+                ("increasing parameter value results in this %s:" %outputName, "@highs")
+                
+            ])
+
+            # add triangle pointers
+            start = numVars * 3
+            for i in range(numVars):
+                fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
+                    x_start=lows[i], y_start=start, x_end=lows[i], y_end=start-2))
+                fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
+                    x_start=highs[i], y_start=start-2, x_end=highs[i], y_end=start))
+                # fig.inverted_triangle(x=lows[i], y=start-1.5, size=15, fill_alpha=1, legend="Decrease in Parameter")
+                # fig.inverted_triangle(x=highs[i], y=start-.5, size=15, fill_alpha=1, angle=np.pi)
+                start -= 3
 
             # add baseline
-            fig.line([values[0], values[0]],[numVars*2, start+.5], line_width=2, line_color="black")
+            fig.line([values[0], values[0]],[numVars*3, start+.5], line_width=1.5, line_color="black")
+            fig.yaxis.visible = None
             mtext(values[0], start-.5, prettyNum(values[0]))
             mtext(values[0], start, "Baseline")
-        
+     
         except:
             # create a new plot with a title and axis labels
             fig = figure(title="Parameter Sensitivity", x_axis_label=None , y_axis_label='Parameters')
@@ -1244,6 +1344,11 @@ if use_bokeh:
 
 @app.route("/tornado", methods=['POST'])
 def GetTornado():
+    """
+    Consolidates and sorts results for Tornado Plots. 
+    Returns:
+        jsonified script, div for generating plots
+    """
     outputName = str(request.form['outVar'])
     global tornadoInputs
     global tornadoOutputs
@@ -1301,8 +1406,11 @@ def GetTornado():
 
 
 def saveUnits(inputList): 
-    """ Saves the units to a global variable for use later (when using compare case feature).
-    Saves only number types, which are identified if they have units -- compared to booleans or "geared"
+    """ 
+    Saves the units to a global variable for use later (when using compare case feature).
+    Saves only number types, which are identified if they have units -- compared to booleans or "geared" 
+    Params:
+        @inputList: inputList is a list of dictionaries
     """
     global myUnits
     for el in inputList:

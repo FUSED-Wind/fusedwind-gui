@@ -48,14 +48,11 @@ div#pop-up {
   min-width:100%;
 
 }
-.about{
+.about, .webGUI{
     background-image: url('../img/16303.jpg');
 
 }
 
-.webGUI{
-  background-image: url('../img/16303.jpg');
-}
 
 
 .h1{
