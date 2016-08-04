@@ -133,10 +133,7 @@ def WebGUIForm(dic, run=False, sens_flag=False):
     class MyForm(Form):
         pass
 
-    # sorting the keys alphabetically
-    skeys = sorted(dic.keys())
-
-    for k in skeys:
+    for k in dic.keys():
         v = dic[k]
         setattr(MyForm, k, make_field(k, v))
 
@@ -182,7 +179,11 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
                 'href': '#collapse-%s' % (cname)})
 
             tmp = get_io_dict(comp)
-            sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
+            # tmp = dict(tmp)
+            # makePretty(tmp['outputs'])
+            # makePretty(tmp['inputs'])
+
+            sub_comp_data[cname]['params'] = tmp['outputs'] + tmp['inputs']
             # no plots for now since bootstrap-table and bokeh seem to be in
             # conflict
             if hasattr(comp, "plot"):

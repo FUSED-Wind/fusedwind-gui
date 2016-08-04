@@ -579,7 +579,7 @@ def webgui(app=None):
                         makePretty(myInputs)
                         makePretty(myOutputs)
 
-                        combIO = outputs['inputs'] + outputs['outputs']
+                        combIO = outputs['outputs'] + outputs['inputs']
                     else:
                         combIO = None
                         inputs_names_form, outputs_names_form = None, None
