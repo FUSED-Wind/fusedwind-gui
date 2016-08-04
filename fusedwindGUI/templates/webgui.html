@@ -344,7 +344,11 @@
    {%- if outputs and not sens_flag %}
    <div class="btn-group pull-right" id="myTabs">
       <ul class="nav nav-tabs" role="tablist">
+        {% if not toggle %}
          <li role="presentation">
+         {% else %}
+         <li role="presentation" class="active">
+         {% endif %}
             <a href="#inputs" 
                role="tab" 
                onClick="document.getElementById('hideaway2').style.display='none';
@@ -352,13 +356,20 @@
                document.getElementById('hideaway').style.display='none';
                $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);
                " data-toggle="tab">Inputs</a>
+        
          </li>
+         {% if not toggle %}
          <li role="presentation" class="active">
+         {% else %}
+         <li role="presentation">
+         {% endif %}
             <a href="#results" role="tab" 
                onClick="document.getElementById('hideaway').style.display='block';
                document.getElementById('hideaway2').style.display='none';
                document.getElementById('hideaway3').style.display='none';
                " data-toggle="tab">Results</a>
+       
+         
          </li>
          <li role="presentation">
             <a href="#plots" role="tab" 
@@ -820,7 +831,11 @@
    {% if not outputs %}
    <div role="tabpanel" class="tab-pane active" id="inputs">
    {% else %}
+   {% if not toggle %}
    <div role="tabpanel" class="tab-pane" id="inputs">
+   {% else %}
+   <div role="tabpanel" class="tab-pane active" id="inputs">
+   {% endif %}
    {% endif %}
       <div class="col-xs-9" id='inputs_single'>
          <div class="panel-body">
@@ -852,10 +867,10 @@
                                   <td> Record Case </td> <td> 
                                   {% if toggle %}
                                   <input id="toggle-button" type="checkbox" class="form-control"  
-                                  name="toggle_record" checked data-toggle="toggle" onClick="toggleButton();"> 
+                                  name="toggle_record" checked data-toggle="toggle"> 
                                   {% else %}
                                   <input id="toggle-button" type="checkbox" class="form-control"  
-                                  name="toggle_record" onClick="toggleButton();" data-toggle="toggle"> 
+                                  name="toggle_record" data-toggle="toggle"> 
                                   {% endif %}
 
                                   </td>
@@ -1082,7 +1097,11 @@
                <!-- ###################### The Outputs panel ########################### -->
                {%if not sens_flag%}
                {% if outputs %} <!-- Only show the outputs panel if there are outputs to show -->
+               {% if not toggle %}
                <div role="tabpanel" class="tab-pane active" id="results">
+               {% else %}
+               <div role="tabpanel" class="tab-pane" id="results">
+               {% endif %}
                <div class="col-xs-9">
                <div id="topLevel" class="panel panel-body  comp-panels panel-{{name}}">
                <div class="panel panel-default">
