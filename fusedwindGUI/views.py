@@ -1319,15 +1319,13 @@ if use_bokeh:
                 
             ])
 
-            # add triangle pointers
+            # add Arrow pointers
             start = numVars * 3
             for i in range(numVars):
                 fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
                     x_start=lows[i], y_start=start, x_end=lows[i], y_end=start-2))
                 fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
                     x_start=highs[i], y_start=start-2, x_end=highs[i], y_end=start))
-                # fig.inverted_triangle(x=lows[i], y=start-1.5, size=15, fill_alpha=1, legend="Decrease in Parameter")
-                # fig.inverted_triangle(x=highs[i], y=start-.5, size=15, fill_alpha=1, angle=np.pi)
                 start -= 3
 
             # add baseline

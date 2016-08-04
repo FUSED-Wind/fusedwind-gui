@@ -376,6 +376,25 @@
          </li>
       </ul>
    </div>
+   {% elif sens_flag and draw_sens_plot %}
+
+  <div class="btn-group pull-right" id="myTabs">
+    <ul class="nav nav-tabs" role="tablist">
+      <li role="presentation">
+        <a href="#inputs",
+           role="tab"
+           onClick="$('#sensitivityPlots').hide();
+           $('#inputs').show();"
+           data-toggle="tab"> Inputs </a>
+           </li>
+      <li role="presentation" class="active">
+        <a href="#sensitivityPlots" role="tab"
+ onClick="$('#sensitivityPlots').show();
+           $('#inputs').hide();" 
+                  data-toggle="tab"> Plot </a>
+      </li>
+    </ul>
+  </div>
    {%- endif %}
    <form id="download-inputs-form" method="get" action="/analysis/download"></form>
    <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
@@ -414,8 +433,8 @@
             </p>
             {% else %}
             <p>
-            Green numbers indicate the result due to increasing the value of the parameter.</p><p>
-            Red numbers indicate the result due to decreasing the values of the parameter.</p> 
+            The green color and upward arrow indicate the value of an output after the parameter is increased; red, downward arrow indicates the value of an output after the parameter is decreased.
+            </p> 
             {% endif %}
             {%- else %}
             <p>For the individual analysis, please specify all input values.</p>
@@ -452,7 +471,7 @@
             <h3 class="panel-title"> Instructions </h3>
          </div>
          <div class="panel-body">
-            <p> Record the cases you want to compare by selecting "Record Case" under the Save dropdown menu.</p>
+            <p> Record the cases you want to compare by selecting "Record Case" under the Save dropdown menu or turning on the "Record Case" toggle in the inputs form.</p>
          </div>
       </div>
    </div>
@@ -544,9 +563,10 @@
       </div>
    </div>
    {%- endif %}
+
    {%- if not sens_flag %}
    <div role="tabpanel" class="tab-pane" id="plots">
-      {%- endif %}
+   {%- endif %}
       <!-- ########################## The Plotting Panel ############################# -->
       {% if draw_plot %}
       <div class="tab-content">
@@ -588,6 +608,8 @@
       {% endif %}
 
       {% if draw_sens_plot %}
+      <div class="tab-content">
+      <div role="tabpanel" class="tab-pane active" id="sensitivityPlots">
       <div class="col-md-9">
          <div class="panel-body comp-panels panel-{{name}}">
             <div class="panel panel-default">
@@ -786,6 +808,8 @@
             </div>
          </div>
       </div>
+      </div>
+      </div>
       {% endif %}
 
       {%- if not sens_flag %}
@@ -880,8 +904,17 @@
          </div>
       </div>
       {%- else %}
+      <!-- if sens flag  -->
+      <div class="tab-content">
+      {% if draw_sens_plot %}
+      <div role="tabpanel" class="tab-pane" id="inputs">
+      {% else %}
+
+      <div role="tabpanel" class="tab-pane active" id="inputs">
+      {% endif %}
+
       {%- if draw_sens_plot %}
-      <div class="col-xs-offset-3 col-xs-9" id='inputs_single'>
+      <div class="col-xs-9" id='inputs_single'>
          {%- else %}
          <div class="col-xs-9" id='inputs_single'>
             {%- endif %}
@@ -896,11 +929,7 @@
                               </a>
                            </h3>
                         </div>
-                        {%- if not draw_sens_plot %}
                         <div id="collapseSensitivity" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingSensitity">
-                           {%- else %}
-                           <div id="collapseSensitivity" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="headingSensitity">
-                              {%- endif %}
                               <div class="panel-body" align="center" id='sensitivity-inputs-panel'>
                                  {{ inputs.hidden_tag() }}
                                  {{ wtf.form_errors(inputs, hiddens='only') }}
@@ -914,7 +943,12 @@
                                        <td>Number of Iterations in Sensitivity Analysis (iteration_count)</td>
                                        <td>
                                         <div id='trigger-select.sens'>
-                                          <input type="radio" class="form-control" value="n" name="select.alpha" checked>
+                                          <input type="radio" class="form-control" value="n" name="select.alpha" checked 
+                                          onClick="
+                                          $('.hideaway4').show();
+                                          $('.hideaway5').show();
+                                          $('.hideaway6').show();
+                                          $('.hideaway7').show();">
                                          </div>
                                       </td>
                                        <td>
@@ -928,7 +962,12 @@
                                       
                                       <td>
                                         <div id='trigger-select.alpha'>
-                                          <input type="radio" class="form-control" value="y" name="select.alpha">
+                                          <input type="radio" class="form-control" value="y" name="select.alpha" onClick="
+                                          $('.hideaway4').hide();
+                                          $('.hideaway5').hide();
+                                          $('.hideaway6').hide();
+                                          $('.hideaway7').hide();
+                                          ">
                                          </div>
                                       </td>
                                     <td>  
@@ -954,11 +993,8 @@
                               </h3>
                            </div>
                            {%- if group == 'Global' %}
-                           {% if not draw_sens_plot %}
                            <div id="collapse{{group}}" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading{{group}}">
-                              {%- else %}
-                              <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
-                                 {%- endif %}
+                            
                                  {%- else %}
                                  <div id="collapse{{group}}" class="panel-collapse collapse out" role="tabpanel" aria-labelledby="heading{{group}}">
                                     {%- endif %}
@@ -969,10 +1005,10 @@
                                        <table class="table table-hover" align="left">
                                           <tr>
                                              <th>Parameter</th>
-                                             <th>Initial Value</th>
+                                             <th id="initial_values">Initial Value</th>
                                              <th>Sensitivity Input</th>
-                                             <th>Sensitivity Low Value</th>
-                                             <th>Sensitivity High Value</th>
+                                             <th class="hideaway4">Sensitivity Low Value</th>
+                                             <th class="hideaway5">Sensitivity High Value</th>
                                           </tr>
                                           {%- for field in inputs %}
                                           {%- if ('select.' not in field.name) and ('low.' not in field.name) and ('high.' not in field_name) %}
@@ -998,7 +1034,7 @@
                                                 {%- endfor %}
                                              </td>
 
-                                             <td>
+                                             <td class="hideaway6">
                                                 {%- for low_field in inputs %}
                                                 {%- if ('low.'+field.name == low_field.name) %}
                                                 <div id='trigger-{{low_field.name|safe}}'>
@@ -1007,7 +1043,7 @@
                                                 {%- endif %}
                                                 {%- endfor %}
                                              </td>
-                                             <td>
+                                             <td class="hideaway7">
                                                 {%- for high_field in inputs %}
                                                 {%- if ('high.'+field.name == high_field.name) %}
                                                 <div id='trigger-{{high_field.name|safe}}'>
@@ -1038,6 +1074,8 @@
                               </script>
                            </div>
                </form>
+               </div>
+               </div>
                </div>
                </div>
                {%- endif %}
