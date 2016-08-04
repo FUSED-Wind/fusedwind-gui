@@ -1081,7 +1081,8 @@ if use_bokeh:
         fig = figure(title="Sensitivity Results",
                      x_axis_label=args[0][0],
                      y_axis_label=args[1][0],
-                     toolbar_location="above")
+                     toolbar_location="above",
+                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
 
         # Set colors according to input
         colors = []
@@ -1093,12 +1094,19 @@ if use_bokeh:
                 d = 200 * (max(colorData) - val) / \
                     (max(colorData) - min(colorData))
                 colors.append("#%02x%02x%02x" % (200 - d, 150, d))
+            source = ColumnDataSource(
+            dict(
+                x=args[0][1],
+                y=args[1][1],
+                colorData=colorData))
+            fig.circle( x="x", y="y", size=10, fill_color=colors, source=source)
+
 
         except:
             colors = ["#22AEAA" for i in args[0][1]]
-
+        
         # plot data
-        fig.scatter(args[0][1], args[1][1], size=10, fill_color=colors)
+            fig.circle(x=args[0][1], y=args[1][1], size=10, fill_color=colors)
 
         if(len(args[0][1]) > 0 and len(args[1][1]) > 0 and (kwargs['colorAxis']['name'] != "Mono")):
             # draw color name
@@ -1149,6 +1157,18 @@ if use_bokeh:
                     prettyNum(
                         max(colorData))],
                 text_align="center")
+        try:
+            hover = fig.select(dict(type=HoverTool))
+            hover.tooltips = OrderedDict([
+                ("%s" % args[0][0], "@x"),
+                ("%s" % args[1][0], "@y"),
+                ("%s" % kwargs['colorAxis']['name'], "@colorData")
+               
+            ])
+        except KeyError:
+            pass
+        except:
+            pass
         return fig
 
     def CompareResultsPlot(fig, *args, **kwargs):

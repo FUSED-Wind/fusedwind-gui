@@ -133,13 +133,14 @@ def WebGUIForm(dic, run=False, sens_flag=False):
     class MyForm(Form):
         pass
 
+
     for k in dic.keys():
         v = dic[k]
         setattr(MyForm, k, make_field(k, v))
 
 
     if sens_flag:
-        for k in skeys:
+        for k in dic.keys():
             v = dic[k]
             if not 'group' in v.keys():
                 v['group'] = 'Other'
