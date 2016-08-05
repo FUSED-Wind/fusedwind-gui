@@ -25,13 +25,12 @@ from fusedwindGUI import app
 
 def finditem(obj, key): 
 	""" 
-	Parameters: 
-	Obj -- going to be a dictionary; 
-	key -- key of a dictionary entry.
-	Returns: item -- a value associated with a key
-
-	This function will perform a deep search in a dictionary
-	for a value associated with a key        
+    This function performs a deep search in a dictionary for a value associated with any key.
+	Params: 
+        @obj is the dictionary
+        @key is the key you want the value for 
+	Returns:
+        @item, is the value associated with the key parameter     
 	"""
 	if key in obj: 
 		return obj[key]
@@ -43,12 +42,13 @@ def finditem(obj, key):
 
 
 
-
-
 def makePretty(myList):
     """ 
-    This function takes in a list of dictionaries, where each dictionary represents an input/output
-    It modifies variable names and descriptions to be more human readable. 
+    It modifies (mutative) variable names and descriptions to be more human readable. 
+    Params:
+        @myList is a list of dictionaries -- each dictionary represents an input/output
+    Returns:
+        None
 
     """
     for myDict in myList:
@@ -56,6 +56,8 @@ def makePretty(myList):
             myDict['name'] = myDict['name'].replace("_"," ").title()
         if 'desc' in myDict.keys():
             myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+
+
 import types
 NumberTypes = (types.IntType,
     types.LongType,
@@ -63,15 +65,23 @@ NumberTypes = (types.IntType,
     types.ComplexType)
 def form_names(varList):
 	""" 
-	Returns the variables to populate the drop down forms. It has to be a number type to populate the forms
+    Used in the compare results feature. Populates the drop down menu for inputs
+    Params: 
+        @varList
+    Return:
+        - Variables to populate drop down form. These variables include number types only
 
 	"""
 
-	return [varList[:][i]['name'] for i in range(len(varList)) if isinstance(varList[i]['state'], NumberTypes)]
+	return [varList[:][i]['name'] for i in range(len(varList)) if (isinstance(varList[i]['state'], NumberTypes) and varList[i]['state'] is not True)]
 
 def prettyNum(num):
 	""" 
 	Returns a prettier version of a number. Includes truncations
+    Params:
+        @num is the input, unmodified number
+    Returns
+        - Formatted number
 
 	"""
 	anum = abs(num)
@@ -120,52 +130,6 @@ def make_field(k, v):
     return field(k, **prep_field(v))
 
 
-def WebGUIForm(dic, run=False, sens_flag=False):
-    """Automagically generate the form from a FUSED I/O dictionary.
-    TODO:
-    [ ] Add type validators
-    [ ] Add low/high validators
-    [x] Add units nice looking extension using 'input-group-addon'
-             (http://getbootstrap.com/components/#input-groups)
-    [ ] Move the units formating into the html code directly
-    """
-
-    class MyForm(Form):
-        pass
-
-
-    for k in dic.keys():
-        v = dic[k]
-        setattr(MyForm, k, make_field(k, v))
-
-
-    if sens_flag:
-        for k in dic.keys():
-            v = dic[k]
-            if not 'group' in v.keys():
-                v['group'] = 'Other'
-            elif v['group'] is None:
-                v['group'] = 'Other'
-            if v['type'] == 'Float':
-                kselect = "select." + k
-                newdic = {
-                    'default': False,
-                    'state': False,
-                    'desc': kselect,
-                    'type': 'Bool',
-                    'group': v['group']}
-                setattr(MyForm, kselect, make_field(kselect, newdic))
-                klow = "low." + k
-                setattr(MyForm, klow, make_field(klow, v))
-                khigh = "high." + k
-                setattr(MyForm, khigh, make_field(khigh, v))
-        setattr(MyForm, "select.alpha", make_field("select.alpha", newdic))
-
-    if run:  # Add the run button
-        setattr(MyForm, 'submit', SubmitField("Run"))
-
-    return MyForm
-
 
 def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     for name in cpnt.list_components():
@@ -180,9 +144,6 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
                 'href': '#collapse-%s' % (cname)})
 
             tmp = get_io_dict(comp)
-            # tmp = dict(tmp)
-            # makePretty(tmp['outputs'])
-            # makePretty(tmp['inputs'])
 
             sub_comp_data[cname]['params'] = tmp['outputs'] + tmp['inputs']
             # no plots for now since bootstrap-table and bokeh seem to be in
@@ -201,7 +162,13 @@ def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
     return sub_comp_data, asym_structure
 
 def traits2json(cpnt):
-    """Get the traits information about the component and return a json dictionary"""
+    """
+    Get the traits information about the component and return a json dictionary
+    Params:
+        @cpnt: the openMDAO component
+    Returns:
+        @out is a json dictionary with component trait info
+    """
 
     # I/O are separated in two lists with a dict for each variable
     out = {'inputs': [], 'outputs': []}
@@ -229,8 +196,13 @@ def traits2json(cpnt):
 
 
 def get_io_dict(cpnt):
+    """
+    Params:
+        @cpnt: openMDAO component
+    Returns:
+        @io: json dictionary with entries serialized
+    """
     io = traits2json(cpnt)
-
     for i, k in enumerate(io['inputs']):
         io['inputs'][i]['state'] = serialize(getattr(cpnt, k['name']))
     for i, k in enumerate(io['outputs']):
@@ -239,16 +211,21 @@ def get_io_dict(cpnt):
 
 
 def serialize(thing):
-    if isinstance(thing, np.ndarray):  # numpy ndarray
-        return thing.tolist()  # returns as list
+    """
+    Params:
+        @thing to serialize
+    Returns:
+        @thing after serialization in form of list, float, dictionary, float, int, or string
+    """
+    if isinstance(thing, np.ndarray):  
+        return thing.tolist()  
     elif isinstance(thing, np.float64):
-        return float(thing)  # returns as float
+        return float(thing)  
     elif isinstance(thing, Component):
-        return get_io_dict(thing)  # returns dictionary of i/o
+        return get_io_dict(thing)  
     elif isinstance(thing, VariableTree):
         out = {}
         for k in thing.list_vars():
-            # returns dictionary after recursion
             out[k] = serialize(getattr(thing, k))
         return out
     elif isinstance(thing, float):
@@ -262,7 +239,80 @@ def serialize(thing):
 
 
 def to_unicode(dic):
+    """
+    Params:
+        @dic is a dictionary
+    Returns:
+        @new is new dictionary with values in unicode
+    """
     new = {}
     for k, v in dic.iteritems():
         new[k] = unicode(v)
     return new
+
+
+# Palette of colors from green to blue
+greenBluePalette = ['#00E504',
+'#00E306',
+'#00E109',
+'#00E00B',
+'#00DE0E',
+'#00DD11',
+'#00DB13',
+'#00DA16',
+'#00D818',
+'#00D71B',
+'#00D51E',
+'#00D420',
+'#00D223',
+'#00D126',
+'#00CF28',
+'#00CE2B',
+'#00CC2D',
+'#00CB30',
+'#00C933',
+'#00C835',
+'#00C638',
+'#00C53B',
+'#00C33D',
+'#00C140',
+'#00C042',
+'#00BE45',
+'#00BD48',
+'#00BB4A',
+'#00BA4D',
+'#00B84F',
+'#00B752',
+'#00B555',
+'#00B457',
+'#00B25A',
+'#00B15D',
+'#00AF5F',
+'#00AE62',
+'#00AC64',
+'#00AB67',
+'#00A96A',
+'#00A86C',
+'#00A66F',
+'#00A572',
+'#00A374',
+'#00A177',
+'#00A079',
+'#009E7C',
+'#009D7F',
+'#009B81',
+'#009A84',
+'#009886',
+'#009789',
+'#00958C',
+'#00948E',
+'#009291',
+'#009194',
+'#008F96',
+'#008E99',
+'#008C9B',
+'#008B9E',
+'#0089A1',
+'#0088A3',
+'#0086A6',
+'#0185A9']

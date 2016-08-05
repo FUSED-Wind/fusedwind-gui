@@ -36,6 +36,10 @@ from fusedwindGUI import app
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
     using a yaml library, and return its content as a python object.
+    Params:
+        @files 
+    Returns:
+        @outfiles: a ist of dictionary
     """
     if not files:
         return None
@@ -62,7 +66,7 @@ def _handleUpload(files):
             'content': inputs
         })
 
-    return outfiles  # list of dictionary
+    return outfiles  
 
 
 # Views -----------------------------------------------------------------------
@@ -91,8 +95,9 @@ def documentation():
 
 @app.route('/upload/', methods=['POST'])  # when uplaod
 def upload():
-    """Take care of the reception of the file upload. Return a json file
-    to be consumed by a jQuery function
+    """Take care of the reception of the file upload. 
+    Returns:
+        @response, @jsonify - a json file to be consumed by a jQuery function
     """
     try:
         files = request.files
@@ -166,8 +171,7 @@ def webgui(app=None):
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
                         filename = os.path.join(
                             abspath, 'wt_models/dtu10mw_tier1.inp')
-                    # returns a python object. 'r' means open text file for
-                    # reading only.
+           
                     f = open(filename, 'r')
                     wt_inputs = to_unicode(yaml.load(f))
                 except:
@@ -220,7 +224,9 @@ def webgui(app=None):
     #---------------
 
     def download():
-        """ This downloads into a file called fused_inputs.yaml the inputs """
+        """ 
+        This downloads the inputs of an individual analysis run into a file called fused_inputs.yaml
+        """
         out = get_io_dict(cpnt)
         params = {}
         for param in out['inputs']:
@@ -241,7 +247,9 @@ def webgui(app=None):
     #---------------
 
     def download_full():
-        """ This downloads inputs and outputs to a file called fused_model.yaml """
+        """ 
+        This downloads inputs and outputs to a file called fused_model.yaml
+        """
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             # flash('No case downloaded - NO gui_recorder in component!')
@@ -266,6 +274,10 @@ def webgui(app=None):
 
     @app.route('/analysis/download_sensitivity_results', methods=['GET'])
     def download_sensitivity_results():
+        """
+        Downloads results from sensitivity analysis
+
+        """
         global sensitivityResults
 
         if not 'inputs' in sensitivityResults:
@@ -383,6 +395,8 @@ def webgui(app=None):
     def compare_results():
         """
         Finds relevant input/output values and units to be plotted
+        Returns:
+            jsonified script, div for html page. The script, div generate bokeh plot
         """
 
         if not 'gui_recorder' in vars(cpnt):
@@ -467,11 +481,11 @@ def webgui(app=None):
             sens_flag = False
         else:
             sens_flag = True
+
         cpname = cpnt.__class__.__name__
         if cpnt is None:
             print '\n*** WARNING: component is None\n'
             failed_run_flag = 'WARNING: component is None in fused_webapp() - try another model(?)'
-
             return render_template('error.html',
                                    errmssg=failed_run_flag,
                                    sens_flag=sens_flag)
@@ -507,6 +521,7 @@ def webgui(app=None):
             inputs = request.form.to_dict()
             io = traits2jsondict(cpnt)
 
+            # determine if doing tornado plot
             try:
                 if inputs['select.alpha'] == "y":
                     tornado = True
@@ -515,12 +530,17 @@ def webgui(app=None):
             except KeyError:
                 tornado = False
 
-            if not sens_flag:    
+            # if doing individual analysis
+            if not sens_flag:
+
+                # determine if record case feature is toggled on
                 toggle = False
                 try:
                     toggle = 'toggle_record' in inputs
                 except KeyError:
                     pass
+
+                # set initial inputs to component
                 try:
                     for k in inputs.keys():
                         if k in io[
@@ -534,6 +554,8 @@ def webgui(app=None):
                     failed_run_flag = True
                     failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     flash(failed_run_flag)
+
+                # run the componenent
                 try:
                     cpnt.run()
                 except NameError as detail:
@@ -544,12 +566,8 @@ def webgui(app=None):
                     print "att Error:" , detail
                 except ValueError as detail:
                     print "att Error:" , detail
-
-
                 except:
                     print sys.exc_info()[0]
-
-                
                     print "Analysis did not execute properly (sens_flag = False)"
                     failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
@@ -588,7 +606,7 @@ def webgui(app=None):
                         # if isinstance(cpnt, Assembly) and not
                         # failed_run_flag: # if added - GNS 2015 09 28
                         try:
-                            # plots the capital costs
+                            # get JS, divs for CAPEX, LCOE, Comparison s=plots
                             script, div = prepare_plot(cpnt.plot)
                             script_lcoe, div_lcoe = prepare_plot(
                                 cpnt.lcoe_plot) 
@@ -612,7 +630,7 @@ def webgui(app=None):
                     messages = None
                     if toggle:
                         messages = record_case()
-                    return render_template('webgui.html',  # basically rerenter webgui.html with results or no results dependingon success
+                    return render_template('webgui.html',  
                                            inputs=WebGUIForm(
                                                io['inputs'], run=True, sens_flag=sens_flag)(
                                                MultiDict(inputs)),
@@ -630,9 +648,9 @@ def webgui(app=None):
 
             # if sensitivity analysis and selected tornado option
             elif sens_flag and tornado:
-
                 # alpha is variation parameter: 
                 alpha = int(inputs['alpha'])
+
                 # if alpha is invalid or if no parameters checked
                 check_select = inputs.keys()[:]
                 if 'select.alpha' in inputs.keys():
@@ -641,9 +659,11 @@ def webgui(app=None):
                 if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0: 
                     if alpha > 100 or alpha <= 0:
                         print "Vary between -100 and 100 only "
+                        messages = "Vary between -100 and 100 only"
                         flash("Vary between -100 and 100 only ")
                     else:
                         print "Select parameters"
+                        messages = "Select parameters"
                         flash("Select parameters")
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
                     # Show the standard form
@@ -1266,14 +1286,15 @@ if use_bokeh:
 
             # colors is a palette for a gradient between red and green. Can change this to desired colors
             # via importing an existing palette or changing values below
-            colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
-                    '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
-                    '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
-                    '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
-                    '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
-                    '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
-                    '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
-                    '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
+            # colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
+            #         '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
+            #         '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
+            #         '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
+            #         '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
+            #         '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
+            #         '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
+            #         '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
+            colors = greenBluePalette
             numColors = len(colors)
 
             # color, width, x-coord, y-coord and relevant information for glyphs
@@ -1438,7 +1459,51 @@ def saveUnits(inputList):
             myUnits[el['name']] = None 
 
 
+def WebGUIForm(dic, run=False, sens_flag=False):
+    """Automagically generate the form from a FUSED I/O dictionary.
+    TODO:
+    [ ] Add type validators
+    [ ] Add low/high validators
+    [x] Add units nice looking extension using 'input-group-addon'
+             (http://getbootstrap.com/components/#input-groups)
+    [ ] Move the units formating into the html code directly
+    """
 
+    class MyForm(Form):
+        pass
+
+
+    for k in dic.keys():
+        v = dic[k]
+        setattr(MyForm, k, make_field(k, v))
+
+
+    if sens_flag:
+        for k in dic.keys():
+            v = dic[k]
+            if not 'group' in v.keys():
+                v['group'] = 'Other'
+            elif v['group'] is None:
+                v['group'] = 'Other'
+            if v['type'] == 'Float':
+                kselect = "select." + k
+                newdic = {
+                    'default': False,
+                    'state': False,
+                    'desc': kselect,
+                    'type': 'Bool',
+                    'group': v['group']}
+                setattr(MyForm, kselect, make_field(kselect, newdic))
+                klow = "low." + k
+                setattr(MyForm, klow, make_field(klow, v))
+                khigh = "high." + k
+                setattr(MyForm, khigh, make_field(khigh, v))
+        setattr(MyForm, "select.alpha", make_field("select.alpha", newdic))
+
+    if run:  # Add the run button
+        setattr(MyForm, 'submit', SubmitField("Run"))
+
+    return MyForm
 
 
 ##########################################################################
