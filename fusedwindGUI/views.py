@@ -443,13 +443,11 @@ def webgui(app=None):
                                                                          xUnit if xUnit != "" else ""), xArray), (outputName + (" (%s)" %
                                                                                                                                 yUnit if yUnit != "" else ""), yArray), units=(xUnit, yUnit))
         f = {"script": script, "div": div}
-
         return jsonify(**f)
     compare_results.__name__ = 'analysis_compare_results'
     app.route(
         '/analysis/compare_results',
         methods=[
-            'GET',
             'POST'])(compare_results)
 
 
@@ -665,6 +663,7 @@ def webgui(app=None):
                         print "Select parameters"
                         messages = "Select parameters"
                         flash("Select parameters")
+
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
                     # Show the standard form
                     return render_template(
@@ -699,7 +698,6 @@ def webgui(app=None):
                                     inputs['iteration_count']),
                                 "alpha": alpha }
                 skipInputs = ['iteration_count', 'alpha', 'select.alpha']
-                #print inputs.keys()  - this has all the inputs not just the ones we selected from the form
                 for k in inputs.keys():
                     if k in skipInputs:
                         continue
@@ -714,7 +712,8 @@ def webgui(app=None):
                         failed_run_flag = True
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
-                                            # this adds the input variable to vary 
+
+                # iterate through selected parameters. Stores results in tornadoInputs/tornadoOutputs global dictionaries
                 for k in inputs.keys():
                     if k in skipInputs or 'select.' not in k:
                         continue
@@ -850,12 +849,11 @@ def webgui(app=None):
                     "sensitivity_iterations": int(
                         inputs['iteration_count'])}
                 skipInputs = ['iteration_count']    
-                # inputs variable currently has all the allowable inputs. 
                 for k in inputs.keys():
                     if k in skipInputs:
                         continue
                     try:
-                        if k in io['inputs']:  # io = traits2jsondict(cpnt)
+                        if k in io['inputs']:  
                             setattr(
                                 cpnt, k, json2type[
                                     io['inputs'][k]['type']](
