@@ -17,8 +17,7 @@
 
 <script type="text/javascript" src="http://rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
-<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
-<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
+
 
 
 
@@ -35,6 +34,10 @@
 
 {% block scripts %}
 {{super()}}
+<script type="text/javascript">
+    {% include "main.js" %}
+</script>
+<script src="{{ url_for('.static', filename='js/myjs.js') }}" > </script>
 
 <script>
 // Submit forms ------------------
@@ -105,10 +108,27 @@
     <div class="container">
         <h1 > Perform Analysis </h1>
     </div>
+     
 
 
     <div id="configure-content" class="container" >
-        <div class="container" id="alert_placeholder"></div> 
+
+           <div  id="alert_placeholder">
+                    <!-- display any flashed messages -->
+        {% if messages %}
+        <div id="alertdiv" class="alert alert-success" role="alert" >
+          <a class="close" data-dismiss="alert">×</a>
+          <span> 
+            {{messages}} 
+          </span>
+        </div>
+        {% endif %}
+
+<!-- display a failed run message if present -->
+
+
+        </div> 
+
         <div class="panel panel-default">
     		    {%- if not config_flag %}
     <!-- ### Information #### -->

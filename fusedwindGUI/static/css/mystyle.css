@@ -194,3 +194,8 @@ input.btn-mvp{
 #initial_values{
   width:400px;
 }
+
+#alert_placeholder{
+  padding:0px;
+  margin:0px;
+}

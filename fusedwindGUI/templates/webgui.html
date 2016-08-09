@@ -63,43 +63,49 @@
 <!-- ################### Main Content ################### -->
 <div class="container" id="maincontent">
 {%- if not sens_flag %}
-<h1>  Individual Analysis </h1>
+  <h1>  Individual Analysis </h1>
 {%- else %}
-<h1> Sensitivity Analysis </h1>
+  <h1> Sensitivity Analysis </h1>
 {%- endif %}
-<div class="container" id="alert_placeholder">
-  
+<div id="alert_placeholder">
+
 <!-- display any flashed messages -->
 {% if messages %}
-
 <div id="alertdiv" class="alert alert-success" role="alert" >
-<a class="close" data-dismiss="alert">×</a>
-<span> 
-{{messages}} 
-</span>
+  <a class="close" data-dismiss="alert">×</a>
+  <span> 
+    {{messages}} 
+  </span>
 </div>
-
 {% endif %}
+
+<!-- display a failed run message if present -->
+{% if failed_run_flag %}
+<script>
+   // console.log(' {{ failed_run_flag }} ');
+   // window.alert(' {{ failed_run_flag }} ');
+   $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-danger' +
+                                      '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
+                                      ' {{ failed_run_flag }} ' +
+                                      '</span></div>')
+</script>
+{% endif %}
+
+</div>
 <!-- end display any flashed messages -->
 
-</div>
 <div class="panel panel-default">
-<!-- ####################  Buttons to run scripts ################### -->
 <div class="panel-body" id='button-panel'>
-   
-
-
   <input  class="btn btn-mvp" id="submit"  name="submit" type="submit" onClick="submitForms();" value="Run">
 
-
    {%- if not sens_flag %}
-
-   <span class="btn btn-mvp fileinput-button" >
+   <span class="btn btn-mvp fileinput-button">
    <i class="glyphicon glyphicon-plus"></i>
    <span>Load inputs</span>
    <input id="fileupload" type="file" name="files[]" multiple >
    </span>
    {%- endif %}
+   {%- if outputs %}
    <div class="btn-group">
       <button type="button"  id="save" class="btn btn-mvp nohover" >Save</button>
       <button type="button" id="save_toggle" class="btn btn-mvp dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -115,10 +121,10 @@
          {%- else %}
          <li><a href="#" onClick='document.getElementById("download-sensitivity-results").submit()'>Results (CSV)</a></li>
          {%- endif %}
-         <!-- <li role="separator" class="divider"></li>
-            <li><a href="#">Separated link</a></li> -->
       </ul>
    </div>
+   {% endif %}
+
    {%- if outputs and not sens_flag %}
    <div class="btn-group pull-right" id="myTabs">
       <ul class="nav nav-tabs" role="tablist">
@@ -134,7 +140,6 @@
                document.getElementById('hideaway').style.display='none';
                $('#assembly-tree').treeview('selectNode',[0, {silent: false}]);
                " data-toggle="tab">Inputs</a>
-        
          </li>
          {% if not toggle %}
          <li role="presentation" class="active">
@@ -146,8 +151,6 @@
                document.getElementById('hideaway2').style.display='none';
                document.getElementById('hideaway3').style.display='none';
                " data-toggle="tab">Results</a>
-       
-         
          </li>
          <li role="presentation">
             <a href="#plots" role="tab" 
@@ -165,8 +168,7 @@
          </li>
       </ul>
    </div>
-   {% elif sens_flag and draw_sens_plot %}
-
+  {% elif sens_flag and draw_sens_plot %}
   <div class="btn-group pull-right" id="myTabs">
     <ul class="nav nav-tabs" role="tablist">
       <li role="presentation">
@@ -189,18 +191,7 @@
    <form id="download-full-model"  method="get" action="/analysis/download_full"></form>
    <form id="download-sensitivity-results"  method="get" action="/analysis/download_sensitivity_results"></form>
 </div>
-<!-- ################### divider for error messages GNS 2015 09 21 ################### -->
-<!-- display a failed run message if present -->
-{% if failed_run_flag %}
-<script>
-   console.log(' {{ failed_run_flag }} ');
-   // window.alert(' {{ failed_run_flag }} ');
-   $('#alert_placeholder').append('<div id="alertdiv" class="alert alert-danger' +
-                                      '" role="alert"><a class="close" data-dismiss="alert">×</a><span>' +
-                                      ' {{ failed_run_flag }} ' +
-                                      '</span></div>')
-</script>
-{% endif %}
+
 
 <!-- ################### divider to rest of content ################### -->
 <div class="panel-body">
@@ -280,9 +271,8 @@
    </div>
    {%- endif %}            
 </div>
-<!-- @############################################################
-   ##########################################
-   ############################# -->
+
+
 <div class="tab-content">
    {%- if outputs and not sens_flag %}
    <div role="tabpanel" class="tab-pane" id="compare">
@@ -327,7 +317,7 @@
                         <!-- start plot -->
                         <div class="col-md-9" id="plot_space">
                           {{ plot_script_comp|indent(4)|safe }}
-                           {{ plot_div_comp|indent(4)|safe }}
+                          {{ plot_div_comp|indent(4)|safe }}
                         </div>
                         <!-- end plot -->
                         <script type="text/javascript">
@@ -443,11 +433,9 @@
                         <script type="text/javascript">
                            $("form#plot_controller__tornado").submit( function(event) {
                                event.preventDefault();
-                           
                                var topDOM = $(this).closest("div#plot_row");
                                var plotDOM = topDOM.find("div#plot_space");
                                var outVar = $(this).find("#output_plot_variable").find("option:selected").text();
-                           
                                $.post( "/tornado", { outVar: outVar } , function(data){
                                    plotDOM.html( data.script + data.div );
                                });
@@ -585,8 +573,6 @@
                          $("#plot_area").append(plotText);
                          console.log(plotText);
                      }
-                     
-                     
                      $("#addPlotWindow-btn").click( function(){
                          addPlotWindow();
                      });
@@ -650,7 +636,6 @@
                                   <input id="toggle-button" type="checkbox" class="form-control"  
                                   name="toggle_record" data-toggle="toggle"> 
                                   {% endif %}
-
                                   </td>
                                  </tr>
                                  {% endif %}
@@ -750,7 +735,6 @@
                                     </tr>
                                     <tr>
                                       <td> Tornado Plot Variability (%) </td>
-                                      
                                       <td>
                                         <div id='trigger-select.alpha'>
                                           <input type="radio" class="form-control" value="y" name="select.alpha" onClick="
@@ -765,11 +749,8 @@
                                         <div id='trigger-alpha'>
                                           <input type="text" class="form-control" value="{{extra_inputs['alpha']}}" name="alpha">
                                          </div>
-                                        
                                      </td>
-                           
                                     </tr>
-
                                  </table>
                               </div>
                            </div>

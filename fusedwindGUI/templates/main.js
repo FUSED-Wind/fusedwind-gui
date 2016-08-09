@@ -56,6 +56,8 @@ function showalert(message,alerttype, delayms) {
        setTimeout(function() { // this will automatically close the alert and remove this if the users doesn't close it in 'delayms' ms
 
            $("#alertdiv").remove();
+           $("#alertdiv").remove();
 
-       }, delayms); //2000);
+
+       }, delayms); //5000);
    }

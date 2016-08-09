@@ -169,8 +169,8 @@ def webgui(app=None):
                         filename = winenv + \
                             os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp')
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-                        filename = os.path.join(
-                            abspath, 'wt_models/dtu10mw_tier1.inp')
+                        filename = winenv + \
+                        os.path.join(abspath, 'wt_models', 'dtu10mw_tier1.inp')
            
                     f = open(filename, 'r')
                     wt_inputs = to_unicode(yaml.load(f))
@@ -201,9 +201,11 @@ def webgui(app=None):
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template(
-                        'error.html',
-                        errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(
-                            inputs['Model Selection']))
+                        'configure.html',
+                        messages='{:} : lcoe_se_seam_assembly could not be loaded!'.format(
+                            inputs['Model Selection']),
+                        config=ConfigForm(MultiDict()),
+                                   config_flag=False)
 
             analysis = inputs['Analysis Type']
             fused_webapp(True)
@@ -351,40 +353,40 @@ def webgui(app=None):
         cpnt.gui_recorder['counter'] contains a counter for the number of cases recorded
         cpnt.gui_recorder['recorder'] contains all the names, values, units.
         """
-        if 'gui_recorder' not in vars(cpnt):       # GNS
-            print '\n*** NO gui_recorder in component!\n'
-            #flash('No case recorded - NO gui_recorder in component!')
-            return 'No case recorded - NO gui_recorder in component!'
+        if failed_run_flag is False:
+            if 'gui_recorder' not in vars(cpnt):       # GNS
+                print '\n*** NO gui_recorder in component!\n'
+                return 'No case recorded - NO gui_recorder in component!'
 
-        if 'counter' in cpnt.gui_recorder.keys():
-            cpnt.gui_recorder['counter'] += 1
-        else:
-            cpnt.gui_recorder['counter'] = 1
+            if 'counter' in cpnt.gui_recorder.keys():
+                cpnt.gui_recorder['counter'] += 1
+            else:
+                cpnt.gui_recorder['counter'] = 1
 
-        out = get_io_dict(cpnt)
-        cmp_data, _ = build_hierarchy(cpnt, {}, [])
-        params = {}
-        top_name = cpnt.__class__.__name__
-        params[top_name] = {}
-        for param in out['inputs'] + out['outputs']:
-            pname = param['name']
-            params[top_name][pname] = param['state']
-
-        for cmp_name in cmp_data:
-            params[cmp_name] = {}
-            for param in cmp_data[cmp_name]['params']:
+            out = get_io_dict(cpnt)
+            cmp_data, _ = build_hierarchy(cpnt, {}, [])
+            params = {}
+            top_name = cpnt.__class__.__name__
+            params[top_name] = {}
+            for param in out['inputs'] + out['outputs']:
                 pname = param['name']
-                params[cmp_name][pname] = param['state']
-        try:
-            cpnt.gui_recorder['recorder']['case%i' %
-                                          cpnt.gui_recorder['counter']] = params
-        except:
-            cpnt.gui_recorder['recorder'] = {}
-            cpnt.gui_recorder['recorder']['case%i' %
-                                          cpnt.gui_recorder['counter']] = params
+                params[top_name][pname] = param['state']
 
-        # flash('Case %i recorded successfully!' % cpnt.gui_recorder['counter'], category='message')
-        return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
+            for cmp_name in cmp_data:
+                params[cmp_name] = {}
+                for param in cmp_data[cmp_name]['params']:
+                    pname = param['name']
+                    params[cmp_name][pname] = param['state']
+            try:
+                cpnt.gui_recorder['recorder']['case%i' %
+                                              cpnt.gui_recorder['counter']] = params
+            except:
+                cpnt.gui_recorder['recorder'] = {}
+                cpnt.gui_recorder['recorder']['case%i' %
+                                              cpnt.gui_recorder['counter']] = params
+
+            return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
+        return None
 
     record_case.__name__ = 'analysis_record_case'
     app.route('/analysis/record_case', methods=['POST'])(record_case)
@@ -475,6 +477,7 @@ def webgui(app=None):
 
     def fused_webapp(config_flag=False):
         """ Runs the analysis page """
+        global failed_run_flag
         if analysis == 'Individual Analysis':
             sens_flag = False
         else:
@@ -549,25 +552,15 @@ def webgui(app=None):
                                     inputs[k]))
                 except:
                     print "Something went wrong when setting the model inputs, one of them may have a wrong type"
-                    failed_run_flag = True
                     failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     flash(failed_run_flag)
 
                 # run the componenent
                 try:
                     cpnt.run()
-                except NameError as detail:
-                        print "att Error:" , detail
-                except TypeError as detail:
-                    print "att Error:" , detail
-                except AttributeError as detail:
-                    print "att Error:" , detail
-                except ValueError as detail:
-                    print "att Error:" , detail
                 except:
                     print sys.exc_info()[0]
                     print "Analysis did not execute properly (sens_flag = False)"
-                    failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
 
                 sub_comp_data = {}
@@ -656,15 +649,13 @@ def webgui(app=None):
 
                 if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0: 
                     if alpha > 100 or alpha <= 0:
-                        print "Vary between -100 and 100 only "
-                        messages = "Vary between -100 and 100 only"
-                        flash("Vary between -100 and 100 only ")
+                        messages = "Vary between 0 and 100 only"
                     else:
-                        print "Select parameters"
                         messages = "Select parameters"
-                        flash("Select parameters")
 
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
+               
+
                     # Show the standard form
                     return render_template(
                         'webgui.html',
@@ -686,7 +677,8 @@ def webgui(app=None):
                         desc=desc,
                         failed_run_flag=failed_run_flag,
                         sens_flag=sens_flag,
-                        tornado_flag=tornado)
+                        tornado_flag=tornado,
+                        messages=messages)
 
                 
                 global tornadoInputs
@@ -709,7 +701,7 @@ def webgui(app=None):
                                     inputs[k]))
                     except:
                         print "Something went wrong when setting the model inputs, one of them may have a wrong type"
-                        failed_run_flag = True
+                        # failed_run_flag = True
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
 
@@ -738,19 +730,10 @@ def webgui(app=None):
 
                         try:
                             my_sa.run()
-
-                        except NameError as detail:
-                            print "att Error:" , detail
-                        except TypeError as detail:
-                            print "att Error:" , detail
-                        except AttributeError as detail:
-                            print "att Error:" , detail
-                        except ValueError as detail:
-                            print "att Error:" , detail
                         except:
                             print sys.exc_info()[0]
                             print "Analysis did not execute properly (sens_flag = True)"
-                            failed_run_flag = True
+                            # failed_run_flag = True
                             failed_run_flag = "Analysis did not execute properly - check input parameters!"
                             draw_plot = False
                             script, div = None, None
@@ -1284,15 +1267,15 @@ if use_bokeh:
 
             # colors is a palette for a gradient between red and green. Can change this to desired colors
             # via importing an existing palette or changing values below
-            # colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
-            #         '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
-            #         '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
-            #         '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
-            #         '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
-            #         '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
-            #         '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
-            #         '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
-            colors = greenBluePalette
+            colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
+                    '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
+                    '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
+                    '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
+                    '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
+                    '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
+                    '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
+                    '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
+            # colors = greenBluePalette
             numColors = len(colors)
 
             # color, width, x-coord, y-coord and relevant information for glyphs
@@ -1514,4 +1497,3 @@ tornadoOutputs = {}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
 debug = False
-

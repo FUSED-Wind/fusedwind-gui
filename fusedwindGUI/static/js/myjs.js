@@ -161,7 +161,14 @@ submitForms = function(){
    document.forms["global-inputs-form"].submit();
 }
 
-$(document).ready( function() {
-$('#alertdiv').delay(5000).remove();
-});
+
+ // Remove the alert message box after time 
+setTimeout(function() { // this will automatically close the alert and remove this if the users doesn't close it in 'delayms' ms
+
+           $("#alertdiv").remove();
+           $("#alertdiv").remove();
+
+
+       }, 5000); //5000);
+
 

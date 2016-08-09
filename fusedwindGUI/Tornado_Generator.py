@@ -1,7 +1,5 @@
-""" DOEgenerator that performs a uniform space-filling Design of Experiments. Plugs
-into the DOEgenerator socket on a DOEdriver."""
+""" Tornado_generator plugs into the DOEgenerator socket on a DOEdriver. Sets up a DOE for tornado plots"""
 
-# pylint: disable-msg=E0611,F0401
 import numpy as np
 from numpy import linspace,random
 from openmdao.main.datatypes.api import Int
@@ -10,10 +8,7 @@ from openmdao.main.interfaces import implements, IDOEgenerator
 from openmdao.main.api import Container
 
 class Tornado_Generator(Container):
-    """ DOEgenerator that performs a space-filling Design of Experiments with uniform
-    distributions on all design variables. Plugs into the DOEgenerator socket on a 
-    DOEdriver."""
-    
+    """ Tornado_generator plugs into the DOEgenerator socket on a DOEdriver. Sets up a DOE for tornado plots"""
     implements(IDOEgenerator)
     
     # pylint: disable-msg=E1101
@@ -33,7 +28,6 @@ class Tornado_Generator(Container):
             self.alpha = float(alpha)/100
 
     
-        
     def __iter__(self):
         """Return an iterator over our sets of input values"""
         if self.num_samples != 3: 
@@ -43,14 +37,10 @@ class Tornado_Generator(Container):
         return (np.array([start + x*self.alpha for i in range(self.num_parameters)]) for x in range(self.num_samples+1))    
         # the +1 is necessary at the end because OpenMDAO cuts a number out for some reason ??
 
+
+
+
 # --------------------------------------------------------------------
-
-"""
-.. _`DOEdriver.py`:
-
-``doedriver.py`` -- Driver that executes a Design of Experiments.
-
-"""
 
 import csv
 import numpy as np
@@ -65,14 +55,14 @@ def check_parameter(parameter):
     try:
         if parameter.vartypename == 'Array':
             if 'float' not in parameter.valtypename:
-                msg = "DOEdriver cannot add array parameter '{}'" \
+                msg = "TORdriver cannot add array parameter '{}'" \
                       " because target is not of type 'numpy.float'."
                 msg = msg.format(parameter.name)
 
                 raise TypeError(msg)
 
         elif not parameter.vartypename == 'Float':
-            msg = "DOEdriver cannot add parameter '{}'" \
+            msg = "TORdriver cannot add parameter '{}'" \
                   " because target is not of type 'Float'."
             msg = msg.format(parameter.name)
 
@@ -81,15 +71,17 @@ def check_parameter(parameter):
     except AttributeError as exception:
         print "exception raised in check_parameter"
         if not parameter.typename == 'float':
-            msg = "DOEdriver cannot add parameter group '{}'" \
+            msg = "TORdriver cannot add parameter group '{}'" \
                   " because targets are not of type 'float'."
 
             msg = msg.format(parameter.name)
 
             raise TypeError(msg)
 
+
+
 class TORdriver(CaseIteratorDriver):
-    """ Driver for Design of Experiments. """
+    """ Driver for Tornado Design of Experiments. """
     # pylint: disable-msg=E1101
     DOEgenerator = Slot(IDOEgenerator, required=True,
                         desc='Iterator supplying normalized DOE values.')
