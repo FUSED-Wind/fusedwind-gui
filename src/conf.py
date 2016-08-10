@@ -59,7 +59,7 @@ copyright = u'2015, DTU Wind Energy, NREL'
 # built documents.
 #
 # The short X.Y version.
-version = '0.1'
+# version = '0.1'
 # The full version, including alpha/beta/rc tags.
 release = '0.1.0'
 
@@ -166,12 +166,12 @@ html_theme_options = {
 
     # HTML navbar class (Default: "navbar") to attach to <div> element.
     # For black navbar, do "navbar navbar-inverse"
-    'navbar_class': "navbar",
+    'navbar_class': "navbar navbar-default",
     # 'navbar_class': "navbar navbar-inverse",
 
     # Fix navigation bar to top of page?
     # Values: "true" (default) or "false"
-    'navbar_fixed_top': "true",
+    'navbar_fixed_top': "false",
 
     # Location of link to source.
     # Options are "nav" (default), "footer" or anything else to exclude.
@@ -204,7 +204,8 @@ html_theme_options = {
     # * united
     # * yeti (v3 only)
     # 'bootswatch_theme': "cerulean",
-    'bootswatch_theme': "cerulean",
+    # 'bootswatch_theme': "cerulean",
+    # 'bootswatch_css_custom' : "_static/mvpready-landing.css",
 
     # Choose Bootstrap version.
     # Values: "3" (default) or "2" (in quotes)
@@ -231,7 +232,7 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

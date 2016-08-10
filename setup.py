@@ -139,13 +139,14 @@ setup(
    "flask-wtf",
    "flask-mail",
    "pyyaml",
-   "bokeh==0.10.0",
+   "bokeh",
    "Flask-SQLAlchemy==1.0",
    "Jinja2==2.7.1",
    "MarkupSafe==0.18",
    "gunicorn==18.0",
    "gevent==1.0",
-   "requests==1.2.3",
+   "requests",
+   "matplotlib"
    ],
   include_package_data=True,
   entry_points = {

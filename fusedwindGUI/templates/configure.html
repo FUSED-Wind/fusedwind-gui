@@ -17,8 +17,7 @@
 
 <script type="text/javascript" src="http://rawgit.com/kayalshri/tableExport.jquery.plugin/master/tableExport.js"></script>
 <script src="//rawgit.com/kayalshri/tableExport.jquery.plugin/master/jquery.base64.js"></script>
-<link href="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.css" rel="stylesheet" type="text/css">
-<script src="http://cdn.pydata.org/bokeh/release/bokeh-0.9.1.min.js"></script>
+
 
 
 
@@ -35,11 +34,17 @@
 
 {% block scripts %}
 {{super()}}
+<script type="text/javascript">
+    {% include "main.js" %}
+</script>
+<script src="{{ url_for('.static', filename='js/myjs.js') }}" > </script>
 
 <script>
 // Submit forms ------------------
      submitConfig = function(){
-         document.forms["config-form"].submit();
+         // document.forms["config-form"].submit();
+         // // Chrome says above function does not exist - document.forms.submit is not a function. I will leave it in for now since it doesn't really matter.
+         
          window.location.href = "/analysis"
      }
 </script>
@@ -76,14 +81,14 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" style="margin-top:10px;" href="#">FUSED-Wind GUI</a>
+      <a class="navbar-brand" href="#">FUSED-Wind GUI</a>
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
         <li><a href="/">Home<span class="sr-only">(current)</span></a></li>
         <li class="active"><a href="configure.html">Perform Analysis</a></li>
-        <li><a href="static/docs/index.html">Documentation</a></li>
+        <li><a href="../static/docs/html/index.html">Documentation</a></li>
         <li><a href="about.html"> About </a></li>
 
       </ul>
@@ -100,17 +105,34 @@
 
 
 <!-- ################### Main Content ################### -->
-    <div class="container" style="margin-top:20px;">
-        <h1 style="color:#FFFFFF"> Perform Analysis </h1>
+    <div class="container">
+        <h1 > Perform Analysis </h1>
     </div>
+     
 
 
-    <div class="container" style="margin-top:0px; background-color:white">
-        <div class="container" id="alert_placeholder"></div> 
+    <div id="configure-content" class="container" >
+
+           <div  id="alert_placeholder">
+                    <!-- display any flashed messages -->
+        {% if messages %}
+        <div id="alertdiv" class="alert alert-success" role="alert" >
+          <a class="close" data-dismiss="alert">×</a>
+          <span> 
+            {{messages}} 
+          </span>
+        </div>
+        {% endif %}
+
+<!-- display a failed run message if present -->
+
+
+        </div> 
+
         <div class="panel panel-default">
     		    {%- if not config_flag %}
     <!-- ### Information #### -->
-        <div class="panel col-lg-6" style="background-color:#FFFFFF;">
+        <div class="panel col-lg-6" >
             <div class="panel-body" >
                 <p></p>
                 <p>
@@ -143,11 +165,11 @@
 
 
             <!-- Model Selection Modal -->
-            <div class="container col-lg-6 col-md-6">
+            <div class="col-lg-6 ">
             <form method="post" class="form" id='config-form'>
                 
-                <div class="tab-content" style="margin-top:5px;">
-                    <div class="tab-pane active" id="modelselect" style="box-sizing:content-box;">
+                <div class="tab-content" >
+                    <div class="tab-pane active" id="modelselect">
                             <br>
                             <br>
                             <div class="panel">
@@ -172,7 +194,7 @@
                               </div>
                             </div>
                         
-						<input class="btn btn-mvp col-lg-6 col-sm-2 col-xs-2" style="margin-left:2px; margin-top:-20px;" id="submit" name="submit" type="submit" onClick="submitConfig()" value="Run">
+						<input class="btn btn-mvp col-lg-6 col-sm-2 col-xs-2" id="submit" name="submit" type="submit" onClick="submitConfig();" value="Start Analysis">
                     </div>
                 </div>
             </form></div>

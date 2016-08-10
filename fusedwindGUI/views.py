@@ -4,6 +4,7 @@ from openmdao.main.vartree import VariableTree
 from openmdao.main.api import set_as_top, Assembly
 from openmdao.lib.drivers.api import DOEdriver
 from openmdao.lib.doegenerators.api import Uniform
+from Tornado_Generator import *
 
 import os
 import sys
@@ -30,122 +31,15 @@ import types
 
 from fusedwindGUI import app
 
-# Handling Forms -------------------------------------------------------------
-def unitfield(units, name):
-    """A simple widget generating function. The nested function is necessary in order
-    to have a different function name for each widget. This whole code should
-    really be moved to the template side, but that would require passing the units
-    along in the form
-    """
-    def myfield(field, ul_class='', **kwargs):
-        field_id = kwargs.pop('id', field.id)
-        html = []
-        html.append(u'<div class="input-group">')
-        html.append(
-            u'<input class="form-control" id="%s" name="%s" type="text" value="%s">' %
-            (field.name, field.name, field.data))
-        html.append(u'<span class="input-group-addon">%s</span>' % (units))
-        html.append(u'</div>')
-
-        return u''.join(html)
-    myfield.__name__ = name
-    return myfield
-
-
-def make_field(k, v):
-    """Create the widget of the field, adds the units when necessary
-    """
-    field = type_fields[v['type']]
-    if 'units' in v:
-        class MyField(field):
-            widget = unitfield(v['units'], k)
-        MyField.__name__ = 'Field' + k
-        return MyField(k, **prep_field(v))
-    return field(k, **prep_field(v))
-
-
-def WebGUIForm(dic, run=False, sens_flag=False):
-    """Automagically generate the form from a FUSED I/O dictionary.
-    TODO:
-    [ ] Add type validators
-    [ ] Add low/high validators
-    [x] Add units nice looking extension using 'input-group-addon'
-             (http://getbootstrap.com/components/#input-groups)
-    [ ] Move the units formating into the html code directly
-    """
-
-    class MyForm(Form):
-        pass
-
-    # sorting the keys alphabetically
-    skeys = sorted(dic.keys())
-
-    for k in skeys:
-        v = dic[k]
-        setattr(MyForm, k, make_field(k, v))
-
-    if sens_flag:
-        for k in skeys:
-            v = dic[k]
-            if not 'group' in v.keys():
-                v['group'] = 'Other'
-            elif v['group'] is None:
-                v['group'] = 'Other'
-            if v['type'] == 'Float':
-                kselect = "select." + k
-                newdic = {
-                    'default': False,
-                    'state': False,
-                    'desc': kselect,
-                    'type': 'Bool',
-                    'group': v['group']}
-                setattr(MyForm, kselect, make_field(kselect, newdic))
-                klow = "low." + k
-                setattr(MyForm, klow, make_field(klow, v))
-                khigh = "high." + k
-                setattr(MyForm, khigh, make_field(khigh, v))
-
-    if run:  # Add the run button
-        setattr(MyForm, 'submit', SubmitField("Run"))
-
-    return MyForm
-
-
-def build_hierarchy(cpnt, sub_comp_data, asym_structure=[], parent=''):
-    for name in cpnt.list_components():
-        comp = getattr(cpnt, name)
-
-        cname = comp.__class__.__name__
-        if cname != 'Driver':
-            sub_comp_data[cname] = {}
-
-            asym_structure.append({
-                'text': cname,
-                'href': '#collapse-%s' % (cname)})
-
-            tmp = get_io_dict(comp)
-            sub_comp_data[cname]['params'] = tmp['inputs'] + tmp['outputs']
-            # no plots for now since bootstrap-table and bokeh seem to be in
-            # conflict
-            if hasattr(comp, "plot"):
-                c_script, c_div = prepare_plot(comp.plot)
-                sub_comp_data[cname]['plot'] = {
-                    'script': c_script, 'div': c_div}
-
-            if isinstance(comp, Assembly):
-
-                sub_comp_data, sub_structure = build_hierarchy(
-                    comp, sub_comp_data, [], name)
-                asym_structure[-1]['nodes'] = sub_structure
-
-    return sub_comp_data, asym_structure
 
 # Handling file upload -------------------------------------------------------
-
-
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
     using a yaml library, and return its content as a python object.
+    Params:
+        @files 
+    Returns:
+        @outfiles: a ist of dictionary
     """
     if not files:
         return None
@@ -172,7 +66,7 @@ def _handleUpload(files):
             'content': inputs
         })
 
-    return outfiles  # list of dictionary
+    return outfiles  
 
 
 # Views -----------------------------------------------------------------------
@@ -185,7 +79,7 @@ def hello():
 
 
 @app.route('/about.html')
-def hello2():
+def about():
     """ About Page
     """
     provider = str(os.environ.get('PROVIDER', 'world'))
@@ -193,7 +87,7 @@ def hello2():
 
 
 @app.route('/documentation.html')
-def hello3():
+def documentation():
     """ Documentation
     """
     return render_template('documentation.html', form={'hello': 'world'})
@@ -201,8 +95,9 @@ def hello3():
 
 @app.route('/upload/', methods=['POST'])  # when uplaod
 def upload():
-    """Take care of the reception of the file upload. Return a json file
-    to be consumed by a jQuery function
+    """Take care of the reception of the file upload. 
+    Returns:
+        @response, @jsonify - a json file to be consumed by a jQuery function
     """
     try:
         files = request.files
@@ -219,72 +114,6 @@ def upload():
         return jsonify({'status': 'error'})
 
 
-def traits2json(cpnt):
-    """Get the traits information about the component and return a json dictionary"""
-
-    # I/O are separated in two lists with a dict for each variable
-    out = {'inputs': [], 'outputs': []}
-    for ty, se in zip(['inputs', 'outputs'],
-                      [set(cpnt.list_inputs()).difference(Assembly().list_inputs()),
-                       set(cpnt.list_outputs()).difference(Assembly().list_outputs())]):
-        for s in se:
-            t = cpnt.get_trait(s)
-            var = {'name': s}
-            var['type'] = t.trait_type.__class__.__name__
-            for d in [
-                'iotype',
-                'desc',
-                'units',
-                'high',
-                'low',
-                'values',
-                    'group']:
-                val = getattr(t, d)
-                if not val is None:
-                    var[d] = val
-            var['state'] = getattr(cpnt, s)
-            out[ty].append(var)
-    return out
-
-
-def get_io_dict(cpnt):
-    io = traits2json(cpnt)
-
-    for i, k in enumerate(io['inputs']):
-        io['inputs'][i]['state'] = serialize(getattr(cpnt, k['name']))
-    for i, k in enumerate(io['outputs']):
-        io['outputs'][i]['state'] = serialize(getattr(cpnt, k['name']))
-    return io
-
-
-def serialize(thing):
-    if isinstance(thing, np.ndarray):  # numpy ndarray
-        return thing.tolist()  # returns as list
-    elif isinstance(thing, np.float64):
-        return float(thing)  # returns as float
-    elif isinstance(thing, Component):
-        return get_io_dict(thing)  # returns dictionary of i/o
-    elif isinstance(thing, VariableTree):
-        out = {}
-        for k in thing.list_vars():
-            # returns dictionary after recursion
-            out[k] = serialize(getattr(thing, k))
-        return out
-    elif isinstance(thing, float):
-        return thing
-    elif isinstance(thing, int):
-        return thing
-    elif isinstance(thing, str):
-        return thing
-
-    return '??_' + str(thing.__class__)
-
-
-def to_unicode(dic):
-    new = {}
-    for k, v in dic.iteritems():
-        new[k] = unicode(v)
-    return new
 
 
 def webgui(app=None):
@@ -292,7 +121,6 @@ def webgui(app=None):
     def configure():
         """ Configuration page
         """
-
         global cpnt
         global desc
         global analysis
@@ -317,18 +145,11 @@ def webgui(app=None):
 
         for dic in models:
             name = dic['name']
-            # the tuple: 1st is value that will be submitted, 2nd is text
-            # that'll show to end user
             choices = [(val, val) for val in dic['choices']]
-            # adds fields. field = name, selectfield = choices
             setattr(ConfigForm, name, SelectField(name, choices=choices))
-            # for example, Field Model Selection has 2 options of Tier1 and
-            # Tier 2.
 
         if request.method == 'POST':  # Receiving a POST request
-
             inputs = request.form.to_dict()
-
             winenv = ''
             if platform.system() == 'Windows':
                 winenv = os.getenv("SystemDrive").replace(":", "")
@@ -348,10 +169,9 @@ def webgui(app=None):
                         filename = winenv + \
                             os.path.join(abspath, 'wt_models', 'nrel5mw_tier1.inp')
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
-                        filename = os.path.join(
-                            abspath, 'wt_models/dtu10mw_tier1.inp')
-                    # returns a python object. 'r' means open text file for
-                    # reading only.
+                        filename = winenv + \
+                        os.path.join(abspath, 'wt_models', 'dtu10mw_tier1.inp')
+           
                     f = open(filename, 'r')
                     wt_inputs = to_unicode(yaml.load(f))
                 except:
@@ -381,9 +201,11 @@ def webgui(app=None):
                 except:
                     print 'lcoe_se_seam_assembly could not be loaded!'
                     return render_template(
-                        'error.html',
-                        errmssg='{:} : lcoe_se_seam_assembly could not be loaded!'.format(
-                            inputs['Model Selection']))
+                        'configure.html',
+                        messages='{:} : lcoe_se_seam_assembly could not be loaded!'.format(
+                            inputs['Model Selection']),
+                        config=ConfigForm(MultiDict()),
+                                   config_flag=False)
 
             analysis = inputs['Analysis Type']
             fused_webapp(True)
@@ -400,10 +222,13 @@ def webgui(app=None):
     configure.__name__ = 'configure'
     app.route('/configure.html', methods=['Get', 'Post'])(configure)
 
+
     #---------------
 
     def download():
-        """ This downloads into a file called fused_inputs.yaml the inputs """
+        """ 
+        This downloads the inputs of an individual analysis run into a file called fused_inputs.yaml
+        """
         out = get_io_dict(cpnt)
         params = {}
         for param in out['inputs']:
@@ -420,10 +245,13 @@ def webgui(app=None):
     download.__name__ = 'analysis_download'
     app.route('/analysis/download', methods=['GET'])(download)
 
+
     #---------------
 
     def download_full():
-        """ This downloads inputs and outputs to a file called fused_model.yaml """
+        """ 
+        This downloads inputs and outputs to a file called fused_model.yaml
+        """
         if not 'gui_recorder' in vars(cpnt):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             # flash('No case downloaded - NO gui_recorder in component!')
@@ -445,8 +273,13 @@ def webgui(app=None):
     app.route('/analysis/download_full', methods=['GET'])(download_full)
 
     #---------------
+
     @app.route('/analysis/download_sensitivity_results', methods=['GET'])
     def download_sensitivity_results():
+        """
+        Downloads results from sensitivity analysis
+
+        """
         global sensitivityResults
 
         if not 'inputs' in sensitivityResults:
@@ -511,6 +344,7 @@ def webgui(app=None):
 
         return response
 
+
     #---------------
 
     def record_case():
@@ -519,48 +353,52 @@ def webgui(app=None):
         cpnt.gui_recorder['counter'] contains a counter for the number of cases recorded
         cpnt.gui_recorder['recorder'] contains all the names, values, units.
         """
-        if 'gui_recorder' not in vars(cpnt):       # GNS
-            print '\n*** NO gui_recorder in component!\n'
-            #flash('No case recorded - NO gui_recorder in component!')
-            return 'No case recorded - NO gui_recorder in component!'
+        if failed_run_flag is False:
+            if 'gui_recorder' not in vars(cpnt):       # GNS
+                print '\n*** NO gui_recorder in component!\n'
+                return 'No case recorded - NO gui_recorder in component!'
 
-        if 'counter' in cpnt.gui_recorder.keys():
-            cpnt.gui_recorder['counter'] += 1
-        else:
-            cpnt.gui_recorder['counter'] = 1
+            if 'counter' in cpnt.gui_recorder.keys():
+                cpnt.gui_recorder['counter'] += 1
+            else:
+                cpnt.gui_recorder['counter'] = 1
 
-        out = get_io_dict(cpnt)
-        cmp_data, _ = build_hierarchy(cpnt, {}, [])
-        params = {}
-        top_name = cpnt.__class__.__name__
-        params[top_name] = {}
-        for param in out['inputs'] + out['outputs']:
-            pname = param['name']
-            params[top_name][pname] = param['state']
-
-        for cmp_name in cmp_data:
-            params[cmp_name] = {}
-            for param in cmp_data[cmp_name]['params']:
+            out = get_io_dict(cpnt)
+            cmp_data, _ = build_hierarchy(cpnt, {}, [])
+            params = {}
+            top_name = cpnt.__class__.__name__
+            params[top_name] = {}
+            for param in out['inputs'] + out['outputs']:
                 pname = param['name']
-                params[cmp_name][pname] = param['state']
-        try:
-            cpnt.gui_recorder['recorder']['case%i' %
-                                          cpnt.gui_recorder['counter']] = params
-        except:
-            cpnt.gui_recorder['recorder'] = {}
-            cpnt.gui_recorder['recorder']['case%i' %
-                                          cpnt.gui_recorder['counter']] = params
-        # flash('recorded case! %i' % cpnt.gui_recorder['counter'], category='message')
-        return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
+                params[top_name][pname] = param['state']
+
+            for cmp_name in cmp_data:
+                params[cmp_name] = {}
+                for param in cmp_data[cmp_name]['params']:
+                    pname = param['name']
+                    params[cmp_name][pname] = param['state']
+            try:
+                cpnt.gui_recorder['recorder']['case%i' %
+                                              cpnt.gui_recorder['counter']] = params
+            except:
+                cpnt.gui_recorder['recorder'] = {}
+                cpnt.gui_recorder['recorder']['case%i' %
+                                              cpnt.gui_recorder['counter']] = params
+
+            return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
+        return None
 
     record_case.__name__ = 'analysis_record_case'
     app.route('/analysis/record_case', methods=['POST'])(record_case)
 
     #------------------
+
     @app.route('/compare_results', methods=['POST'])
     def compare_results():
         """
         Finds relevant input/output values and units to be plotted
+        Returns:
+            jsonified script, div for html page. The script, div generate bokeh plot
         """
 
         if not 'gui_recorder' in vars(cpnt):
@@ -593,21 +431,8 @@ def webgui(app=None):
             
             xArray = np.array(input_vals)
             yArray = np.array(output_vals)
-
-            # for i in range(len(xArray)):
-            #     try:
-            #         xArray[i] = prettyNum(xArray[i])
-            #     except ValueError:
-            #         xArray[i] = prettyNum(float(xArray[i]))
-            # for val in yArray:
-            #     try:
-            #         yArray[i] = prettyNum(yArray[i])
-            #     except ValueError:
-            #         yArray[i] = prettyNum(float(yArray[i]))
             xUnit = myUnits[inputName]
             yUnit = myUnits[outputName]
-
-
         except KeyError:
             script, div = prepare_plot(CompareResultsPlot, ("", []), ("", []))
         else:
@@ -620,14 +445,13 @@ def webgui(app=None):
                                                                          xUnit if xUnit != "" else ""), xArray), (outputName + (" (%s)" %
                                                                                                                                 yUnit if yUnit != "" else ""), yArray), units=(xUnit, yUnit))
         f = {"script": script, "div": div}
-
         return jsonify(**f)
     compare_results.__name__ = 'analysis_compare_results'
     app.route(
         '/analysis/compare_results',
         methods=[
-            'GET',
             'POST'])(compare_results)
+
 
     #---------------
 
@@ -648,27 +472,21 @@ def webgui(app=None):
     clear_recorder.__name__ = 'analysis_clear_recorder'
     app.route('/analysis/clear_recorder', methods=['POST'])(clear_recorder)
 
-    #     record_case()
-    #     r = cpnt.gui_recorder['recorder']
-
-    # r = yaml.dump(cpnt.gui_recorder['recorder'], default_flow_style=False)
-    # response = make_response(r)
-    # response.headers["Content-Disposition"] = "attachment; filename=fused_model.yaml"
-    # return response
 
     #---------------
 
     def fused_webapp(config_flag=False):
         """ Runs the analysis page """
+        global failed_run_flag
         if analysis == 'Individual Analysis':
             sens_flag = False
         else:
             sens_flag = True
+
         cpname = cpnt.__class__.__name__
         if cpnt is None:
             print '\n*** WARNING: component is None\n'
             failed_run_flag = 'WARNING: component is None in fused_webapp() - try another model(?)'
-
             return render_template('error.html',
                                    errmssg=failed_run_flag,
                                    sens_flag=sens_flag)
@@ -704,7 +522,26 @@ def webgui(app=None):
             inputs = request.form.to_dict()
             io = traits2jsondict(cpnt)
 
+            # determine if doing tornado plot
+            try:
+                if inputs['select.alpha'] == "y":
+                    tornado = True
+                else:
+                    tornado = False
+            except KeyError:
+                tornado = False
+
+            # if doing individual analysis
             if not sens_flag:
+
+                # determine if record case feature is toggled on
+                toggle = False
+                try:
+                    toggle = 'toggle_record' in inputs
+                except KeyError:
+                    pass
+
+                # set initial inputs to component
                 try:
                     for k in inputs.keys():
                         if k in io[
@@ -715,15 +552,15 @@ def webgui(app=None):
                                     inputs[k]))
                 except:
                     print "Something went wrong when setting the model inputs, one of them may have a wrong type"
-                    failed_run_flag = True
                     failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                     flash(failed_run_flag)
+
+                # run the componenent
                 try:
                     cpnt.run()
-
                 except:
+                    print sys.exc_info()[0]
                     print "Analysis did not execute properly (sens_flag = False)"
-                    failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
 
                 sub_comp_data = {}
@@ -732,65 +569,40 @@ def webgui(app=None):
                     sub_comp_data, structure = build_hierarchy(
                         cpnt, sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
-                    # show both inputs and outputs in right side table
                     outputs = get_io_dict(cpnt)
-                    if debug:
-                        print ' INPUTS ', outputs['inputs']
-                        print 'OUTPUTS ', outputs['outputs']
                     if not failed_run_flag:
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
 
                         # saving the elements that will appear in the form
                         # under the compare results tab
-                        inputs_names_form = [
-                            myInputs[:][i]['name'] for i in range(
-                                len(myInputs)) if isinstance(
-                                myInputs[i]['state'],
-                                NumberTypes)]
-                        outputs_names_form = [
-                            myOutputs[:][i]['name'] for i in range(
-                                len(myOutputs)) if isinstance(
-                                myOutputs[i]['state'],
-                                NumberTypes)]
+                        inputs_names_form = form_names(myInputs)
+                        outputs_names_form = form_names(myOutputs)
 
-                        # recording units for i/o variables for plotting
-                        # purposes later
                         global myUnits
-                        for el in myInputs[:]:
-                            if el['name'] not in myUnits.keys(
-                            ) and 'units' in el.keys():
-                                myUnits[el['name']] = el['units']
-                            elif el['name'] not in myUnits.keys() and isinstance(el['state'], NumberTypes):
-                                myUnits[el['name']] = None 
-                                
-                        for el in myOutputs[:]:
-                            if el['name'] not in myUnits.keys(
-                            ) and 'units' in el.keys():
-                                myUnits[el['name']] = el['units']
-                            elif el['name'] not in myUnits.keys() and isinstance(el['state'], NumberTypes):
-                                myUnits[el['name']] = None
+                        saveUnits(myInputs[:])
+                        saveUnits(myOutputs[:])
 
                         # capitalize and change underscore to spaces for display purposes. Should not affect variables themselves for any other purposes
                         # such as saving or plotting
                         makePretty(myInputs)
                         makePretty(myOutputs)
 
-                        combIO = outputs['inputs'] + outputs['outputs']
+                        combIO = outputs['outputs'] + outputs['inputs']
                     else:
                         combIO = None
+                        inputs_names_form, outputs_names_form = None, None
 
                     if not failed_run_flag:
                         # if isinstance(cpnt, Assembly) and not
                         # failed_run_flag: # if added - GNS 2015 09 28
                         try:
-                            # plots the capital costs
+                            # get JS, divs for CAPEX, LCOE, Comparison s=plots
                             script, div = prepare_plot(cpnt.plot)
                             script_lcoe, div_lcoe = prepare_plot(
-                                cpnt.lcoe_plot)  # plots Lcoe
+                                cpnt.lcoe_plot) 
                             script_comp, div_comp = prepare_plot(
                                 CompareResultsPlot, ("", []), ("", []), ("", []))
-
                             draw_plot = True
                         except:
                             # TODO: gracefully inform the user of why he doesnt
@@ -806,13 +618,15 @@ def webgui(app=None):
                         script, div, plot_resources, draw_plot = None, None, None, None
                         script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                         script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
-
-                    return render_template('webgui.html',  # basically rerenter webgui.html with results or no results dependingon success
+                    messages = None
+                    if toggle:
+                        messages = record_case()
+                    return render_template('webgui.html',  
                                            inputs=WebGUIForm(
                                                io['inputs'], run=True, sens_flag=sens_flag)(
                                                MultiDict(inputs)),
                                            outputs=combIO,
-                                           name=cpname,
+                                           name=cpname, messages=messages,
                                            plot_script=script, plot_div=div, draw_plot=draw_plot,
                                            plot_script_lcoe=script_lcoe, plot_div_lcoe=div_lcoe,
                                            plot_inputVars=inputs_names_form, plot_outputVars=outputs_names_form,
@@ -821,10 +635,189 @@ def webgui(app=None):
                                            assembly_structure=assembly_structure,
                                            group_list=group_list,
                                            group_dic=group_dic,
-                                           desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag)
+                                           desc=desc, failed_run_flag=failed_run_flag, sens_flag=sens_flag, toggle=toggle)
+
+            # if sensitivity analysis and selected tornado option
+            elif sens_flag and tornado:
+                # alpha is variation parameter: 
+                alpha = int(inputs['alpha'])
+
+                # if alpha is invalid or if no parameters checked
+                check_select = inputs.keys()[:]
+                if 'select.alpha' in inputs.keys():
+                    check_select.remove('select.alpha')
+
+                if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0: 
+                    if alpha > 100 or alpha <= 0:
+                        messages = "Vary between 0 and 100 only"
+                    else:
+                        messages = "Select parameters"
+
+                    extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
+               
+
+                    # Show the standard form
+                    return render_template(
+                        'webgui.html',
+                        inputs=WebGUIForm(
+                            io['inputs'],
+                            run=True,
+                            sens_flag=sens_flag)(
+                            MultiDict(wt_inputs)),
+                        extra_inputs=extra_inputs,
+                        outputs=None,
+                        name=cpname,
+                        plot_script=None,
+                        plot_div=None,
+                        plot_resources=None,
+                        sub_comp_data=sub_comp_data,
+                        assembly_structure=assembly_structure,
+                        group_list=group_list,
+                        group_dic=group_dic,
+                        desc=desc,
+                        failed_run_flag=failed_run_flag,
+                        sens_flag=sens_flag,
+                        tornado_flag=tornado,
+                        messages=messages)
+
+                
+                global tornadoInputs
+                global tornadoOutputs
+                tornadoInputs, tornadoOutputs = {}, {}
+                outputVars, removeFromOutputs = [], []
+
+                extra_inputs = {"sensitivity_iterations": int(
+                                    inputs['iteration_count']),
+                                "alpha": alpha }
+                skipInputs = ['iteration_count', 'alpha', 'select.alpha']
+                for k in inputs.keys():
+                    if k in skipInputs:
+                        continue
+                    try:
+                        if k in io['inputs']:                         
+                            setattr(
+                                cpnt, k, json2type[
+                                    io['inputs'][k]['type']](
+                                    inputs[k]))
+                    except:
+                        print "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        # failed_run_flag = True
+                        failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
+                        flash(failed_run_flag)
+
+                # iterate through selected parameters. Stores results in tornadoInputs/tornadoOutputs global dictionaries
+                for k in inputs.keys():
+                    if k in skipInputs or 'select.' not in k:
+                        continue
+                    else:
+                        my_sa = Assembly()
+                        my_sa.add('asym', cpnt)
+                        my_sa.add('driver', TORdriver())
+                        my_sa.driver.workflow.add('asym')
+                        my_sa.driver.DOEgenerator = Tornado_Generator(alpha)
+
+                        kselect = k[7:] 
+                        tornadoInputs[kselect] = {}
+                        tornadoOutputs[kselect] = {}
+
+                        my_sa.driver.add_parameter(
+                            'asym.' + kselect, start=float(inputs[kselect]))
+
+                        for s in io['outputs']:
+                            t = cpnt.get_trait(s)
+                            if t.trait_type.__class__.__name__ != 'VarTree':
+                                my_sa.driver.add_response('asym.' + s)
+
+                        try:
+                            my_sa.run()
+                        except:
+                            print sys.exc_info()[0]
+                            print "Analysis did not execute properly (sens_flag = True)"
+                            # failed_run_flag = True
+                            failed_run_flag = "Analysis did not execute properly - check input parameters!"
+                            draw_plot = False
+                            script, div = None, None
+                            inputVars = None
+                            outputVars = None
+                            plot_controls = None
+
+                        else:
+                            try:
+                                my_sa.driver.case_inputs.asym.list_vars()
+                            except:
+                                draw_plot = False
+                                script, div = None, None
+                                inputVars = None
+                                outputVars = None
+                                plot_controls = None
+
+                            else:
+                                draw_plot = True
+                                for val in my_sa.driver.case_inputs.asym.list_vars():
+                                    try:
+                                        tornadoInputs[val] = {
+                                            'value': my_sa.driver.case_inputs.asym.get(val),
+                                            'units': getattr(cpnt.get_trait(val), 'units')}
+                                    except Exception:
+                                        pass
+                                
+                                global myUnits
+                                for val in my_sa.driver.case_outputs.asym.list_vars():
+                                    try:
+                                        tmp = my_sa.driver.case_outputs.asym.get(val)
+                                    except Exception:
+                                        print val
+                                        pass
+                                    else:
+                                        if(isinstance(tmp.pop(), np.float64)):
+                                            tornadoOutputs[kselect][val] = {
+                                                'value': tmp,
+                                                'units': getattr(cpnt.get_trait(val), 'units')}
+                                            if val not in outputVars:
+                                                outputVars.append(val)
+                                            myUnits[val] = getattr(cpnt.get_trait(val), 'units')
+                                        else:
+                                            if val not in removeFromOutputs:
+                                                removeFromOutputs.append(val)
+
+                                # after each run, set the attributes back to baseline
+                                setattr(
+                                cpnt, kselect, json2type[
+                                    io['inputs'][kselect]['type']](
+                                    inputs[kselect]))
+
+                            script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
+                            plot_controls = True
+
+                io = traits2jsondict(cpnt)
+
+                # remove the outputs that didnt work for every parameter
+                for el in removeFromOutputs:
+                    if el in outputVars:
+                        outputVars.remove(el)
+            
+                return render_template(
+                    'webgui.html',
+                    inputs=WebGUIForm(
+                        io['inputs'],
+                        run=True,
+                        sens_flag=sens_flag)(
+                        MultiDict(inputs)),
+                    extra_inputs=extra_inputs,
+                    name=cpname,
+                    plot_script=script,
+                    plot_div=div,
+                    draw_sens_plot=draw_plot,
+                    plot_controls=plot_controls,
+                    plot_outputVars=outputVars,
+                    group_list=group_list,
+                    group_dic=group_dic,
+                    desc=desc,
+                    failed_run_flag=failed_run_flag,
+                    sens_flag=sens_flag,
+                    tornado_flag=tornado)
 
             else:  # sens_flag == True
-
                 my_sa = Assembly()
                 my_sa.add('asym', cpnt)
                 my_sa.add('driver', DOEdriver())
@@ -832,16 +825,18 @@ def webgui(app=None):
                 my_sa.driver.DOEgenerator = Uniform(
                     int(inputs['iteration_count']))
 
+                # using add_parameter and add_response not only tells the DOEdriver what variables to vary, 
+                # but also tells the driver what information to store in the case_input and case_output variable trees.
                 extra_inputs = {
+                    "alpha": 20, 
                     "sensitivity_iterations": int(
                         inputs['iteration_count'])}
-                skipInputs = ['iteration_count']
-
+                skipInputs = ['iteration_count']    
                 for k in inputs.keys():
                     if k in skipInputs:
                         continue
                     try:
-                        if k in io['inputs']:  # io = traits2jsondict(cpnt)
+                        if k in io['inputs']:  
                             setattr(
                                 cpnt, k, json2type[
                                     io['inputs'][k]['type']](
@@ -852,29 +847,24 @@ def webgui(app=None):
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
+                        # this adds the input variable to vary 
                         if 'select.' in k:
                             for kselect in inputs.keys():
-                                if 'select.' + kselect == k:
-                                    for klow in inputs.keys():
-                                        if 'low.' + kselect == klow:
-                                            for khigh in inputs.keys():
-                                                if 'high.' + kselect == khigh:
-                                                    my_sa.driver.add_parameter(
-                                                        'asym.' + kselect, low=float(inputs[klow]), high=float(inputs[khigh]))
+                                if 'select.' + kselect == k and 'low.' + kselect in inputs.keys() and 'high.' + kselect in inputs.keys():
+                                    my_sa.driver.add_parameter(
+                                        'asym.' + kselect, low=float(inputs['low.' + kselect]), high=float(inputs['high.' + kselect]))
 
+                # this selects the valid output variables
                 for s in io['outputs']:
                     t = cpnt.get_trait(s)
                     if t.trait_type.__class__.__name__ != 'VarTree':
                         my_sa.driver.add_response('asym.' + s)
-
                 try:
                     my_sa.run()
+
                 except:
                     print "Analysis did not execute properly (sens_flag = True)"
-                    failed_run_flag = True
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
-                    # flash(failed_run_flag) # no need to flash a
-                    # failed_run_flag
                 else:
                     try:
                         my_sa.driver.case_inputs.asym.list_vars()
@@ -887,18 +877,18 @@ def webgui(app=None):
 
                     else:
                         draw_plot = True
+
                         # Make plotting of results available (Severin)
                         global sensitivityResults
-
                         sensitivityResults = {
                             "inputs": {},
                             "outputs": {}
                         }
 
-                        inputVars = []
-                        outputVars = []
+                        inputVars, outputVars = [], []
 
                         for val in my_sa.driver.case_inputs.asym.list_vars():
+                            temp = val
                             try:
                                 sensitivityResults['inputs'][val] = {
                                     'value': my_sa.driver.case_inputs.asym.get(val),
@@ -907,7 +897,6 @@ def webgui(app=None):
                                 pass
                             else:
                                 inputVars.append(val)
-
                         for val in my_sa.driver.case_outputs.asym.list_vars():
                             try:
                                 tmp = my_sa.driver.case_outputs.asym.get(val)
@@ -921,7 +910,7 @@ def webgui(app=None):
                                     outputVars.append(val)
 
                         script, div = prepare_plot(
-                            SensPlot1D, ("", []), ("", []), ("", []))
+                            SensPlot1D, ("", []), ("", []))
                         plot_controls = True
 
                 io = traits2jsondict(cpnt)
@@ -936,7 +925,6 @@ def webgui(app=None):
                         combIO = outputs['inputs'] + outputs['outputs']
                     else:
                         combIO = None
-
                 return render_template(
                     'webgui.html',
                     inputs=WebGUIForm(
@@ -963,7 +951,7 @@ def webgui(app=None):
 
         else:
 
-            extra_inputs = {"sensitivity_iterations": 1000}
+            extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
             # Show the standard form
             return render_template(
                 'webgui.html',
@@ -1017,15 +1005,12 @@ def GetSensPlot():
             colors = None
     except KeyError:
         script, div = prepare_plot(SensPlot1D, ("", []), ("", []))
-
         summary = "<p>Error Retrieving Data</p>"
-
     else:
         if (xUnit == "None" or xUnit is None):
             xUnit = ""
         if (yUnit == "None" or yUnit is None):
             yUnit = ""
-
         script, div = prepare_plot(SensPlot1D,
                                    (inputName + (" (%s)" % xUnit if xUnit != "" else ""), xArray),
                                    (outputName + (" (%s)" % yUnit if yUnit != "" else ""), yArray),
@@ -1046,32 +1031,26 @@ def GetSensPlot():
         summary += "\t  Std Dev: %s %s<br>\n" % (
             prettyNum(yArray.std()), yUnit)
         summary += "</p>"
-
     f = {"script": script, "div": div, "summary": summary}
-
     return jsonify(**f)
-
 
 # Bokeh stuff after run
 try:
     from bokeh.embed import components
     from bokeh.plotting import *
-    from bokeh.charts import Line
-    # inline configures to provide entire BokehJS code and CSS inline
     from bokeh.resources import INLINE
-    from bokeh.templates import JS_RESOURCES
+    from bokeh.core.templates import JS_RESOURCES
     from bokeh.util.string import encode_utf8
-    from bokeh._legacy_charts import Donut, output_file, show
-    from bokeh.palettes import Spectral9
-    from bokeh.models import HoverTool
+    from bokeh.palettes import Spectral11
+    from bokeh.models import HoverTool, Arrow, OpenHead, NormalHead, VeeHead
+    from bokeh.models.glyphs import Quad
+    from bokeh.charts import show, output_file
     use_bokeh = True
 except:
     print 'Bokeh hasnt been installed properly'
     use_bokeh = False
 
-
 if use_bokeh:
-    # the func seems to be either sens1dplot or copnt.plot
     def prepare_plot(func, *args, **kwargs):
         fig = figure()
         fig = func(fig, *args, **kwargs)
@@ -1097,25 +1076,14 @@ if use_bokeh:
         return script, div
         # Function used to print pretty numbers
 
-    def prettyNum(num):
-        anum = abs(num)
-        if(anum > 1e4 or anum < 1e-2):
-            return "%.2e" % num
-        elif(anum > 10.0):
-            # this just means to print the 2 values after the decimal point for
-            # float
-            return "%.2f" % num
-        elif(anum < 1.0):
-            return "%.4f" % num
-        else:
-            return "%.3f" % num
-
     # Create 1D sensitivitey Bokeh plots
     def SensPlot1D(fig, *args, **kwargs):
 
         fig = figure(title="Sensitivity Results",
                      x_axis_label=args[0][0],
-                     y_axis_label=args[1][0])
+                     y_axis_label=args[1][0],
+                     toolbar_location="above",
+                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
 
         # Set colors according to input
         colors = []
@@ -1127,12 +1095,19 @@ if use_bokeh:
                 d = 200 * (max(colorData) - val) / \
                     (max(colorData) - min(colorData))
                 colors.append("#%02x%02x%02x" % (200 - d, 150, d))
+            source = ColumnDataSource(
+            dict(
+                x=args[0][1],
+                y=args[1][1],
+                colorData=colorData))
+            fig.circle( x="x", y="y", size=10, fill_color=colors, source=source)
+
 
         except:
             colors = ["#22AEAA" for i in args[0][1]]
-
+        
         # plot data
-        fig.scatter(args[0][1], args[1][1], size=10, fill_color=colors)
+            fig.circle(x=args[0][1], y=args[1][1], size=10, fill_color=colors)
 
         if(len(args[0][1]) > 0 and len(args[1][1]) > 0 and (kwargs['colorAxis']['name'] != "Mono")):
             # draw color name
@@ -1183,33 +1158,39 @@ if use_bokeh:
                     prettyNum(
                         max(colorData))],
                 text_align="center")
+        try:
+            hover = fig.select(dict(type=HoverTool))
+            hover.tooltips = OrderedDict([
+                ("%s" % args[0][0], "@x"),
+                ("%s" % args[1][0], "@y"),
+                ("%s" % kwargs['colorAxis']['name'], "@colorData")
+               
+            ])
+        except KeyError:
+            pass
+        except:
+            pass
         return fig
 
     def CompareResultsPlot(fig, *args, **kwargs):
+        """ 
+        Configures the compare results plot
+        Params:
+            @fig: figure object from bokeh
+            @args: data for plotting
+            @kwargs: not used
+        Returns:
+            @fig: returns the bokeh figure object after populating it
+        """
         if len(args) == 0:
             pass
-        import itertools
         fig = figure(title="Compare Results",
                      x_axis_label=args[0][0],
                      y_axis_label=args[1][0],
-                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
+                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave",
+                     toolbar_location="above")
 
-        # Set colors to bokeh palette (Can change palettes in import statement above)
-        # http://bokeh.pydata.org/en/0.10.0/docs/gallery/palettes.html
-        # palette = itertools.cycle(Spectral9)
-        # # plot data
-        # def mscatter(p,x,y,typestr="circle"):
-        #     p.scatter(x,y,marker=typestr, line_color="#000000", fill_color=palette.next(), fill_alpha=0.8, size=12)
-        # def mtext(p, x, y, textstr):
-        #     p.text(x, y, text=[textstr],
-        #     text_color="#449944", text_align="center", text_font_size="10pt")
-
-        # # use for loop to iterate through palette
         numDataPoints = len(args[0][1])
-        # for i in range(numDataPoints):
-        #     x, y = args[0][1][i], args[1][1][i]
-        #     mscatter(fig, x, y)
-
         source = ColumnDataSource(
             data=dict(
                 x=args[0][1],
@@ -1226,32 +1207,293 @@ if use_bokeh:
             size=12)
 
         hover = fig.select(dict(type=HoverTool))
-
         hover.tooltips = OrderedDict([
+            ("x", "%s" % args[0][0]),
+            ("y", "%s" % args[1][0]),
             ("(x,y)", "(@x, @y)"),
-            ("Case", "@label"),
+            ("Case", "@label")
         ])
         return fig
+    
 
-import matplotlib.pyplot as plt
-@app.route('/tornado', methods=['POST'])
-def tornadoPlt(var_name, var_val):
-    pass
+
+# --------------------------
+
+
+    def tornadoPlt(fig, *args, **kwargs):
+        """
+        Generates a tornado plot for sensitivity analysis.
+        Params:
+            @fig: figure object from bokeh
+            @args: parameters are either empty or from the GetTornado() function.
+                   these args include numerical values to be plotted
+            @kwargs: keywords aren't used in this function, but
+                     added as optional input for consistency with other plots
+        Returns:
+            @fig: returns the bokeh figure object after populating it 
+
+        """
+        if len(args) != 2:
+            return fig
+        try:
+            import itertools
+            totals = args[1][0]
+            lows = args[1][1]
+            highs = args[1][2]
+            values = args[1][3]
+            names = args[1][4]
+            outputName = args[1][5]
+
+            # create a new plot with a title and axis labels
+            fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters',
+                toolbar_location="above", tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
+
+            def mtext(x, y, textstr, color="black"):
+                """
+                Adds text at coordinates
+                Params:
+                    @x: x coordinate, type = int, float, etc.
+                    @y: y coordinate
+                    @textstr: text to display, type='str'
+                    @color: color of text, can be str or hex values
+                Returns:
+                    None
+                """
+                fig.text(x, y, text=[textstr],
+                text_color=color, text_align="center", text_font_size="10pt")
+
+            numVars = len(lows)
+            start = numVars * 3 
+
+            # colors is a palette for a gradient between red and green. Can change this to desired colors
+            # via importing an existing palette or changing values below
+            colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
+                    '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
+                    '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
+                    '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
+                    '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
+                    '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
+                    '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
+                    '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
+            # colors = greenBluePalette
+            numColors = len(colors)
+
+            # color, width, x-coord, y-coord and relevant information for glyphs
+            param_colors = []
+            c_width, c_x, c_y, c_lows, c_highs, c_base, c_names = [], [], [], [], [], [], []
+            
+            # for every parameter the user selected
+            for i in range(numVars): 
+                param_range = highs[i]-lows[i]
+                width = param_range/numColors
+                mtext(values[0], start, names[i] )
+
+                # sometimes increasing parameter value decreases output value
+                if highs[i] < lows[i]:
+                    temp = highs[i]
+                    for x in range(numColors):
+                        c_lows.append(lows[i])
+                        c_highs.append( highs[i] )
+                        c_base.append(values[0])
+                        c_width.append(width)
+                        c_y.append(start-1)
+                        c_x.append(temp-width/2)
+                        c_names.append(names[i])
+                        temp-=width
+                        param_colors.append(colors[numColors-x-1])
+                else:
+                    temp = lows[i]
+                    for x in range(numColors):
+                        c_lows.append(lows[i])
+                        c_highs.append( highs[i] )
+                        c_base.append(values[0])
+                        c_width.append(width)
+                        c_y.append(start-1)
+                        c_x.append(temp+width/2)
+                        c_names.append(names[i])
+                        temp+= width
+                        param_colors.append(colors[x])
+                start -= 3 
+            
+            # data source for graph
+            source = ColumnDataSource(
+                data=dict(
+                    x=c_x,
+                    y=c_y,
+                    width=c_width,
+                    colors=param_colors,
+                    lows=c_lows,
+                    highs=c_highs,
+                    base=c_base,
+                    names=c_names))
+
+            # adds rectangle glyphs
+            fig.rect(x='x', y='y', width='width', height=2,
+                       color='colors', source=source)
+
+            # implement hover tool
+            hover = fig.select(dict(type=HoverTool))
+            hover.tooltips = OrderedDict([
+                ("Parameter", "@names"),
+                ("decreasing parameter results in this %s:" %outputName , "@lows" ),
+                ("base %s:" %outputName, "@base"),
+                ("increasing parameter value results in this %s:" %outputName, "@highs")
+                
+            ])
+
+            # add Arrow pointers
+            start = numVars * 3
+            for i in range(numVars):
+                fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
+                    x_start=lows[i], y_start=start, x_end=lows[i], y_end=start-2))
+                fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
+                    x_start=highs[i], y_start=start-2, x_end=highs[i], y_end=start))
+                start -= 3
+
+            # add baseline
+            fig.line([values[0], values[0]],[numVars*3, start+.5], line_width=1.5, line_color="black")
+            fig.yaxis.visible = None
+            mtext(values[0], start-.5, prettyNum(values[0]))
+            mtext(values[0], start, "Baseline")
+     
+        except:
+            # create a new plot with a title and axis labels
+            fig = figure(title="Parameter Sensitivity", x_axis_label=None , y_axis_label='Parameters')
+        return fig
+
+
+@app.route("/tornado", methods=['POST'])
+def GetTornado():
+    """
+    Consolidates and sorts results for Tornado Plots. 
+    Returns:
+        jsonified script, div for generating plots
+    """
+    outputName = str(request.form['outVar'])
+    global tornadoInputs
+    global tornadoOutputs
+    variables = tornadoInputs.keys()  
+    lows, highs, values, totals = [], [], [], []
+    names = variables[:]
+    for i in range(len(variables)):
+        low_val = tornadoOutputs[variables[i]][outputName]['value'][0]
+        lows.append(low_val)
+        high_val = tornadoOutputs[variables[i]][outputName]['value'][2]
+        highs.append(high_val)
+        val = tornadoOutputs[variables[i]][outputName]['value'][1]
+        values.append(val)
+        totals.append(abs(high_val - low_val))
+        base = tornadoOutputs[variables[0]][outputName]['value'][1] 
+
+    # insertion sort based on totals.
+    if (len(totals)-1) > 0:
+        for i in range(len(totals)-1):
+            i += 1
+            temp_total = totals[i]
+            temp_lows = lows[i]
+            temp_highs = highs[i]
+            temp_name = names[i]
+            j = i - 1
+            while j >= 0 and totals[j] > temp_total:
+                totals[j+1] = totals[j]
+                lows[j+1] = lows[j]
+                highs[j+1] = highs[j]
+                names[j+1] = names[j]
+                j = j - 1
+            totals[j+1] = temp_total
+            lows[j+1] = temp_lows
+            highs[j+1] = temp_highs
+            names[j+1] = temp_name
+        totals.reverse()
+        lows.reverse()
+        highs.reverse()
+        names.reverse()
+    try:
+        yUnit = myUnits[outputName]
+    except KeyError:
+        script, div = prepare_plot(tornadoPlt, ("", []), ("", []))
+        summary = "<p>Error Retrieving Data</p>"
+    else:
+        if (yUnit == "None" or yUnit is None):
+            yUnit = ""
+        script, div = prepare_plot(tornadoPlt,
+                                   (outputName + (" (%s)" % yUnit if yUnit != "" else "")),
+                                   (totals, lows, highs, values, names, outputName) )
+
+    f = {"script": script, "div": div}
+    return jsonify(**f)
+
+
+
+def saveUnits(inputList): 
+    """ 
+    Saves the units to a global variable for use later (when using compare case feature).
+    Saves only number types, which are identified if they have units -- compared to booleans or "geared" 
+    Params:
+        @inputList: inputList is a list of dictionaries
+    """
+    global myUnits
+    for el in inputList:
+        if el['name'] not in myUnits.keys() and 'units' in el.keys():
+            myUnits[el['name']] = el['units']
+        elif el['name'] not in myUnits.keys() and isinstance(el['state'], NumberTypes):
+            myUnits[el['name']] = None 
+
+
+def WebGUIForm(dic, run=False, sens_flag=False):
+    """Automagically generate the form from a FUSED I/O dictionary.
+    TODO:
+    [ ] Add type validators
+    [ ] Add low/high validators
+    [x] Add units nice looking extension using 'input-group-addon'
+             (http://getbootstrap.com/components/#input-groups)
+    [ ] Move the units formating into the html code directly
+    """
+
+    class MyForm(Form):
+        pass
+
+
+    for k in dic.keys():
+        v = dic[k]
+        setattr(MyForm, k, make_field(k, v))
+
+
+    if sens_flag:
+        for k in dic.keys():
+            v = dic[k]
+            if not 'group' in v.keys():
+                v['group'] = 'Other'
+            elif v['group'] is None:
+                v['group'] = 'Other'
+            if v['type'] == 'Float':
+                kselect = "select." + k
+                newdic = {
+                    'default': False,
+                    'state': False,
+                    'desc': kselect,
+                    'type': 'Bool',
+                    'group': v['group']}
+                setattr(MyForm, kselect, make_field(kselect, newdic))
+                klow = "low." + k
+                setattr(MyForm, klow, make_field(klow, v))
+                khigh = "high." + k
+                setattr(MyForm, khigh, make_field(khigh, v))
+        setattr(MyForm, "select.alpha", make_field("select.alpha", newdic))
+
+    if run:  # Add the run button
+        setattr(MyForm, 'submit', SubmitField("Run"))
+
+    return MyForm
 
 
 ##########################################################################
 # Initial global values
-
-
 cpnt = None
 desc = ''
 analysis = 'Individual Analysis'
+tornadoInputs = {}
+tornadoOutputs = {}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
-debug = True  # GNS 2015 09 08 - lots of debugging info - feel free to turn off or delete
 debug = False
-NumberTypes = (
-    types.IntType,
-    types.LongType,
-    types.FloatType,
-    types.ComplexType)
