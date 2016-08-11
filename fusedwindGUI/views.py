@@ -114,8 +114,6 @@ def upload():
         return jsonify({'status': 'error'})
 
 
-
-
 def webgui(app=None):
 
     def configure():
@@ -266,8 +264,6 @@ def webgui(app=None):
         response.headers[
             "Content-Disposition"] = "attachment; filename=fused_model.yaml"
         return response
-        # return Response(r, content_type='text/yaml; charset=utf-8',
-        # filename='books.csv')
 
     download_full.__name__ = 'analysis_download_full'
     app.route('/analysis/download_full', methods=['GET'])(download_full)
@@ -402,11 +398,13 @@ def webgui(app=None):
         """
 
         if not 'gui_recorder' in vars(cpnt):
-            print '\n*** NO gui_recorder in component!\n'
             return 'No case downloaded - NO gui_recorder in component!'
         if len(cpnt.gui_recorder.keys()) == 0:
-            print '\n *** NO cases recorded!\n'
-            return 'No Cases Recorded'
+            # return 'No Cases Recorded'
+            script, div = prepare_plot(
+                                CompareResultsPlot)
+            f = {"script": script, "div": div}
+            return jsonify(**f)
 
         inputName = request.form['inVar']
         outputName = request.form['outVar']
@@ -434,7 +432,7 @@ def webgui(app=None):
             xUnit = myUnits[inputName]
             yUnit = myUnits[outputName]
         except KeyError:
-            script, div = prepare_plot(CompareResultsPlot, ("", []), ("", []))
+            script, div = prepare_plot(CompareResultsPlot)
         else:
             if (xUnit == "None" or xUnit is None):
                 xUnit = ""
@@ -466,7 +464,6 @@ def webgui(app=None):
             return 'No recorder to clear!'
 
         cpnt.gui_recorder = {}
-        # flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
     clear_recorder.__name__ = 'analysis_clear_recorder'
@@ -589,20 +586,13 @@ def webgui(app=None):
                         makePretty(myOutputs)
 
                         combIO = outputs['outputs'] + outputs['inputs']
-                    else:
-                        combIO = None
-                        inputs_names_form, outputs_names_form = None, None
-
-                    if not failed_run_flag:
-                        # if isinstance(cpnt, Assembly) and not
-                        # failed_run_flag: # if added - GNS 2015 09 28
                         try:
                             # get JS, divs for CAPEX, LCOE, Comparison s=plots
                             script, div = prepare_plot(cpnt.plot)
                             script_lcoe, div_lcoe = prepare_plot(
                                 cpnt.lcoe_plot) 
                             script_comp, div_comp = prepare_plot(
-                                CompareResultsPlot, ("", []), ("", []), ("", []))
+                                CompareResultsPlot)
                             draw_plot = True
                         except:
                             # TODO: gracefully inform the user of why he doesnt
@@ -611,13 +601,14 @@ def webgui(app=None):
                             flash(
                                 "Analysis ran; failed to prepare any plots for " +
                                 cpnt.__class__.__name__)
-                            script, div, plot_resources, draw_plot = None, None, None, None
-                            script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
-                            script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
                     else:
+                        combIO = None
+                        inputs_names_form, outputs_names_form = None, None
                         script, div, plot_resources, draw_plot = None, None, None, None
                         script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                         script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
+        
+                        
                     messages = None
                     if toggle:
                         messages = record_case()
@@ -642,21 +633,19 @@ def webgui(app=None):
                 # alpha is variation parameter: 
                 alpha = int(inputs['alpha'])
 
-                # if alpha is invalid or if no parameters checked
+                # if alpha is invalid or if no parameters checked, then re render page with message
                 check_select = inputs.keys()[:]
                 if 'select.alpha' in inputs.keys():
                     check_select.remove('select.alpha')
 
                 if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0: 
                     if alpha > 100 or alpha <= 0:
-                        messages = "Vary between 0 and 100 only"
+                        failed_run_flag = "Vary between 0 and 100 only"
                     else:
-                        messages = "Select parameters"
-
+                        failed_run_flag = "Select parameters"
+                    
+                    # Show the standard form with error message
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
-               
-
-                    # Show the standard form
                     return render_template(
                         'webgui.html',
                         inputs=WebGUIForm(
@@ -665,22 +654,14 @@ def webgui(app=None):
                             sens_flag=sens_flag)(
                             MultiDict(wt_inputs)),
                         extra_inputs=extra_inputs,
-                        outputs=None,
                         name=cpname,
-                        plot_script=None,
-                        plot_div=None,
-                        plot_resources=None,
                         sub_comp_data=sub_comp_data,
-                        assembly_structure=assembly_structure,
                         group_list=group_list,
                         group_dic=group_dic,
                         desc=desc,
                         failed_run_flag=failed_run_flag,
                         sens_flag=sens_flag,
-                        tornado_flag=tornado,
-                        messages=messages)
-
-                
+                        tornado_flag=tornado)                
                 global tornadoInputs
                 global tornadoOutputs
                 tornadoInputs, tornadoOutputs = {}, {}
@@ -719,32 +700,30 @@ def webgui(app=None):
                         kselect = k[7:] 
                         tornadoInputs[kselect] = {}
                         tornadoOutputs[kselect] = {}
-
-                        my_sa.driver.add_parameter(
-                            'asym.' + kselect, start=float(inputs[kselect]))
-
-                        for s in io['outputs']:
-                            t = cpnt.get_trait(s)
-                            if t.trait_type.__class__.__name__ != 'VarTree':
-                                my_sa.driver.add_response('asym.' + s)
-
                         try:
-                            my_sa.run()
-                        except:
-                            print sys.exc_info()[0]
-                            print "Analysis did not execute properly (sens_flag = True)"
-                            # failed_run_flag = True
+                            my_sa.driver.add_parameter(
+                                'asym.' + kselect, start=float(inputs[kselect]))
+                        except ValueError:
                             failed_run_flag = "Analysis did not execute properly - check input parameters!"
                             draw_plot = False
                             script, div = None, None
                             inputVars = None
                             outputVars = None
                             plot_controls = None
-
                         else:
+
+                            for s in io['outputs']:
+                                t = cpnt.get_trait(s)
+                                if t.trait_type.__class__.__name__ != 'VarTree':
+                                    my_sa.driver.add_response('asym.' + s)
+
                             try:
-                                my_sa.driver.case_inputs.asym.list_vars()
+                                my_sa.run()
                             except:
+                                print sys.exc_info()[0]
+                                print "Analysis did not execute properly (sens_flag = True)"
+                                # failed_run_flag = True
+                                failed_run_flag = "Analysis did not execute properly - check input parameters!"
                                 draw_plot = False
                                 script, div = None, None
                                 inputVars = None
@@ -752,42 +731,52 @@ def webgui(app=None):
                                 plot_controls = None
 
                             else:
-                                draw_plot = True
-                                for val in my_sa.driver.case_inputs.asym.list_vars():
-                                    try:
-                                        tornadoInputs[val] = {
-                                            'value': my_sa.driver.case_inputs.asym.get(val),
-                                            'units': getattr(cpnt.get_trait(val), 'units')}
-                                    except Exception:
-                                        pass
-                                
-                                global myUnits
-                                for val in my_sa.driver.case_outputs.asym.list_vars():
-                                    try:
-                                        tmp = my_sa.driver.case_outputs.asym.get(val)
-                                    except Exception:
-                                        print val
-                                        pass
-                                    else:
-                                        if(isinstance(tmp.pop(), np.float64)):
-                                            tornadoOutputs[kselect][val] = {
-                                                'value': tmp,
+                                try:
+                                    my_sa.driver.case_inputs.asym.list_vars()
+                                except:
+                                    draw_plot = False
+                                    script, div = None, None
+                                    inputVars = None
+                                    outputVars = None
+                                    plot_controls = None
+
+                                else:
+                                    draw_plot = True
+                                    for val in my_sa.driver.case_inputs.asym.list_vars():
+                                        try:
+                                            tornadoInputs[val] = {
+                                                'value': my_sa.driver.case_inputs.asym.get(val),
                                                 'units': getattr(cpnt.get_trait(val), 'units')}
-                                            if val not in outputVars:
-                                                outputVars.append(val)
-                                            myUnits[val] = getattr(cpnt.get_trait(val), 'units')
+                                        except Exception:
+                                            pass
+                                    
+                                    global myUnits
+                                    for val in my_sa.driver.case_outputs.asym.list_vars():
+                                        try:
+                                            tmp = my_sa.driver.case_outputs.asym.get(val)
+                                        except Exception:
+                                            print val
+                                            pass
                                         else:
-                                            if val not in removeFromOutputs:
-                                                removeFromOutputs.append(val)
+                                            if(isinstance(tmp.pop(), np.float64)):
+                                                tornadoOutputs[kselect][val] = {
+                                                    'value': tmp,
+                                                    'units': getattr(cpnt.get_trait(val), 'units')}
+                                                if val not in outputVars:
+                                                    outputVars.append(val)
+                                                myUnits[val] = getattr(cpnt.get_trait(val), 'units')
+                                            else:
+                                                if val not in removeFromOutputs:
+                                                    removeFromOutputs.append(val)
 
-                                # after each run, set the attributes back to baseline
-                                setattr(
-                                cpnt, kselect, json2type[
-                                    io['inputs'][kselect]['type']](
-                                    inputs[kselect]))
+                                    # after each run, set the attributes back to baseline
+                                    setattr(
+                                    cpnt, kselect, json2type[
+                                        io['inputs'][kselect]['type']](
+                                        inputs[kselect]))
 
-                            script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
-                            plot_controls = True
+                                script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
+                                plot_controls = True
 
                 io = traits2jsondict(cpnt)
 
@@ -847,13 +836,17 @@ def webgui(app=None):
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
+                        try:
                         # this adds the input variable to vary 
-                        if 'select.' in k:
-                            for kselect in inputs.keys():
-                                if 'select.' + kselect == k and 'low.' + kselect in inputs.keys() and 'high.' + kselect in inputs.keys():
-                                    my_sa.driver.add_parameter(
-                                        'asym.' + kselect, low=float(inputs['low.' + kselect]), high=float(inputs['high.' + kselect]))
+                            if 'select.' in k:
+                                for kselect in inputs.keys():
+                                    if 'select.' + kselect == k and 'low.' + kselect in inputs.keys() and 'high.' + kselect in inputs.keys():
 
+                                        my_sa.driver.add_parameter(
+                                            'asym.' + kselect, low=float(inputs['low.' + kselect]), high=float(inputs['high.' + kselect]))
+                        except ValueError:
+                            # valueError occurs if high value < low values 
+                            failed_run_flag = "Analysis did not execute properly - check input parameters!"
                 # this selects the valid output variables
                 for s in io['outputs']:
                     t = cpnt.get_trait(s)
@@ -910,7 +903,7 @@ def webgui(app=None):
                                     outputVars.append(val)
 
                         script, div = prepare_plot(
-                            SensPlot1D, ("", []), ("", []))
+                            SensPlot1D)
                         plot_controls = True
 
                 io = traits2jsondict(cpnt)
@@ -942,7 +935,6 @@ def webgui(app=None):
                     plot_inputVars=inputVars,
                     plot_outputVars=outputVars,
                     sub_comp_data=sub_comp_data,
-                    assembly_structure=assembly_structure,
                     group_list=group_list,
                     group_dic=group_dic,
                     desc=desc,
@@ -961,13 +953,7 @@ def webgui(app=None):
                     sens_flag=sens_flag)(
                     MultiDict(wt_inputs)),
                 extra_inputs=extra_inputs,
-                outputs=None,
                 name=cpname,
-                plot_script=None,
-                plot_div=None,
-                plot_resources=None,
-                sub_comp_data=sub_comp_data,
-                assembly_structure=assembly_structure,
                 group_list=group_list,
                 group_dic=group_dic,
                 desc=desc,
@@ -1078,6 +1064,10 @@ if use_bokeh:
 
     # Create 1D sensitivitey Bokeh plots
     def SensPlot1D(fig, *args, **kwargs):
+        if len(args)==0:
+            fig = figure(title="Sensitivity Results", x_axis_label=None, y_axis_label=None)
+            mtext(fig, 0,0, "Select inputs and outputs and color to see this feature!")
+            return fig
 
         fig = figure(title="Sensitivity Results",
                      x_axis_label=args[0][0],
@@ -1181,9 +1171,15 @@ if use_bokeh:
             @kwargs: not used
         Returns:
             @fig: returns the bokeh figure object after populating it
+        TODO:
+            [ ] default plot should have text with instructions
         """
+
         if len(args) == 0:
-            pass
+            fig = figure(title="Compare Results", x_axis_label=None , y_axis_label=None)
+            mtext(fig, 0,0, "Record case to start using this plot!")
+            return fig
+            
         fig = figure(title="Compare Results",
                      x_axis_label=args[0][0],
                      y_axis_label=args[1][0],
@@ -1248,19 +1244,6 @@ if use_bokeh:
             fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters',
                 toolbar_location="above", tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
 
-            def mtext(x, y, textstr, color="black"):
-                """
-                Adds text at coordinates
-                Params:
-                    @x: x coordinate, type = int, float, etc.
-                    @y: y coordinate
-                    @textstr: text to display, type='str'
-                    @color: color of text, can be str or hex values
-                Returns:
-                    None
-                """
-                fig.text(x, y, text=[textstr],
-                text_color=color, text_align="center", text_font_size="10pt")
 
             numVars = len(lows)
             start = numVars * 3 
@@ -1286,7 +1269,7 @@ if use_bokeh:
             for i in range(numVars): 
                 param_range = highs[i]-lows[i]
                 width = param_range/numColors
-                mtext(values[0], start, names[i] )
+                mtext(fig, values[0], start, names[i] )
 
                 # sometimes increasing parameter value decreases output value
                 if highs[i] < lows[i]:
@@ -1335,9 +1318,9 @@ if use_bokeh:
             hover = fig.select(dict(type=HoverTool))
             hover.tooltips = OrderedDict([
                 ("Parameter", "@names"),
-                ("decreasing parameter results in this %s:" %outputName , "@lows" ),
+                ("%s at lower parameter:" %outputName , "@lows" ),
                 ("base %s:" %outputName, "@base"),
-                ("increasing parameter value results in this %s:" %outputName, "@highs")
+                ("%s at higher parameter:" %outputName, "@highs")
                 
             ])
 
@@ -1353,12 +1336,15 @@ if use_bokeh:
             # add baseline
             fig.line([values[0], values[0]],[numVars*3, start+.5], line_width=1.5, line_color="black")
             fig.yaxis.visible = None
-            mtext(values[0], start-.5, prettyNum(values[0]))
-            mtext(values[0], start, "Baseline")
+            mtext(fig, values[0], start-.5, prettyNum(values[0]))
+            mtext(fig, values[0], start, "Baseline")
      
         except:
             # create a new plot with a title and axis labels
             fig = figure(title="Parameter Sensitivity", x_axis_label=None , y_axis_label='Parameters')
+            fig.yaxis.visible = None
+            mtext(fig, 0,0, "Select output to see parameter sensitivity on")
+
         return fig
 
 
@@ -1497,3 +1483,4 @@ tornadoOutputs = {}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
 debug = False
+rendering_dic = {""}
