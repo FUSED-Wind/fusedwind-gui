@@ -353,21 +353,21 @@ if use_bokeh:
 
 
 def finditem(obj, key):
-	"""
+    """
     This function performs a deep search in a dictionary for a value associated with any key.
-	Params:
+    Params:
         @obj is the dictionary
         @key is the key you want the value for
-	Returns:
+    Returns:
         @item, is the value associated with the key parameter
-	"""
-	if key in obj:
-		return obj[key]
-	for k, v in obj.items():
-	    if isinstance(v, dict):
-	        item = finditem(v, key)
-	        if item is not None:
-	            return item
+    """
+    if key in obj:
+        return obj[key]
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            item = finditem(v, key)
+            if item is not None:
+                return item
 
 
 
@@ -384,7 +384,8 @@ def makePretty(myList):
         if 'name' in myDict.keys():
             myDict['name'] = myDict['name'].replace("_"," ").title()
         if 'desc' in myDict.keys():
-            myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
+            if len(myDict['desc'])>0:
+                myDict['desc'] = myDict['desc'][0].upper()+myDict['desc'][1:]
 
 
 import types
@@ -393,37 +394,37 @@ NumberTypes = (types.IntType,
     types.FloatType,
     types.ComplexType)
 def form_names(varList):
-	"""
+    """
     Used in the compare results feature. Populates the drop down menu for inputs
     Params:
         @varList
     Return:
         - Variables to populate drop down form. These variables include number types only
 
-	"""
+    """
 
-	return [varList[:][i]['name'] for i in range(len(varList)) if (isinstance(varList[i]['state'], NumberTypes) and varList[i]['state'] is not True)]
+    return [varList[:][i]['name'] for i in range(len(varList)) if (isinstance(varList[i]['state'], NumberTypes) and varList[i]['state'] is not True)]
 
 def prettyNum(num):
-	"""
-	Returns a prettier version of a number. Includes truncations
+    """
+    Returns a prettier version of a number. Includes truncations
     Params:
         @num is the input, unmodified number
     Returns
         - Formatted number
 
-	"""
-	anum = abs(num)
-	if(anum > 1e4 or anum < 1e-2):
-	    return "%.2e" % num
-	elif(anum > 10.0):
-	    # this just means to print the 2 values after the decimal point for
-	    # float
-	    return "%.2f" % num
-	elif(anum < 1.0):
-	    return "%.4f" % num
-	else:
-	    return "%.3f" % num
+    """
+    anum = abs(num)
+    if(anum > 1e4 or anum < 1e-2):
+        return "%.2e" % num
+    elif(anum > 10.0):
+        # this just means to print the 2 values after the decimal point for
+        # float
+        return "%.2f" % num
+    elif(anum < 1.0):
+        return "%.4f" % num
+    else:
+        return "%.3f" % num
 
 # Handling Forms -------------------------------------------------------------
 def unitfield(units, name):
