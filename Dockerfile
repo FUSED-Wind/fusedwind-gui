@@ -16,20 +16,25 @@ RUN mkdir /opt/webapp
 WORKDIR /opt/webapp
 ADD . /opt/webapp
 
+# That should not be necessary. Those are unnecessary dependencies in fusedwind
+RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install --upgrade setuptools &>null"; exit 0
+RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install ipython algopy"
+RUN apt-get -y install python-matplotlib
+
 # Install the webapp
 RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; cd /opt/webapp; python setup.py develop"
 
-# That should not be necessary. Those are unnecessary dependencies in fusedwind 
-RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install ipython algopy"
-RUN apt-get -y install python-matplotlib
 
 WORKDIR /opt/webapp/src/wisdem
 RUN git checkout develop \
  && git pull
 
+RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install --upgrade bokeh pandas"
 
 # Done last in order not to have to rebuild all the lib every single time
 
 EXPOSE 5000
+
+WORKDIR /opt/webapp
 
 CMD o10.3 /opt/webapp/fusedwindGUI/scripts/run.py
