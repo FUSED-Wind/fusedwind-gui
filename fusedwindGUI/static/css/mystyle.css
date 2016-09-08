@@ -1,29 +1,31 @@
 /* Container is necessary because td cannot be positioned relative */
 /* HOVER STYLES */
-div#pop-up {
-  display: none;
-  position: absolute;
-  width: 280px;
-  padding: 10px;
-  background: #eeeeee;
-  color: #000000;
-  border: 1px solid #1a1a1a;
-  font-size: 90%;
-}
 
-.header-image {
-    width: 30%;
-    vertical-align: top;
-}
 .col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {
     position: relative;
     min-height: 1px;
     padding-right: 2px;
     padding-left: 2px;
 }
+
+/********************************/
+/*General Styling for all pages */
+/********************************/
+
 .panel-body {
     padding: 2px;
 }
+.panel-default{
+  border:0px;
+}
+.panel-heading{
+  background-color:#D8D8D8 !important;
+}
+h3.panel-title{
+  display:inline;
+}
+
+
 .row {
     margin-right: 0px;
     margin-left: 0px;
@@ -31,84 +33,7 @@ div#pop-up {
 
 .navbar{
     margin-bottom:0px;
-
 }
-
-#HeadTitle{
-  display:flex;
-  align-items: center;
-  justify-content: center;
-  margin-top:15%;
-  }
-
-.banner{
-  background-image: url('../img/26777.jpg');
-  background-size:cover; /* this stretches image based on sizing of window! */
-  min-height:100%;
-  min-width:100%;
-
-}
-.about, .webGUI{
-    background-image: url('../img/16303.jpg');
-
-}
-
-
-
-.h1{
-  color:#000000;
-}
-
-/* this makes it so that on pages that require scrolling the web page doesn't dynamically adjust */
-html {
-  overflow-y: scroll;
-
-}
-
-#myTabs{
-  align:right;
-  padding-right:80px;
-}
-
-.startButton{
-  margin-top:0px;
-  min-width:200px;
-}
-
-html, body{
-  height:100%;
-}
-
-.myNavBar{
-  padding:0px;
-}
-
-.panel-default{
-  border:0px;
-}
-
-
-.panel-heading{
-  background-color:#D8D8D8 !important;
-}
-
-#maincontent{
-  padding-right:100px;
-  min-width:1350px;
-}
-
-#plotTabs{
-  margin-top:10px;
-}
-
-#hideaway2, #hideaway3{
-  display:none;
-}
-
-#hideaway{
-  display:block;
-}
-
 .btn-mvp{
   background-color:#d74b4b;
   color:#FFFFFF;
@@ -122,12 +47,90 @@ button.btn-success{
   visibility: hidden !important;
 }
 
-#button-panel{
-  margin-left:4px;
+
+/*Adds background image to the web pages */
+.banner{
+  background-image: url('../img/26777.jpg');
+  background-size:cover; /* this stretches image based on sizing of window! */
+  min-height:100%;
+  min-width:100%;
+
+}
+.about, .webGUI{
+    background-image: url('../img/16303.jpg');
+}
+.h1{
+  color:#000000;
 }
 
-#plot_controller__2{
-  margin-top:50px;
+/* this makes it so that on pages that require scrolling the web page doesn't dynamically adjust */
+html {
+  overflow-y: scroll;
+
+}
+html, body{
+  height:100%;
+}
+input.btn-mvp{
+  margin-left:2px;
+  margin-top:-20px;
+  margin-bottom:10px;
+}
+
+#button-panel>input#submit{
+  margin-left:0px;
+  margin-top:0px;
+  margin-bottom:0px;
+}
+
+
+
+/*** Landing Page ****/
+.startButton{
+  margin-top:0px;
+  min-width:200px;
+}
+
+#HeadTitle{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  margin-top:15%;
+  }
+#alert_placeholder{
+  padding:0px;
+  margin:0px;
+}
+
+
+
+/**********************************************/
+/************** Analysis page *****************/
+/**********************************************/
+#maincontent{
+  padding-right:100px;
+  min-width:1350px;
+}
+
+#plotTabs{
+  margin-top:10px;
+}
+#myTabs{
+  align:right;
+  padding-right:80px;
+}
+
+#hideaway2, #hideaway3{
+  display:none;
+}
+
+#hideaway{
+  display:block;
+}
+
+
+#button-panel{
+  margin-left:4px;
 }
 
 #CAPEX{
@@ -138,9 +141,6 @@ button.btn-success{
   display:none;
 }
 
-h3.panel-title{
-  display:inline;
-}
 
 #summary_heading{
   margin-top:50px;
@@ -167,8 +167,12 @@ div.page-header{
 h2>small, h4, #about-content{
   color:#FFFFFF;
 }
+#initial_values{
+  width:300px;
+}
 
 
+/*Configure page styling */
 #configure-content{
   background-color:#FFFFFF;
   margin-top:0px;
@@ -179,23 +183,3 @@ h2>small, h4, #about-content{
   margin-bottom:10px;
 }
 
-input.btn-mvp{
-  margin-left:2px;
-  margin-top:-20px;
-  margin-bottom:10px;
-}
-
-#button-panel>input#submit{
-  margin-left:0px;
-  margin-top:0px;
-  margin-bottom:0px;
-}
-
-#initial_values{
-  width:400px;
-}
-
-#alert_placeholder{
-  padding:0px;
-  margin:0px;
-}

@@ -37,7 +37,7 @@ def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
     using a yaml library, and return its content as a python object.
     Params:
-        @files 
+        @files
     Returns:
         @outfiles: a ist of dictionary
     """
@@ -66,7 +66,7 @@ def _handleUpload(files):
             'content': inputs
         })
 
-    return outfiles  
+    return outfiles
 
 
 # Views -----------------------------------------------------------------------
@@ -95,7 +95,7 @@ def documentation():
 
 @app.route('/upload/', methods=['POST'])  # when uplaod
 def upload():
-    """Take care of the reception of the file upload. 
+    """Take care of the reception of the file upload.
     Returns:
         @response, @jsonify - a json file to be consumed by a jQuery function
     """
@@ -169,11 +169,11 @@ def webgui(app=None):
                     elif inputs['Turbine Selection'] == 'DTU 10MW RWT':
                         filename = winenv + \
                         os.path.join(abspath, 'wt_models', 'dtu10mw_tier1.inp')
-           
+
                     f = open(filename, 'r')
                     wt_inputs = to_unicode(yaml.load(f))
-                except:
-                    print 'lcoe_csm_assembly could not be loaded!'
+                except Exception as e:
+                    print 'lcoe_csm_assembly could not be loaded!:', str(e)
                     return render_template(
                         'error.html',
                         errmssg='{:} : lcoe_csm_assembly could not be loaded!'.format(
@@ -224,7 +224,7 @@ def webgui(app=None):
     #---------------
 
     def download():
-        """ 
+        """
         This downloads the inputs of an individual analysis run into a file called fused_inputs.yaml
         """
         out = get_io_dict(cpnt)
@@ -247,7 +247,7 @@ def webgui(app=None):
     #---------------
 
     def download_full():
-        """ 
+        """
         This downloads inputs and outputs to a file called fused_model.yaml
         """
         if not 'gui_recorder' in vars(cpnt):       # GNS
@@ -426,7 +426,7 @@ def webgui(app=None):
 
                 input_vals.append(current_input)
                 output_vals.append(current_output)
-            
+
             xArray = np.array(input_vals)
             yArray = np.array(output_vals)
             xUnit = myUnits[inputName]
@@ -590,7 +590,7 @@ def webgui(app=None):
                             # get JS, divs for CAPEX, LCOE, Comparison s=plots
                             script, div = prepare_plot(cpnt.plot)
                             script_lcoe, div_lcoe = prepare_plot(
-                                cpnt.lcoe_plot) 
+                                cpnt.lcoe_plot)
                             script_comp, div_comp = prepare_plot(
                                 CompareResultsPlot)
                             draw_plot = True
@@ -612,7 +612,7 @@ def webgui(app=None):
                     messages = None
                     if toggle:
                         messages = record_case()
-                    return render_template('webgui.html',  
+                    return render_template('webgui.html',
                                            inputs=WebGUIForm(
                                                io['inputs'], run=True, sens_flag=sens_flag)(
                                                MultiDict(inputs)),
@@ -630,7 +630,7 @@ def webgui(app=None):
 
             # if sensitivity analysis and selected tornado option
             elif sens_flag and tornado:
-                # alpha is variation parameter: 
+                # alpha is variation parameter:
                 alpha = int(inputs['alpha'])
 
                 # if alpha is invalid or if no parameters checked, then re render page with message
@@ -638,7 +638,7 @@ def webgui(app=None):
                 if 'select.alpha' in inputs.keys():
                     check_select.remove('select.alpha')
 
-                if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0: 
+                if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0:
                     if alpha > 100 or alpha <= 0:
                         failed_run_flag = "Vary between 0 and 100 only"
                     else:
@@ -646,6 +646,9 @@ def webgui(app=None):
                     
                     # Show the standard form with error message
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
+
+
+
                     return render_template(
                         'webgui.html',
                         inputs=WebGUIForm(
@@ -660,8 +663,10 @@ def webgui(app=None):
                         group_dic=group_dic,
                         desc=desc,
                         failed_run_flag=failed_run_flag,
-                        sens_flag=sens_flag,
-                        tornado_flag=tornado)                
+                        tornado_flag=tornado,
+                        messages=messages)
+
+
                 global tornadoInputs
                 global tornadoOutputs
                 tornadoInputs, tornadoOutputs = {}, {}
@@ -675,7 +680,7 @@ def webgui(app=None):
                     if k in skipInputs:
                         continue
                     try:
-                        if k in io['inputs']:                         
+                        if k in io['inputs']:
                             setattr(
                                 cpnt, k, json2type[
                                     io['inputs'][k]['type']](
@@ -697,7 +702,7 @@ def webgui(app=None):
                         my_sa.driver.workflow.add('asym')
                         my_sa.driver.DOEgenerator = Tornado_Generator(alpha)
 
-                        kselect = k[7:] 
+                        kselect = k[7:]
                         tornadoInputs[kselect] = {}
                         tornadoOutputs[kselect] = {}
                         try:
@@ -731,21 +736,27 @@ def webgui(app=None):
                                 plot_controls = None
 
                             else:
-                                try:
-                                    my_sa.driver.case_inputs.asym.list_vars()
-                                except:
-                                    draw_plot = False
-                                    script, div = None, None
-                                    inputVars = None
-                                    outputVars = None
-                                    plot_controls = None
 
-                                else:
-                                    draw_plot = True
-                                    for val in my_sa.driver.case_inputs.asym.list_vars():
-                                        try:
-                                            tornadoInputs[val] = {
-                                                'value': my_sa.driver.case_inputs.asym.get(val),
+                                draw_plot = True
+                                for val in my_sa.driver.case_inputs.asym.list_vars():
+                                    try:
+                                        tornadoInputs[val] = {
+                                            'value': my_sa.driver.case_inputs.asym.get(val),
+                                            'units': getattr(cpnt.get_trait(val), 'units')}
+                                    except Exception:
+                                        pass
+
+                                global myUnits
+                                for val in my_sa.driver.case_outputs.asym.list_vars():
+                                    try:
+                                        tmp = my_sa.driver.case_outputs.asym.get(val)
+                                    except Exception:
+                                        print val
+                                        pass
+                                    else:
+                                        if(isinstance(tmp.pop(), np.float64)):
+                                            tornadoOutputs[kselect][val] = {
+                                                'value': tmp,
                                                 'units': getattr(cpnt.get_trait(val), 'units')}
                                         except Exception:
                                             pass
@@ -784,7 +795,7 @@ def webgui(app=None):
                 for el in removeFromOutputs:
                     if el in outputVars:
                         outputVars.remove(el)
-            
+
                 return render_template(
                     'webgui.html',
                     inputs=WebGUIForm(
@@ -814,18 +825,18 @@ def webgui(app=None):
                 my_sa.driver.DOEgenerator = Uniform(
                     int(inputs['iteration_count']))
 
-                # using add_parameter and add_response not only tells the DOEdriver what variables to vary, 
+                # using add_parameter and add_response not only tells the DOEdriver what variables to vary,
                 # but also tells the driver what information to store in the case_input and case_output variable trees.
                 extra_inputs = {
-                    "alpha": 20, 
+                    "alpha": 20,
                     "sensitivity_iterations": int(
                         inputs['iteration_count'])}
-                skipInputs = ['iteration_count']    
+                skipInputs = ['iteration_count']
                 for k in inputs.keys():
                     if k in skipInputs:
                         continue
                     try:
-                        if k in io['inputs']:  
+                        if k in io['inputs']:
                             setattr(
                                 cpnt, k, json2type[
                                     io['inputs'][k]['type']](
@@ -836,17 +847,15 @@ def webgui(app=None):
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
-                        try:
-                        # this adds the input variable to vary 
-                            if 'select.' in k:
-                                for kselect in inputs.keys():
-                                    if 'select.' + kselect == k and 'low.' + kselect in inputs.keys() and 'high.' + kselect in inputs.keys():
 
-                                        my_sa.driver.add_parameter(
-                                            'asym.' + kselect, low=float(inputs['low.' + kselect]), high=float(inputs['high.' + kselect]))
-                        except ValueError:
-                            # valueError occurs if high value < low values 
-                            failed_run_flag = "Analysis did not execute properly - check input parameters!"
+
+                        # this adds the input variable to vary
+                        if 'select.' in k:
+                            for kselect in inputs.keys():
+                                if 'select.' + kselect == k and 'low.' + kselect in inputs.keys() and 'high.' + kselect in inputs.keys():
+                                    my_sa.driver.add_parameter(
+                                        'asym.' + kselect, low=float(inputs['low.' + kselect]), high=float(inputs['high.' + kselect]))
+
                 # this selects the valid output variables
                 for s in io['outputs']:
                     t = cpnt.get_trait(s)
@@ -1020,345 +1029,20 @@ def GetSensPlot():
     f = {"script": script, "div": div, "summary": summary}
     return jsonify(**f)
 
-# Bokeh stuff after run
-try:
-    from bokeh.embed import components
-    from bokeh.plotting import *
-    from bokeh.resources import INLINE
-    from bokeh.core.templates import JS_RESOURCES
-    from bokeh.util.string import encode_utf8
-    from bokeh.palettes import Spectral11
-    from bokeh.models import HoverTool, Arrow, OpenHead, NormalHead, VeeHead
-    from bokeh.models.glyphs import Quad
-    from bokeh.charts import show, output_file
-    use_bokeh = True
-except:
-    print 'Bokeh hasnt been installed properly'
-    use_bokeh = False
 
-if use_bokeh:
-    def prepare_plot(func, *args, **kwargs):
-        fig = figure()
-        fig = func(fig, *args, **kwargs)
-        # Create a polynomial line graph
-
-        # Configure resources to include BokehJS inline in the document.
-        # For more details see:
-        #   http://bokeh.pydata.org/en/latest/docs/reference/resources_embedding.html#module-bokeh.resources
-        plot_resources = JS_RESOURCES.render(
-            js_raw=INLINE.js_raw,
-            css_raw=INLINE.css_raw,
-            js_files=INLINE.js_files,
-            css_files=INLINE.css_files,
-        )
-
-        # For more details see:
-        #   http://bokeh.pydata.org/en/latest/docs/user_guide/embedding.html#components
-        # http://bokeh.pydata.org/en/latest/docs/user_guide/embed.html#components
-        # (as of 2015 09 28)
-        # components(plot_objs) returns HTML components to embed a Bokeh Plot.
-        # THe data for the plot is stored direclty in the returned HTML.
-        script, div = components(fig, INLINE)
-        return script, div
-        # Function used to print pretty numbers
-
-    # Create 1D sensitivitey Bokeh plots
-    def SensPlot1D(fig, *args, **kwargs):
-        if len(args)==0:
-            fig = figure(title="Sensitivity Results", x_axis_label=None, y_axis_label=None)
-            mtext(fig, 0,0, "Select inputs and outputs and color to see this feature!")
-            return fig
-
-        fig = figure(title="Sensitivity Results",
-                     x_axis_label=args[0][0],
-                     y_axis_label=args[1][0],
-                     toolbar_location="above",
-                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
-
-        # Set colors according to input
-        colors = []
-        try:
-            colorData = kwargs['colorAxis']['values']
-            # colorData has the y-values for the colored coordinate
-
-            for val in colorData:
-                d = 200 * (max(colorData) - val) / \
-                    (max(colorData) - min(colorData))
-                colors.append("#%02x%02x%02x" % (200 - d, 150, d))
-            source = ColumnDataSource(
-            dict(
-                x=args[0][1],
-                y=args[1][1],
-                colorData=colorData))
-            fig.circle( x="x", y="y", size=10, fill_color=colors, source=source)
-
-
-        except:
-            colors = ["#22AEAA" for i in args[0][1]]
-        
-        # plot data
-            fig.circle(x=args[0][1], y=args[1][1], size=10, fill_color=colors)
-
-        if(len(args[0][1]) > 0 and len(args[1][1]) > 0 and (kwargs['colorAxis']['name'] != "Mono")):
-            # draw color name
-
-            xDiff = max(args[0][1]) - min(args[0][1])
-            yDiff = max(args[1][1]) - min(args[1][1])
-
-            xPos = min(args[0][1]) + 0.05 * xDiff
-            yPos = max(args[1][1]) + 0.10 * yDiff
-
-            fig.text(
-                x=xPos + 0.125 * xDiff,
-                y=yPos - 0.05 * yDiff,
-                text=["%s" % kwargs['colorAxis']['name']],
-                text_align="center")
-            # draw color scale
-            fig.line(
-                x=[xPos, xPos + 0.25 * xDiff],
-                y=[yPos, yPos],
-                line_color="black")
-
-            fig.circle(x=xPos, y=yPos, size=10, fill_color="#0096C8")
-            fig.circle(
-                x=xPos + 0.25 * xDiff,
-                y=yPos,
-                size=10,
-                fill_color="#C89600")
-
-            fig.text(
-                x=xPos,
-                y=yPos +
-                0.02 *
-                yDiff,
-                text=[
-                    "%s" %
-                    prettyNum(
-                        min(colorData))],
-                text_align="center")
-            fig.text(
-                x=xPos +
-                0.25 *
-                xDiff,
-                y=yPos +
-                0.02 *
-                yDiff,
-                text=[
-                    "%s" %
-                    prettyNum(
-                        max(colorData))],
-                text_align="center")
-        try:
-            hover = fig.select(dict(type=HoverTool))
-            hover.tooltips = OrderedDict([
-                ("%s" % args[0][0], "@x"),
-                ("%s" % args[1][0], "@y"),
-                ("%s" % kwargs['colorAxis']['name'], "@colorData")
-               
-            ])
-        except KeyError:
-            pass
-        except:
-            pass
-        return fig
-
-    def CompareResultsPlot(fig, *args, **kwargs):
-        """ 
-        Configures the compare results plot
-        Params:
-            @fig: figure object from bokeh
-            @args: data for plotting
-            @kwargs: not used
-        Returns:
-            @fig: returns the bokeh figure object after populating it
-        TODO:
-            [ ] default plot should have text with instructions
-        """
-
-        if len(args) == 0:
-            fig = figure(title="Compare Results", x_axis_label=None , y_axis_label=None)
-            mtext(fig, 0,0, "Record case to start using this plot!")
-            return fig
-            
-        fig = figure(title="Compare Results",
-                     x_axis_label=args[0][0],
-                     y_axis_label=args[1][0],
-                     tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave",
-                     toolbar_location="above")
-
-        numDataPoints = len(args[0][1])
-        source = ColumnDataSource(
-            data=dict(
-                x=args[0][1],
-                y=args[1][1],
-                label=[i + 1 for i in range(numDataPoints)]
-            )
-        )
-        fig.circle(
-            'x',
-            'y',
-            color="#2222aa",
-            line_width=2,
-            source=source,
-            size=12)
-
-        hover = fig.select(dict(type=HoverTool))
-        hover.tooltips = OrderedDict([
-            ("x", "%s" % args[0][0]),
-            ("y", "%s" % args[1][0]),
-            ("(x,y)", "(@x, @y)"),
-            ("Case", "@label")
-        ])
-        return fig
-    
-
-
-# --------------------------
-
-
-    def tornadoPlt(fig, *args, **kwargs):
-        """
-        Generates a tornado plot for sensitivity analysis.
-        Params:
-            @fig: figure object from bokeh
-            @args: parameters are either empty or from the GetTornado() function.
-                   these args include numerical values to be plotted
-            @kwargs: keywords aren't used in this function, but
-                     added as optional input for consistency with other plots
-        Returns:
-            @fig: returns the bokeh figure object after populating it 
-
-        """
-        if len(args) != 2:
-            return fig
-        try:
-            import itertools
-            totals = args[1][0]
-            lows = args[1][1]
-            highs = args[1][2]
-            values = args[1][3]
-            names = args[1][4]
-            outputName = args[1][5]
-
-            # create a new plot with a title and axis labels
-            fig = figure(title="Parameter Sensitivity", x_axis_label=args[0], y_axis_label='Parameters',
-                toolbar_location="above", tools="crosshair,pan,wheel_zoom,box_zoom,reset,hover,previewsave")
-
-
-            numVars = len(lows)
-            start = numVars * 3 
-
-            # colors is a palette for a gradient between red and green. Can change this to desired colors
-            # via importing an existing palette or changing values below
-            colors = ['#178726','#168722','#16881E','#168919','#178A16','#1B8B15','#208C15','#248D15','#298E15',
-                    '#2E8F15','#329014','#379014','#3C9114','#419214','#469313',
-                    '#4B9413','#519513','#569613','#5B9712','#619812','#679912','#6C9A12','#729A11','#789B11',
-                    '#7E9C11','#849D10','#8A9E10','#919F10','#97A00F','#9DA10F','#A29F0F','#A39B0E','#A3960E',
-                    '#A4910E','#A58B0D','#A6860D','#A7810D','#A87C0C','#A9760C','#AA700C','#AB6B0B','#AC650B',
-                    '#AD5F0B','#AD590A','#AE530A','#AF4D09','#B04609','#B14009','#B23908','#B33308','#B42C07',
-                    '#B52507','#B61E06','#B61706','#B71006','#B80905','#B90508','#BA040F',
-                    '#BB0415','#BC031C','#BD0323','#BE022A','#BF0231','#C00139'][::-1]
-            # colors = greenBluePalette
-            numColors = len(colors)
-
-            # color, width, x-coord, y-coord and relevant information for glyphs
-            param_colors = []
-            c_width, c_x, c_y, c_lows, c_highs, c_base, c_names = [], [], [], [], [], [], []
-            
-            # for every parameter the user selected
-            for i in range(numVars): 
-                param_range = highs[i]-lows[i]
-                width = param_range/numColors
-                mtext(fig, values[0], start, names[i] )
-
-                # sometimes increasing parameter value decreases output value
-                if highs[i] < lows[i]:
-                    temp = highs[i]
-                    for x in range(numColors):
-                        c_lows.append(lows[i])
-                        c_highs.append( highs[i] )
-                        c_base.append(values[0])
-                        c_width.append(width)
-                        c_y.append(start-1)
-                        c_x.append(temp-width/2)
-                        c_names.append(names[i])
-                        temp-=width
-                        param_colors.append(colors[numColors-x-1])
-                else:
-                    temp = lows[i]
-                    for x in range(numColors):
-                        c_lows.append(lows[i])
-                        c_highs.append( highs[i] )
-                        c_base.append(values[0])
-                        c_width.append(width)
-                        c_y.append(start-1)
-                        c_x.append(temp+width/2)
-                        c_names.append(names[i])
-                        temp+= width
-                        param_colors.append(colors[x])
-                start -= 3 
-            
-            # data source for graph
-            source = ColumnDataSource(
-                data=dict(
-                    x=c_x,
-                    y=c_y,
-                    width=c_width,
-                    colors=param_colors,
-                    lows=c_lows,
-                    highs=c_highs,
-                    base=c_base,
-                    names=c_names))
-
-            # adds rectangle glyphs
-            fig.rect(x='x', y='y', width='width', height=2,
-                       color='colors', source=source)
-
-            # implement hover tool
-            hover = fig.select(dict(type=HoverTool))
-            hover.tooltips = OrderedDict([
-                ("Parameter", "@names"),
-                ("%s at lower parameter:" %outputName , "@lows" ),
-                ("base %s:" %outputName, "@base"),
-                ("%s at higher parameter:" %outputName, "@highs")
-                
-            ])
-
-            # add Arrow pointers
-            start = numVars * 3
-            for i in range(numVars):
-                fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
-                    x_start=lows[i], y_start=start, x_end=lows[i], y_end=start-2))
-                fig.add_layout(Arrow(end=VeeHead(size=17), line_color="black",
-                    x_start=highs[i], y_start=start-2, x_end=highs[i], y_end=start))
-                start -= 3
-
-            # add baseline
-            fig.line([values[0], values[0]],[numVars*3, start+.5], line_width=1.5, line_color="black")
-            fig.yaxis.visible = None
-            mtext(fig, values[0], start-.5, prettyNum(values[0]))
-            mtext(fig, values[0], start, "Baseline")
-     
-        except:
-            # create a new plot with a title and axis labels
-            fig = figure(title="Parameter Sensitivity", x_axis_label=None , y_axis_label='Parameters')
-            fig.yaxis.visible = None
-            mtext(fig, 0,0, "Select output to see parameter sensitivity on")
-
-        return fig
 
 
 @app.route("/tornado", methods=['POST'])
 def GetTornado():
     """
-    Consolidates and sorts results for Tornado Plots. 
+    Consolidates and sorts results for Tornado Plots.
     Returns:
         jsonified script, div for generating plots
     """
     outputName = str(request.form['outVar'])
     global tornadoInputs
     global tornadoOutputs
-    variables = tornadoInputs.keys()  
+    variables = tornadoInputs.keys()
     lows, highs, values, totals = [], [], [], []
     names = variables[:]
     for i in range(len(variables)):
@@ -1369,7 +1053,7 @@ def GetTornado():
         val = tornadoOutputs[variables[i]][outputName]['value'][1]
         values.append(val)
         totals.append(abs(high_val - low_val))
-        base = tornadoOutputs[variables[0]][outputName]['value'][1] 
+        base = tornadoOutputs[variables[0]][outputName]['value'][1]
 
     # insertion sort based on totals.
     if (len(totals)-1) > 0:
@@ -1411,10 +1095,10 @@ def GetTornado():
 
 
 
-def saveUnits(inputList): 
-    """ 
+def saveUnits(inputList):
+    """
     Saves the units to a global variable for use later (when using compare case feature).
-    Saves only number types, which are identified if they have units -- compared to booleans or "geared" 
+    Saves only number types, which are identified if they have units -- compared to booleans or "geared"
     Params:
         @inputList: inputList is a list of dictionaries
     """
@@ -1423,7 +1107,7 @@ def saveUnits(inputList):
         if el['name'] not in myUnits.keys() and 'units' in el.keys():
             myUnits[el['name']] = el['units']
         elif el['name'] not in myUnits.keys() and isinstance(el['state'], NumberTypes):
-            myUnits[el['name']] = None 
+            myUnits[el['name']] = None
 
 
 def WebGUIForm(dic, run=False, sens_flag=False):
@@ -1483,4 +1167,3 @@ tornadoOutputs = {}
 sensitivityResults = {"empty": True}
 myUnits = {"empty": True}
 debug = False
-rendering_dic = {""}
