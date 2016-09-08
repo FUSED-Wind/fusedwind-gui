@@ -41,7 +41,8 @@ def prep_field(dic):
     out = {}
     if 'desc' in dic:
         # capitalize first word of description
-        dic['desc'] = dic['desc'][0].upper()+dic['desc'][1:]
+        if len(dic['desc'])>0:
+            dic['desc'] = dic['desc'][0].upper()+dic['desc'][1:]
         out['description'] = dic['desc']
     if 'default' in dic:
         out['default'] = dic['default']
