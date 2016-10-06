@@ -44,12 +44,13 @@ div#pop-up {
 .banner{
   background-image: url('../img/26777.jpg');
   background-size:cover; /* this stretches image based on sizing of window! */
+  background-attachment: fixed;
   min-height:100%;
   min-width:100%;
 
 }
 .about, .webGUI{
-    background-image: url('../img/16303.jpg');
+    background-image: url('../img/16303.JPG');
 
 }
 
@@ -167,7 +168,16 @@ div.page-header{
 h2>small, h4, #about-content{
   color:#FFFFFF;
 }
-
+#about-content, #documentation-content {
+	opacity:.80; 
+	background:white; 
+	color:black; 
+	padding:20px; 
+	margin:0px -20px;
+}
+#about-content p, #documentation-content p {
+	color:black;
+}
 
 #configure-content{
   background-color:#FFFFFF;
