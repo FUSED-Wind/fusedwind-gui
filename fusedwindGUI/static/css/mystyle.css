@@ -169,7 +169,11 @@ h2>small, h4, #about-content{
   color:#FFFFFF;
 }
 #about-content, #documentation-content {
-	opacity:.80; 
+	-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=80)"; // IE8
+	/* This works in IE 8 & 9 too, but also 5, 6, 7 */
+	filter: alpha(opacity=80); // IE 5-7
+	/* Modern Browsers */
+	opacity: 0.8; 
 	background:white; 
 	color:black; 
 	padding:20px; 
