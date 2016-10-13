@@ -207,11 +207,17 @@
             <p>{{desc}}</p>
             <p></p>
             {%- if sens_flag %}
-            {%- if not tornado_flag %}
+            {%- if not tornado_flag or tornado_flag and not draw_sens_plot %}
+            <div class="panel-heading"> 
+            <h3 class="panel-title">Instructions</h3> </div>
+
             <p>For the sensitivity analysis, please specify all input values as well as which analysis parameters and their low and high values.</p>
             <p>For a tornado plot, first select the tornado plot sensitivity type then select the parameters you want to vary and input a % deviation from the Initial Value that you would like to test.
             </p>
-            {% else %}
+            {% elif tornado_flag and draw_sens_plot %}
+            <div class="panel-heading">
+            <h3 class="panel-title">Tornado Plot Details</h3> </div>
+
             <p>
             The green color and upward arrow indicate the value of an output after the parameter is increased; red, downward arrow indicates the value of an output after the parameter is decreased.
             </p> 
