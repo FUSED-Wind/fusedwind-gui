@@ -580,6 +580,21 @@ def to_unicode(dic):
         new[k] = unicode(v)
     return new
 
+def mtext(fig, x, y, textstr, color="black"):
+    """
+    Adds text at coordinates of bokeh plot
+    Params:
+        @fig: the figure to add text to
+        @x: x coordinate, type = int, float, etc.
+        @y: y coordinate
+        @textstr: text to display, type='str'
+        @color: color of text, can be str or hex values
+    Returns:
+        None
+    """
+    fig.text(x, y, text=[textstr],
+    text_color=color, text_align="center", text_font_size="10pt")
+
 
 # Palette of colors from green to blue
 greenBluePalette = ['#00E504',
@@ -646,3 +661,4 @@ greenBluePalette = ['#00E504',
 '#0088A3',
 '#0086A6',
 '#0185A9']
+
