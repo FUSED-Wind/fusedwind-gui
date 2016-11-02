@@ -607,8 +607,8 @@ def webgui(app=None):
                         script, div, plot_resources, draw_plot = None, None, None, None
                         script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                         script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
-        
-                        
+
+
                     messages = None
                     if toggle:
                         messages = record_case()
@@ -643,7 +643,7 @@ def webgui(app=None):
                         failed_run_flag = "Vary between 0 and 100 only"
                     else:
                         failed_run_flag = "Select parameters"
-                    
+
                     # Show the standard form with error message
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
 
@@ -755,12 +755,13 @@ def webgui(app=None):
                                         pass
                                     else:
                                         if(isinstance(tmp.pop(), np.float64)):
-                                            tornadoOutputs[kselect][val] = {
-                                                'value': tmp,
-                                                'units': getattr(cpnt.get_trait(val), 'units')}
-                                        except Exception:
-                                            pass
-                                    
+                                            try:
+                                                tornadoOutputs[kselect][val] = {
+                                                    'value': tmp,
+                                                    'units': getattr(cpnt.get_trait(val), 'units')}
+                                            except Exception:
+                                                pass
+
                                     global myUnits
                                     for val in my_sa.driver.case_outputs.asym.list_vars():
                                         try:
