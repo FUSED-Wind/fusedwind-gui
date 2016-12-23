@@ -29,7 +29,7 @@ WORKDIR /opt/webapp/src/wisdem
 RUN git checkout develop \
  && git pull
 
-RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install --upgrade bokeh pandas"
+RUN bash -c ". /install/openmdao-0.10.3.2/bin/activate; pip install --upgrade bokeh==0.12.0 pandas"
 
 # Done last in order not to have to rebuild all the lib every single time
 
