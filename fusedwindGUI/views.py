@@ -114,6 +114,8 @@ def upload():
         return jsonify({'status': 'error'})
 
 
+
+
 def webgui(app=None):
 
     def configure():
@@ -264,6 +266,8 @@ def webgui(app=None):
         response.headers[
             "Content-Disposition"] = "attachment; filename=fused_model.yaml"
         return response
+        # return Response(r, content_type='text/yaml; charset=utf-8',
+        # filename='books.csv')
 
     download_full.__name__ = 'analysis_download_full'
     app.route('/analysis/download_full', methods=['GET'])(download_full)
@@ -401,11 +405,8 @@ def webgui(app=None):
             print '\n*** NO gui_recorder in component!\n'
             return 'No case downloaded - NO gui_recorder in component!'
         if len(cpnt.gui_recorder.keys()) == 0:
-            # return 'No Cases Recorded'
-            script, div = prepare_plot(
-                                CompareResultsPlot)
-            f = {"script": script, "div": div}
-            return jsonify(**f)
+            print '\n *** NO cases recorded!\n'
+            return 'No Cases Recorded'
 
         inputName = request.form['inVar']
         outputName = request.form['outVar']
@@ -465,6 +466,7 @@ def webgui(app=None):
             return 'No recorder to clear!'
 
         cpnt.gui_recorder = {}
+        # flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
     clear_recorder.__name__ = 'analysis_clear_recorder'
@@ -613,13 +615,9 @@ def webgui(app=None):
                             script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                             script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
                     else:
-                        combIO = None
-                        inputs_names_form, outputs_names_form = None, None
                         script, div, plot_resources, draw_plot = None, None, None, None
                         script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                         script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
-
-
                     messages = None
                     if toggle:
                         messages = record_case()
@@ -644,7 +642,7 @@ def webgui(app=None):
                 # alpha is variation parameter:
                 alpha = int(inputs['alpha'])
 
-                # if alpha is invalid or if no parameters checked, then re render page with message
+                # if alpha is invalid or if no parameters checked
                 check_select = inputs.keys()[:]
                 if 'select.alpha' in inputs.keys():
                     check_select.remove('select.alpha')
@@ -721,37 +719,29 @@ def webgui(app=None):
                         kselect = k[7:]
                         tornadoInputs[kselect] = {}
                         tornadoOutputs[kselect] = {}
+
+                        my_sa.driver.add_parameter(
+                            'asym.' + kselect, start=float(inputs[kselect]))
+
+                        for s in io['outputs']:
+                            t = cpnt.get_trait(s)
+                            if t.trait_type.__class__.__name__ != 'VarTree':
+                                my_sa.driver.add_response('asym.' + s)
+
                         try:
-                            my_sa.driver.add_parameter(
-                                'asym.' + kselect, start=float(inputs[kselect]))
-                        except ValueError:
+                            my_sa.run()
+                        except:
+                            print sys.exc_info()[0]
+                            print "Analysis did not execute properly (sens_flag = True)"
+                            # failed_run_flag = True
                             failed_run_flag = "Analysis did not execute properly - check input parameters!"
                             draw_plot = False
                             script, div = None, None
                             inputVars = None
                             outputVars = None
                             plot_controls = None
+
                         else:
-
-                            for s in io['outputs']:
-                                t = cpnt.get_trait(s)
-                                if t.trait_type.__class__.__name__ != 'VarTree':
-                                    my_sa.driver.add_response('asym.' + s)
-
-                            try:
-                                my_sa.run()
-                            except:
-                                print sys.exc_info()[0]
-                                print "Analysis did not execute properly (sens_flag = True)"
-                                # failed_run_flag = True
-                                failed_run_flag = "Analysis did not execute properly - check input parameters!"
-                                draw_plot = False
-                                script, div = None, None
-                                inputVars = None
-                                outputVars = None
-                                plot_controls = None
-
-                            else:
                             try:
                                 my_sa.driver.case_inputs.asym.list_vars()
                             except:
@@ -780,40 +770,24 @@ def webgui(app=None):
                                         pass
                                     else:
                                         if(isinstance(tmp.pop(), np.float64)):
-                                            try:
-                                                tornadoOutputs[kselect][val] = {
-                                                    'value': tmp,
-                                                    'units': getattr(cpnt.get_trait(val), 'units')}
-                                            except Exception:
-                                                pass
-
-                                    global myUnits
-                                    for val in my_sa.driver.case_outputs.asym.list_vars():
-                                        try:
-                                            tmp = my_sa.driver.case_outputs.asym.get(val)
-                                        except Exception:
-                                            print val
-                                            pass
+                                            tornadoOutputs[kselect][val] = {
+                                                'value': tmp,
+                                                'units': getattr(cpnt.get_trait(val), 'units')}
+                                            if val not in outputVars:
+                                                outputVars.append(val)
+                                            myUnits[val] = getattr(cpnt.get_trait(val), 'units')
                                         else:
-                                            if(isinstance(tmp.pop(), np.float64)):
-                                                tornadoOutputs[kselect][val] = {
-                                                    'value': tmp,
-                                                    'units': getattr(cpnt.get_trait(val), 'units')}
-                                                if val not in outputVars:
-                                                    outputVars.append(val)
-                                                myUnits[val] = getattr(cpnt.get_trait(val), 'units')
-                                            else:
-                                                if val not in removeFromOutputs:
-                                                    removeFromOutputs.append(val)
+                                            if val not in removeFromOutputs:
+                                                removeFromOutputs.append(val)
 
-                                    # after each run, set the attributes back to baseline
-                                    setattr(
-                                    cpnt, kselect, json2type[
-                                        io['inputs'][kselect]['type']](
-                                        inputs[kselect]))
+                                # after each run, set the attributes back to baseline
+                                setattr(
+                                cpnt, kselect, json2type[
+                                    io['inputs'][kselect]['type']](
+                                    inputs[kselect]))
 
-                                script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
-                                plot_controls = True
+                            script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
+                            plot_controls = True
 
                 io = traits2jsondict(cpnt)
 
@@ -873,8 +847,6 @@ def webgui(app=None):
                         failed_run_flag = "Something went wrong when setting the model inputs, one of them may have a wrong type"
                         flash(failed_run_flag)
                     else:
-
-
                         # this adds the input variable to vary
                         if 'select.' in k:
                             for kselect in inputs.keys():
@@ -1061,7 +1033,6 @@ def GetSensPlot():
         summary += "</p>"
     f = {"script": script, "div": div, "summary": summary}
     return jsonify(**f)
-
 
 
 
