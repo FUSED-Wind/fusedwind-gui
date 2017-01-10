@@ -1,6 +1,20 @@
 /* Container is necessary because td cannot be positioned relative */
 /* HOVER STYLES */
+div#pop-up {
+  display: none;
+  position: absolute;
+  width: 280px;
+  padding: 10px;
+  background: #eeeeee;
+  color: #000000;
+  border: 1px solid #1a1a1a;
+  font-size: 90%;
+}
 
+.header-image {
+    width: 30%;
+    vertical-align: top;
+}
 .col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {
     position: relative;
     min-height: 1px;
@@ -46,6 +60,12 @@ button.btn-success{
   display: none !important;
   visibility: hidden !important;
 }
+#HeadTitle{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  margin-top:15%;
+}
 
 
 /*Adds background image to the web pages */
@@ -58,12 +78,8 @@ button.btn-success{
 
 }
 .about, .webGUI{
-<<<<<<< HEAD
     background-image: url('../img/16303.JPG');
 
-=======
-    background-image: url('../img/16303.jpg');
->>>>>>> a92832b97aa771b549e04bc6ca2dd1da636b7a38
 }
 .h1{
   color:#000000;
@@ -88,7 +104,10 @@ input.btn-mvp{
   margin-top:0px;
   margin-bottom:0px;
 }
-
+#myTabs{
+  align:right;
+  padding-right:80px;
+}
 
 
 /*** Landing Page ****/
@@ -108,7 +127,16 @@ input.btn-mvp{
   margin:0px;
 }
 
+.myNavBar{
+  padding:0px;
+}
 
+.panel-default{
+  border:0px;
+}
+.panel-heading{
+  background-color:#D8D8D8 !important;
+}
 
 /**********************************************/
 /************** Analysis page *****************/
@@ -134,9 +162,25 @@ input.btn-mvp{
   display:block;
 }
 
+.btn-mvp{
+  background-color:#d74b4b;
+  color:#FFFFFF;
+}
+button.btn-success{
+  width:100%;
+}
+
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
 
 #button-panel{
   margin-left:4px;
+}
+
+#plot_controller__2{
+  margin-top:50px;
 }
 
 #CAPEX{
@@ -147,6 +191,9 @@ input.btn-mvp{
   display:none;
 }
 
+h3.panel-title{
+  display:inline;
+}
 
 #summary_heading{
   margin-top:50px;
@@ -200,3 +247,23 @@ h2>small, h4, #about-content{
   margin-bottom:10px;
 }
 
+input.btn-mvp{
+  margin-left:2px;
+  margin-top:-20px;
+  margin-bottom:10px;
+}
+
+#button-panel>input#submit{
+  margin-left:0px;
+  margin-top:0px;
+  margin-bottom:0px;
+}
+
+#initial_values{
+  width:400px;
+}
+
+#alert_placeholder{
+  padding:0px;
+  margin:0px;
+}

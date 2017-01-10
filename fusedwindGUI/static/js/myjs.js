@@ -148,6 +148,7 @@ function compare_results() {
       type: 'POST',
       success: function(response) {
           console.log(response);
+          showalert(response, 'success');
       },
       error: function(error) {
           console.log(error);

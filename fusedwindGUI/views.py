@@ -398,6 +398,7 @@ def webgui(app=None):
         """
 
         if not 'gui_recorder' in vars(cpnt):
+            print '\n*** NO gui_recorder in component!\n'
             return 'No case downloaded - NO gui_recorder in component!'
         if len(cpnt.gui_recorder.keys()) == 0:
             # return 'No Cases Recorded'
@@ -432,7 +433,7 @@ def webgui(app=None):
             xUnit = myUnits[inputName]
             yUnit = myUnits[outputName]
         except KeyError:
-            script, div = prepare_plot(CompareResultsPlot)
+            script, div = prepare_plot(CompareResultsPlot, ("", []), ("", []))
         else:
             if (xUnit == "None" or xUnit is None):
                 xUnit = ""
@@ -586,13 +587,20 @@ def webgui(app=None):
                         makePretty(myOutputs)
 
                         combIO = outputs['outputs'] + outputs['inputs']
+                    else:
+                        combIO = None
+                        inputs_names_form, outputs_names_form = None, None
+
+                    if not failed_run_flag:
+                        # if isinstance(cpnt, Assembly) and not
+                        # failed_run_flag: # if added - GNS 2015 09 28
                         try:
                             # get JS, divs for CAPEX, LCOE, Comparison s=plots
                             script, div = prepare_plot(cpnt.plot)
                             script_lcoe, div_lcoe = prepare_plot(
                                 cpnt.lcoe_plot)
                             script_comp, div_comp = prepare_plot(
-                                CompareResultsPlot)
+                                CompareResultsPlot, ("", []), ("", []), ("", []))
                             draw_plot = True
                         except:
                             # TODO: gracefully inform the user of why he doesnt
@@ -601,6 +609,9 @@ def webgui(app=None):
                             flash(
                                 "Analysis ran; failed to prepare any plots for " +
                                 cpnt.__class__.__name__)
+                            script, div, plot_resources, draw_plot = None, None, None, None
+                            script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
+                            script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
                     else:
                         combIO = None
                         inputs_names_form, outputs_names_form = None, None
@@ -640,15 +651,14 @@ def webgui(app=None):
 
                 if not any('select.' in x for x in check_select) or alpha > 100 or alpha <= 0:
                     if alpha > 100 or alpha <= 0:
-                        failed_run_flag = "Vary between 0 and 100 only"
+                        messages = "Vary between 0 and 100 only"
                     else:
-                        failed_run_flag = "Select parameters"
+                        messages = "Select parameters"
 
-                    # Show the standard form with error message
                     extra_inputs = {"sensitivity_iterations": 1000, "alpha":20}
 
 
-
+                    # Show the standard form
                     return render_template(
                         'webgui.html',
                         inputs=WebGUIForm(
@@ -657,12 +667,18 @@ def webgui(app=None):
                             sens_flag=sens_flag)(
                             MultiDict(wt_inputs)),
                         extra_inputs=extra_inputs,
+                        outputs=None,
                         name=cpname,
+                        plot_script=None,
+                        plot_div=None,
+                        plot_resources=None,
                         sub_comp_data=sub_comp_data,
+                        assembly_structure=assembly_structure,
                         group_list=group_list,
                         group_dic=group_dic,
                         desc=desc,
                         failed_run_flag=failed_run_flag,
+                        sens_flag=sens_flag,
                         tornado_flag=tornado,
                         messages=messages)
 
@@ -736,7 +752,16 @@ def webgui(app=None):
                                 plot_controls = None
 
                             else:
+                            try:
+                                my_sa.driver.case_inputs.asym.list_vars()
+                            except:
+                                draw_plot = False
+                                script, div = None, None
+                                inputVars = None
+                                outputVars = None
+                                plot_controls = None
 
+                            else:
                                 draw_plot = True
                                 for val in my_sa.driver.case_inputs.asym.list_vars():
                                     try:
@@ -913,7 +938,7 @@ def webgui(app=None):
                                     outputVars.append(val)
 
                         script, div = prepare_plot(
-                            SensPlot1D)
+                            SensPlot1D, ("", []), ("", []))
                         plot_controls = True
 
                 io = traits2jsondict(cpnt)
@@ -945,6 +970,7 @@ def webgui(app=None):
                     plot_inputVars=inputVars,
                     plot_outputVars=outputVars,
                     sub_comp_data=sub_comp_data,
+                    assembly_structure=assembly_structure,
                     group_list=group_list,
                     group_dic=group_dic,
                     desc=desc,
@@ -963,7 +989,13 @@ def webgui(app=None):
                     sens_flag=sens_flag)(
                     MultiDict(wt_inputs)),
                 extra_inputs=extra_inputs,
+                outputs=None,
                 name=cpname,
+                plot_script=None,
+                plot_div=None,
+                plot_resources=None,
+                sub_comp_data=sub_comp_data,
+                assembly_structure=assembly_structure,
                 group_list=group_list,
                 group_dic=group_dic,
                 desc=desc,
