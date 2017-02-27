@@ -357,7 +357,7 @@ def webgui(app=None):
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
-            COUNTER = session.get('user_id')
+            COUNTER = 'counter'#session.get('user_id')
             if COUNTER in cpnt.gui_recorder.keys():
                 cpnt.gui_recorder[COUNTER] += 1
             else:
