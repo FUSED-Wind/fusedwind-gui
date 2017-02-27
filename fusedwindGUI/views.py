@@ -10,7 +10,7 @@ import os
 import sys
 import platform
 
-from flask import flash, make_response
+from flask import flash, make_response, session
 from flask import request, jsonify, redirect, render_template
 from flask_wtf import Form
 
@@ -31,8 +31,6 @@ import types
 
 from fusedwindGUI import app
 
-ID = np.random.uniform(0,1e10)
-COUNTER = str(np.random.uniform(0, 99999999))+"_ID"
 # Handling file upload -------------------------------------------------------
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
@@ -359,6 +357,7 @@ def webgui(app=None):
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
+            COUNTER = session.get('user_id')
             if COUNTER in cpnt.gui_recorder.keys():
                 cpnt.gui_recorder[COUNTER] += 1
             else:
