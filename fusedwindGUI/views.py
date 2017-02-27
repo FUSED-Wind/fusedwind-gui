@@ -10,7 +10,7 @@ import os
 import sys
 import platform
 
-from flask import flash, make_response, session
+from flask import flash, make_response
 from flask import request, jsonify, redirect, render_template
 from flask_wtf import Form
 
@@ -30,6 +30,7 @@ import yaml
 import types
 
 from fusedwindGUI import app
+
 
 # Handling file upload -------------------------------------------------------
 def _handleUpload(files):
@@ -357,11 +358,10 @@ def webgui(app=None):
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
-            COUNTER = 'counter'#session.get('user_id')
-            if COUNTER in cpnt.gui_recorder.keys():
-                cpnt.gui_recorder[COUNTER] += 1
+            if 'counter' in cpnt.gui_recorder.keys():
+                cpnt.gui_recorder['counter'] += 1
             else:
-                cpnt.gui_recorder[COUNTER] = 1
+                cpnt.gui_recorder['counter'] = 1
 
             out = get_io_dict(cpnt)
             cmp_data, _ = build_hierarchy(cpnt, {}, [])
@@ -379,13 +379,13 @@ def webgui(app=None):
                     params[cmp_name][pname] = param['state']
             try:
                 cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder[COUNTER]] = params
+                                              cpnt.gui_recorder['counter']] = params
             except:
                 cpnt.gui_recorder['recorder'] = {}
                 cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder[COUNTER]] = params
+                                              cpnt.gui_recorder['counter']] = params
 
-            return 'Case %i recorded successfully!' % cpnt.gui_recorder[COUNTER]
+            return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
         return None
 
     record_case.__name__ = 'analysis_record_case'
@@ -414,7 +414,7 @@ def webgui(app=None):
 
         try:  # find all the values/units of the variables of interest
             input_vals, output_vals = [], []
-            num_cases = int(cpnt.gui_recorder[COUNTER])
+            num_cases = int(cpnt.gui_recorder['counter'])
             for i in range(num_cases):
                 caseNum = i + 1
                 current_input = finditem(
