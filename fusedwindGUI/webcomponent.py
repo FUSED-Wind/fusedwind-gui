@@ -125,7 +125,7 @@ def register_Component(cpnt, app=None):
 def deploy(cpnt):
     app = start_app(cpnt.__class__.__name__)
     register_Component(cpnt, app)
-    app.run()
+    app.run(threaded=True)
 
 
 def convert2omdao(dic, **kwargs):
