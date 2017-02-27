@@ -10,7 +10,7 @@ import os
 import sys
 import platform
 
-from flask import flash, make_response
+from flask import flash, make_response, session
 from flask import request, jsonify, redirect, render_template
 from flask_wtf import Form
 
@@ -257,11 +257,12 @@ def webgui(app=None):
             # flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
 
+        RECORDER = str(session.get('user_id')) + 'RECORDER'
         if len(cpnt.gui_recorder.keys()) == 0:
             record_case()
-            r = cpnt.gui_recorder['recorder']
+            r = cpnt.gui_recorder[RECORDER]
 
-        r = yaml.dump(cpnt.gui_recorder['recorder'], default_flow_style=False)
+        r = yaml.dump(cpnt.gui_recorder[RECORDER], default_flow_style=False)
         response = make_response(r)
         response.headers[
             "Content-Disposition"] = "attachment; filename=fused_model.yaml"
@@ -354,14 +355,16 @@ def webgui(app=None):
         cpnt.gui_recorder['recorder'] contains all the names, values, units.
         """
         if failed_run_flag is False:
+            COUNTER = str(session.get('user_id')) + 'COUNTER'
+            RECORDER = str(session.get('user_id')) + 'RECORDER'
             if 'gui_recorder' not in vars(cpnt):       # GNS
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
-            if 'counter' in cpnt.gui_recorder.keys():
-                cpnt.gui_recorder['counter'] += 1
+            if COUNTER in cpnt.gui_recorder.keys():
+                cpnt.gui_recorder[COUNTER] += 1
             else:
-                cpnt.gui_recorder['counter'] = 1
+                cpnt.gui_recorder[COUNTER] = 1
 
             out = get_io_dict(cpnt)
             cmp_data, _ = build_hierarchy(cpnt, {}, [])
@@ -378,14 +381,14 @@ def webgui(app=None):
                     pname = param['name']
                     params[cmp_name][pname] = param['state']
             try:
-                cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder['counter']] = params
+                cpnt.gui_recorder[RECORDER]['case%i' %
+                                              cpnt.gui_recorder[COUNTER]] = params
             except:
-                cpnt.gui_recorder['recorder'] = {}
-                cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder['counter']] = params
+                cpnt.gui_recorder[RECORDER] = {}
+                cpnt.gui_recorder[RECORDER]['case%i' %
+                                              cpnt.gui_recorder[COUNTER]] = params
 
-            return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
+            return 'Case %i recorded successfully!' % cpnt.gui_recorder[COUNTER]
         return None
 
     record_case.__name__ = 'analysis_record_case'
@@ -414,15 +417,17 @@ def webgui(app=None):
 
         try:  # find all the values/units of the variables of interest
             input_vals, output_vals = [], []
-            num_cases = int(cpnt.gui_recorder['counter'])
+            COUNTER = str(session.get('user_id')) + 'COUNTER'
+            RECORDER = str(session.get('user_id')) + 'RECORDER'
+            num_cases = int(cpnt.gui_recorder[COUNTER])
             for i in range(num_cases):
                 caseNum = i + 1
                 current_input = finditem(
-                    cpnt.gui_recorder['recorder'][
+                    cpnt.gui_recorder[RECORDER][
                         'case%i' %
                         caseNum], inputName)
                 current_output = finditem(
-                    cpnt.gui_recorder['recorder'][
+                    cpnt.gui_recorder[RECORDER][
                         'case%i' %
                         caseNum], outputName)
 
