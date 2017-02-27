@@ -121,7 +121,7 @@ def webgui(app=None):
     def configure():
         """ Configuration page
         """
-        global cpnts#[session.get('user_id')]
+        #global cpnts#[session.get('user_id')]
         global desc
         global analysis
         import fusedwindGUI
