@@ -30,6 +30,7 @@ import yaml
 import types
 
 from fusedwindGUI import app
+cpnts = {}
 
 
 # Handling file upload -------------------------------------------------------
@@ -121,7 +122,8 @@ def webgui(app=None):
     def configure():
         """ Configuration page
         """
-        global cpnt
+        global cpnts
+        #global cpnt
         global desc
         global analysis
         import fusedwindGUI
@@ -160,8 +162,8 @@ def webgui(app=None):
                 # doesn't get changed if import fails - GNS
                 try:
                     from wisdem.lcoe.lcoe_csm_assembly import lcoe_csm_assembly
-                    cpnt = set_as_top(lcoe_csm_assembly())
-                    cpnt.gui_recorder = {}
+                    cpnts[session.get('user_id')] = set_as_top(lcoe_csm_assembly())
+                    cpnts[session.get('user_id')].gui_recorder = {}
 
                     desc = "The NREL Cost and Scaling Model (CSM) is an empirical model for wind plant cost analysis based on the NREL cost and scaling model."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
@@ -185,8 +187,8 @@ def webgui(app=None):
                     from wisdem.lcoe.lcoe_se_seam_assembly import create_example_se_assembly
                     lcoe_se = create_example_se_assembly(
                         'I', 0., True, False, False, False, False, '')
-                    cpnt = lcoe_se
-                    cpnt.gui_recorder = {}
+                    cpnts[session.get('user_id')] = lcoe_se
+                    cpnts[session.get('user_id')].gui_recorder = {}
 
                     desc = "The NREL WISDEM / DTU SEAM integrated model uses components across both model sets to size turbine components and perform cost of energy analysis."
                     if inputs['Turbine Selection'] == 'NREL 5MW RWT':
@@ -229,7 +231,7 @@ def webgui(app=None):
         """
         This downloads the inputs of an individual analysis run into a file called fused_inputs.yaml
         """
-        out = get_io_dict(cpnt)
+        out = get_io_dict(cpnts[session.get('user_id')])
         params = {}
         for param in out['inputs']:
             params[param['name']] = param['state']
@@ -252,17 +254,17 @@ def webgui(app=None):
         """
         This downloads inputs and outputs to a file called fused_model.yaml
         """
-        if not 'gui_recorder' in vars(cpnt):       # GNS
+        if not 'gui_recorder' in vars(cpnts[session.get('user_id')]):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             # flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
 
         RECORDER = str(session.get('user_id')) + 'RECORDER'
-        if len(cpnt.gui_recorder.keys()) == 0:
+        if len(cpnts[session.get('user_id')].gui_recorder.keys()) == 0:
             record_case()
-            r = cpnt.gui_recorder[RECORDER]
+            r = cpnts[session.get('user_id')].gui_recorder[RECORDER]
 
-        r = yaml.dump(cpnt.gui_recorder[RECORDER], default_flow_style=False)
+        r = yaml.dump(cpnts[session.get('user_id')].gui_recorder[RECORDER], default_flow_style=False)
         response = make_response(r)
         response.headers[
             "Content-Disposition"] = "attachment; filename=fused_model.yaml"
@@ -357,19 +359,19 @@ def webgui(app=None):
         if failed_run_flag is False:
             COUNTER = str(session.get('user_id')) + 'COUNTER'
             RECORDER = str(session.get('user_id')) + 'RECORDER'
-            if 'gui_recorder' not in vars(cpnt):       # GNS
+            if 'gui_recorder' not in vars(cpnts[session.get('user_id')]):       # GNS
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
-            if COUNTER in cpnt.gui_recorder.keys():
-                cpnt.gui_recorder[COUNTER] += 1
+            if COUNTER in cpnts[session.get('user_id')].gui_recorder.keys():
+                cpnts[session.get('user_id')].gui_recorder[COUNTER] += 1
             else:
-                cpnt.gui_recorder[COUNTER] = 1
+                cpnts[session.get('user_id')].gui_recorder[COUNTER] = 1
 
-            out = get_io_dict(cpnt)
-            cmp_data, _ = build_hierarchy(cpnt, {}, [])
+            out = get_io_dict(cpnts[session.get('user_id')])
+            cmp_data, _ = build_hierarchy(cpnts[session.get('user_id')], {}, [])
             params = {}
-            top_name = cpnt.__class__.__name__
+            top_name = cpnts[session.get('user_id')].__class__.__name__
             params[top_name] = {}
             for param in out['inputs'] + out['outputs']:
                 pname = param['name']
@@ -381,14 +383,14 @@ def webgui(app=None):
                     pname = param['name']
                     params[cmp_name][pname] = param['state']
             try:
-                cpnt.gui_recorder[RECORDER]['case%i' %
-                                              cpnt.gui_recorder[COUNTER]] = params
+                cpnts[session.get('user_id')].gui_recorder[RECORDER]['case%i' %
+                                              cpnts[session.get('user_id')].gui_recorder[COUNTER]] = params
             except:
-                cpnt.gui_recorder[RECORDER] = {}
-                cpnt.gui_recorder[RECORDER]['case%i' %
-                                              cpnt.gui_recorder[COUNTER]] = params
+                cpnts[session.get('user_id')].gui_recorder[RECORDER] = {}
+                cpnts[session.get('user_id')].gui_recorder[RECORDER]['case%i' %
+                                              cpnts[session.get('user_id')].gui_recorder[COUNTER]] = params
 
-            return 'Case %i recorded successfully!' % cpnt.gui_recorder[COUNTER]
+            return 'Case %i recorded successfully!' % cpnts[session.get('user_id')].gui_recorder[COUNTER]
         return None
 
     record_case.__name__ = 'analysis_record_case'
@@ -404,10 +406,10 @@ def webgui(app=None):
             jsonified script, div for html page. The script, div generate bokeh plot
         """
 
-        if not 'gui_recorder' in vars(cpnt):
+        if not 'gui_recorder' in vars(cpnts[session.get('user_id')]):
             print '\n*** NO gui_recorder in component!\n'
             return 'No case downloaded - NO gui_recorder in component!'
-        if len(cpnt.gui_recorder.keys()) == 0:
+        if len(cpnts[session.get('user_id')].gui_recorder.keys()) == 0:
             print '\n *** NO cases recorded!\n'
             return 'No Cases Recorded'
 
@@ -419,15 +421,15 @@ def webgui(app=None):
             input_vals, output_vals = [], []
             COUNTER = str(session.get('user_id')) + 'COUNTER'
             RECORDER = str(session.get('user_id')) + 'RECORDER'
-            num_cases = int(cpnt.gui_recorder[COUNTER])
+            num_cases = int(cpnts[session.get('user_id')].gui_recorder[COUNTER])
             for i in range(num_cases):
                 caseNum = i + 1
                 current_input = finditem(
-                    cpnt.gui_recorder[RECORDER][
+                    cpnts[session.get('user_id')].gui_recorder[RECORDER][
                         'case%i' %
                         caseNum], inputName)
                 current_output = finditem(
-                    cpnt.gui_recorder[RECORDER][
+                    cpnts[session.get('user_id')].gui_recorder[RECORDER][
                         'case%i' %
                         caseNum], outputName)
 
@@ -465,12 +467,12 @@ def webgui(app=None):
         Clears the recorder (cpnt.gui_recorder) dictionary
         """
 
-        if not 'gui_recorder' in vars(cpnt):       # GNS
+        if not 'gui_recorder' in vars(cpnts[session.get('user_id')]):       # GNS
             print '\n*** NO gui_recorder in component!\n'
             #flash('No recorder to clear!', category='message')
             return 'No recorder to clear!'
 
-        cpnt.gui_recorder = {}
+        cpnts[session.get('user_id')].gui_recorder = {}
         # flash('Recorder cleared!', category='message')
         return 'All cases cleared successfully!'
 
@@ -488,15 +490,15 @@ def webgui(app=None):
         else:
             sens_flag = True
 
-        cpname = cpnt.__class__.__name__
-        if cpnt is None:
+        cpname = cpnts[session.get('user_id')].__class__.__name__
+        if cpnts[session.get('user_id')] is None:
             print '\n*** WARNING: component is None\n'
             failed_run_flag = 'WARNING: component is None in fused_webapp() - try another model(?)'
             return render_template('error.html',
                                    errmssg=failed_run_flag,
                                    sens_flag=sens_flag)
 
-        io = traits2jsondict(cpnt)
+        io = traits2jsondict(cpnts[session.get('user_id')])
 
         # Create input groups
         group_list = ['Global']
@@ -517,15 +519,15 @@ def webgui(app=None):
         assembly_structure = [{'text': cpname,
                                'nodes': []}]
         sub_comp_data = {}
-        if isinstance(cpnt, Assembly):
-            sub_comp_data, structure = build_hierarchy(cpnt, sub_comp_data, [])
+        if isinstance(cpnts[session.get('user_id')], Assembly):
+            sub_comp_data, structure = build_hierarchy(cpnts[session.get('user_id')], sub_comp_data, [])
             assembly_structure[0]['nodes'] = structure
 
         failed_run_flag = False
         if (not config_flag) and request.method == 'POST':
 
             inputs = request.form.to_dict()
-            io = traits2jsondict(cpnt)
+            io = traits2jsondict(cpnts[session.get('user_id')])
 
             # determine if doing tornado plot
             try:
@@ -552,7 +554,7 @@ def webgui(app=None):
                         if k in io[
                                 'inputs']:  # Loading only the inputs allowed
                             setattr(
-                                cpnt, k, json2type[
+                                cpnts[session.get('user_id')], k, json2type[
                                     io['inputs'][k]['type']](
                                     inputs[k]))
                 except:
@@ -562,19 +564,19 @@ def webgui(app=None):
 
                 # run the componenent
                 try:
-                    cpnt.run()
+                    cpnts[session.get('user_id')].run()
                 except:
                     print sys.exc_info()[0]
                     print "Analysis did not execute properly (sens_flag = False)"
                     failed_run_flag = "Analysis did not execute properly - check input parameters!"
 
                 sub_comp_data = {}
-                if isinstance(cpnt, Assembly):
+                if isinstance(cpnts[session.get('user_id')], Assembly):
 
                     sub_comp_data, structure = build_hierarchy(
-                        cpnt, sub_comp_data, [])
+                        cpnts[session.get('user_id')], sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
-                    outputs = get_io_dict(cpnt)
+                    outputs = get_io_dict(cpnts[session.get('user_id')])
                     if not failed_run_flag:
                         myInputs = outputs['inputs']
                         myOutputs = outputs['outputs']
@@ -603,19 +605,19 @@ def webgui(app=None):
                         # failed_run_flag: # if added - GNS 2015 09 28
                         try:
                             # get JS, divs for CAPEX, LCOE, Comparison s=plots
-                            script, div = prepare_plot(cpnt.plot)
+                            script, div = prepare_plot(cpnts[session.get('user_id')].plot)
                             script_lcoe, div_lcoe = prepare_plot(
-                                cpnt.lcoe_plot)
+                                cpnts[session.get('user_id')].lcoe_plot)
                             script_comp, div_comp = prepare_plot(
                                 CompareResultsPlot, ("", []), ("", []), ("", []))
                             draw_plot = True
                         except:
                             # TODO: gracefully inform the user of why he doesnt
                             # see his plots
-                            print "Failed to prepare any plots for " + cpnt.__class__.__name__
+                            print "Failed to prepare any plots for " + cpnts[session.get('user_id')].__class__.__name__
                             flash(
                                 "Analysis ran; failed to prepare any plots for " +
-                                cpnt.__class__.__name__)
+                                cpnts[session.get('user_id')].__class__.__name__)
                             script, div, plot_resources, draw_plot = None, None, None, None
                             script_lcoe, div_lcoe, plot_resources, draw_plot = None, None, None, None
                             script_comp, div_comp, plot_resources, draw_plot = None, None, None, None
@@ -701,7 +703,7 @@ def webgui(app=None):
                     try:
                         if k in io['inputs']:
                             setattr(
-                                cpnt, k, json2type[
+                                cpnts[session.get('user_id')], k, json2type[
                                     io['inputs'][k]['type']](
                                     inputs[k]))
                     except:
@@ -716,7 +718,7 @@ def webgui(app=None):
                         continue
                     else:
                         my_sa = Assembly()
-                        my_sa.add('asym', cpnt)
+                        my_sa.add('asym', cpnts[session.get('user_id')])
                         my_sa.add('driver', TORdriver())
                         my_sa.driver.workflow.add('asym')
                         my_sa.driver.DOEgenerator = Tornado_Generator(alpha)
@@ -729,7 +731,7 @@ def webgui(app=None):
                             'asym.' + kselect, start=float(inputs[kselect]))
 
                         for s in io['outputs']:
-                            t = cpnt.get_trait(s)
+                            t = cpnts[session.get('user_id')].get_trait(s)
                             if t.trait_type.__class__.__name__ != 'VarTree':
                                 my_sa.driver.add_response('asym.' + s)
 
@@ -762,7 +764,7 @@ def webgui(app=None):
                                     try:
                                         tornadoInputs[val] = {
                                             'value': my_sa.driver.case_inputs.asym.get(val),
-                                            'units': getattr(cpnt.get_trait(val), 'units')}
+                                            'units': getattr(cpnts[session.get('user_id')].get_trait(val), 'units')}
                                     except Exception:
                                         pass
 
@@ -777,24 +779,24 @@ def webgui(app=None):
                                         if(isinstance(tmp.pop(), np.float64)):
                                             tornadoOutputs[kselect][val] = {
                                                 'value': tmp,
-                                                'units': getattr(cpnt.get_trait(val), 'units')}
+                                                'units': getattr(cpnts[session.get('user_id')].get_trait(val), 'units')}
                                             if val not in outputVars:
                                                 outputVars.append(val)
-                                            myUnits[val] = getattr(cpnt.get_trait(val), 'units')
+                                            myUnits[val] = getattr(cpnts[session.get('user_id')].get_trait(val), 'units')
                                         else:
                                             if val not in removeFromOutputs:
                                                 removeFromOutputs.append(val)
 
                                 # after each run, set the attributes back to baseline
                                 setattr(
-                                cpnt, kselect, json2type[
+                                cpnts[session.get('user_id')], kselect, json2type[
                                     io['inputs'][kselect]['type']](
                                     inputs[kselect]))
 
                             script, div = prepare_plot(tornadoPlt,(""), ([], [], [] , [], [], [],[]))
                             plot_controls = True
 
-                io = traits2jsondict(cpnt)
+                io = traits2jsondict(cpnts[session.get('user_id')])
 
                 # remove the outputs that didnt work for every parameter
                 for el in removeFromOutputs:
@@ -824,7 +826,7 @@ def webgui(app=None):
 
             else:  # sens_flag == True
                 my_sa = Assembly()
-                my_sa.add('asym', cpnt)
+                my_sa.add('asym', cpnts[session.get('user_id')])
                 my_sa.add('driver', DOEdriver())
                 my_sa.driver.workflow.add('asym')
                 my_sa.driver.DOEgenerator = Uniform(
@@ -843,7 +845,7 @@ def webgui(app=None):
                     try:
                         if k in io['inputs']:
                             setattr(
-                                cpnt, k, json2type[
+                                cpnts[session.get('user_id')], k, json2type[
                                     io['inputs'][k]['type']](
                                     inputs[k]))
                     except:
@@ -861,7 +863,7 @@ def webgui(app=None):
 
                 # this selects the valid output variables
                 for s in io['outputs']:
-                    t = cpnt.get_trait(s)
+                    t = cpnts[session.get('user_id')].get_trait(s)
                     if t.trait_type.__class__.__name__ != 'VarTree':
                         my_sa.driver.add_response('asym.' + s)
                 try:
@@ -897,7 +899,7 @@ def webgui(app=None):
                             try:
                                 sensitivityResults['inputs'][val] = {
                                     'value': my_sa.driver.case_inputs.asym.get(val),
-                                    'units': getattr(cpnt.get_trait(val), 'units')}
+                                    'units': getattr(cpnts[session.get('user_id')].get_trait(val), 'units')}
                             except Exception:
                                 pass
                             else:
@@ -911,21 +913,21 @@ def webgui(app=None):
                                 if(isinstance(tmp.pop(), np.float64)):
                                     sensitivityResults['outputs'][val] = {
                                         'value': tmp,
-                                        'units': getattr(cpnt.get_trait(val), 'units')}
+                                        'units': getattr(cpnts[session.get('user_id')].get_trait(val), 'units')}
                                     outputVars.append(val)
 
                         script, div = prepare_plot(
                             SensPlot1D, ("", []), ("", []))
                         plot_controls = True
 
-                io = traits2jsondict(cpnt)
+                io = traits2jsondict(cpnts[session.get('user_id')])
                 sub_comp_data = {}
-                if isinstance(cpnt, Assembly):
+                if isinstance(cpnts[session.get('user_id')], Assembly):
                     sub_comp_data, structure = build_hierarchy(
-                        cpnt, sub_comp_data, [])
+                        cpnts[session.get('user_id')], sub_comp_data, [])
                     assembly_structure[0]['nodes'] = structure
                     # show both inputs and outputs in right side table
-                    outputs = get_io_dict(cpnt)
+                    outputs = get_io_dict(cpnts[session.get('user_id')])
                     if not failed_run_flag:
                         combIO = outputs['inputs'] + outputs['outputs']
                     else:
@@ -1168,7 +1170,7 @@ def WebGUIForm(dic, run=False, sens_flag=False):
 
 ##########################################################################
 # Initial global values
-cpnt = None
+cpnts[session.get('user_id')] = None
 desc = ''
 analysis = 'Individual Analysis'
 tornadoInputs = {}
