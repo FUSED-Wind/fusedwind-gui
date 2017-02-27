@@ -380,11 +380,11 @@ def webgui(app=None):
                     params[cmp_name][pname] = param['state']
             try:
                 cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder[COUNTER] = params
+                                              cpnt.gui_recorder[COUNTER]] = params
             except:
                 cpnt.gui_recorder['recorder'] = {}
                 cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder[COUNTER] = params
+                                              cpnt.gui_recorder[COUNTER]] = params
 
             return 'Case %i recorded successfully!' % cpnt.gui_recorder[COUNTER]
         return None
