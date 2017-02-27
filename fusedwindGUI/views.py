@@ -30,7 +30,6 @@ import yaml
 import types
 
 from fusedwindGUI import app
-cpnts = {}
 
 
 # Handling file upload -------------------------------------------------------
@@ -122,8 +121,7 @@ def webgui(app=None):
     def configure():
         """ Configuration page
         """
-        global cpnts
-        #global cpnt
+        global cpnts#[session.get('user_id')]
         global desc
         global analysis
         import fusedwindGUI
@@ -259,12 +257,11 @@ def webgui(app=None):
             # flash('No case downloaded - NO gui_recorder in component!')
             return 'No case downloaded - NO gui_recorder in component!'
 
-        RECORDER = str(session.get('user_id')) + 'RECORDER'
         if len(cpnts[session.get('user_id')].gui_recorder.keys()) == 0:
             record_case()
-            r = cpnts[session.get('user_id')].gui_recorder[RECORDER]
+            r = cpnts[session.get('user_id')].gui_recorder['recorder']
 
-        r = yaml.dump(cpnts[session.get('user_id')].gui_recorder[RECORDER], default_flow_style=False)
+        r = yaml.dump(cpnts[session.get('user_id')].gui_recorder['recorder'], default_flow_style=False)
         response = make_response(r)
         response.headers[
             "Content-Disposition"] = "attachment; filename=fused_model.yaml"
@@ -353,20 +350,18 @@ def webgui(app=None):
     def record_case():
         """
         Saves inputs/outputs into dictionary defined in the component.
-        cpnt.gui_recorder['counter'] contains a counter for the number of cases recorded
-        cpnt.gui_recorder['recorder'] contains all the names, values, units.
+        cpnts[session.get('user_id')].gui_recorder['counter'] contains a counter for the number of cases recorded
+        cpnts[session.get('user_id')].gui_recorder['recorder'] contains all the names, values, units.
         """
         if failed_run_flag is False:
-            COUNTER = str(session.get('user_id')) + 'COUNTER'
-            RECORDER = str(session.get('user_id')) + 'RECORDER'
             if 'gui_recorder' not in vars(cpnts[session.get('user_id')]):       # GNS
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
-            if COUNTER in cpnts[session.get('user_id')].gui_recorder.keys():
-                cpnts[session.get('user_id')].gui_recorder[COUNTER] += 1
+            if 'counter' in cpnts[session.get('user_id')].gui_recorder.keys():
+                cpnts[session.get('user_id')].gui_recorder['counter'] += 1
             else:
-                cpnts[session.get('user_id')].gui_recorder[COUNTER] = 1
+                cpnts[session.get('user_id')].gui_recorder['counter'] = 1
 
             out = get_io_dict(cpnts[session.get('user_id')])
             cmp_data, _ = build_hierarchy(cpnts[session.get('user_id')], {}, [])
@@ -383,14 +378,14 @@ def webgui(app=None):
                     pname = param['name']
                     params[cmp_name][pname] = param['state']
             try:
-                cpnts[session.get('user_id')].gui_recorder[RECORDER]['case%i' %
-                                              cpnts[session.get('user_id')].gui_recorder[COUNTER]] = params
+                cpnts[session.get('user_id')].gui_recorder['recorder']['case%i' %
+                                              cpnts[session.get('user_id')].gui_recorder['counter']] = params
             except:
-                cpnts[session.get('user_id')].gui_recorder[RECORDER] = {}
-                cpnts[session.get('user_id')].gui_recorder[RECORDER]['case%i' %
-                                              cpnts[session.get('user_id')].gui_recorder[COUNTER]] = params
+                cpnts[session.get('user_id')].gui_recorder['recorder'] = {}
+                cpnts[session.get('user_id')].gui_recorder['recorder']['case%i' %
+                                              cpnts[session.get('user_id')].gui_recorder['counter']] = params
 
-            return 'Case %i recorded successfully!' % cpnts[session.get('user_id')].gui_recorder[COUNTER]
+            return 'Case %i recorded successfully!' % cpnts[session.get('user_id')].gui_recorder['counter']
         return None
 
     record_case.__name__ = 'analysis_record_case'
@@ -419,17 +414,15 @@ def webgui(app=None):
 
         try:  # find all the values/units of the variables of interest
             input_vals, output_vals = [], []
-            COUNTER = str(session.get('user_id')) + 'COUNTER'
-            RECORDER = str(session.get('user_id')) + 'RECORDER'
-            num_cases = int(cpnts[session.get('user_id')].gui_recorder[COUNTER])
+            num_cases = int(cpnts[session.get('user_id')].gui_recorder['counter'])
             for i in range(num_cases):
                 caseNum = i + 1
                 current_input = finditem(
-                    cpnts[session.get('user_id')].gui_recorder[RECORDER][
+                    cpnts[session.get('user_id')].gui_recorder['recorder'][
                         'case%i' %
                         caseNum], inputName)
                 current_output = finditem(
-                    cpnts[session.get('user_id')].gui_recorder[RECORDER][
+                    cpnts[session.get('user_id')].gui_recorder['recorder'][
                         'case%i' %
                         caseNum], outputName)
 
@@ -464,7 +457,7 @@ def webgui(app=None):
 
     def clear_recorder():
         """
-        Clears the recorder (cpnt.gui_recorder) dictionary
+        Clears the recorder (cpnts[session.get('user_id')].gui_recorder) dictionary
         """
 
         if not 'gui_recorder' in vars(cpnts[session.get('user_id')]):       # GNS
@@ -601,7 +594,7 @@ def webgui(app=None):
                         inputs_names_form, outputs_names_form = None, None
 
                     if not failed_run_flag:
-                        # if isinstance(cpnt, Assembly) and not
+                        # if isinstance(cpnts[session.get('user_id')], Assembly) and not
                         # failed_run_flag: # if added - GNS 2015 09 28
                         try:
                             # get JS, divs for CAPEX, LCOE, Comparison s=plots
