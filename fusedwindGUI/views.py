@@ -31,7 +31,8 @@ import types
 
 from fusedwindGUI import app
 
-
+ID = np.random.uniform(0,1e10)
+COUNTER = str(np.random.uniform(0, 99999999))+"_ID"
 # Handling file upload -------------------------------------------------------
 def _handleUpload(files):
     """Handle the files uploaded, put them in a tmp directory, read the content
@@ -358,10 +359,10 @@ def webgui(app=None):
                 print '\n*** NO gui_recorder in component!\n'
                 return 'No case recorded - NO gui_recorder in component!'
 
-            if 'counter' in cpnt.gui_recorder.keys():
-                cpnt.gui_recorder['counter'] += 1
+            if COUNTER in cpnt.gui_recorder.keys():
+                cpnt.gui_recorder[COUNTER] += 1
             else:
-                cpnt.gui_recorder['counter'] = 1
+                cpnt.gui_recorder[COUNTER] = 1
 
             out = get_io_dict(cpnt)
             cmp_data, _ = build_hierarchy(cpnt, {}, [])
@@ -379,13 +380,13 @@ def webgui(app=None):
                     params[cmp_name][pname] = param['state']
             try:
                 cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder['counter']] = params
+                                              cpnt.gui_recorder[COUNTER] = params
             except:
                 cpnt.gui_recorder['recorder'] = {}
                 cpnt.gui_recorder['recorder']['case%i' %
-                                              cpnt.gui_recorder['counter']] = params
+                                              cpnt.gui_recorder[COUNTER] = params
 
-            return 'Case %i recorded successfully!' % cpnt.gui_recorder['counter']
+            return 'Case %i recorded successfully!' % cpnt.gui_recorder[COUNTER]
         return None
 
     record_case.__name__ = 'analysis_record_case'
@@ -414,7 +415,7 @@ def webgui(app=None):
 
         try:  # find all the values/units of the variables of interest
             input_vals, output_vals = [], []
-            num_cases = int(cpnt.gui_recorder['counter'])
+            num_cases = int(cpnt.gui_recorder[COUNTER])
             for i in range(num_cases):
                 caseNum = i + 1
                 current_input = finditem(
